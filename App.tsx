@@ -1,0 +1,154 @@
+
+import React, { useState, useEffect } from 'react';
+import Sidebar from './components/layout/Sidebar';
+import Header from './components/layout/Header';
+import Dashboard from './pages/Dashboard';
+import SalesContracts from './pages/SalesContracts';
+import VendorsAndClients from './pages/VendorsAndClients';
+import UserManagement from './pages/UserManagement';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
+import Invoices from './pages/Invoices';
+import Payments from './pages/Payments';
+import Disputes from './pages/Disputes';
+import Commissions from './pages/Commissions';
+import Reports from './pages/Reports';
+import AuditTrail from './pages/AuditTrail';
+import GrievanceOfficer from './pages/GrievanceOfficer';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import RolesAndRights from './pages/RolesAndRights';
+import { User, mockUsers, AuditLog, mockAuditLogs, MasterDataItem, mockOrganizations, SalesContract, mockSalesContracts, mockMasterData } from './data/mockData';
+
+const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]); // Default to Admin
+  const [activePage, setActivePage] = useState<string>('Dashboard');
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(mockAuditLogs);
+  const [organizations] = useState<MasterDataItem[]>(mockOrganizations);
+  const [financialYears] = useState<MasterDataItem[]>(mockMasterData.financialYears);
+  const [currentOrganization, setCurrentOrganization] = useState<string>(organizations[0].name);
+  const [currentFinancialYear, setCurrentFinancialYear] = useState<string>(financialYears[financialYears.length - 1].name);
+  const [contracts, setContracts] = useState<SalesContract[]>(mockSalesContracts);
+
+  const handleNavigation = (page: string) => {
+    const hash = page.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
+    window.location.hash = hash;
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      const pageTitle = hash
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      setActivePage(pageTitle.replace(/And/g, '&') || 'Dashboard');
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Set initial page based on hash
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
+  const addAuditLog = (log: Omit<AuditLog, 'id' | 'timestamp'>) => {
+    const newLog: AuditLog = {
+      ...log,
+      id: auditLogs.length + 1,
+      timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'medium' }),
+    };
+    setAuditLogs(prev => [newLog, ...prev]);
+  };
+
+  const handleCarryForward = () => {
+    const currentFYIndex = financialYears.findIndex(fy => fy.name === currentFinancialYear);
+    if (currentFYIndex < 1) {
+        alert("Cannot carry forward. No previous financial year found.");
+        return;
+    }
+    const previousFY = financialYears[currentFYIndex - 1].name;
+
+    const contractsToCarryForward = contracts.filter(c => 
+        c.financialYear === previousFY && (c.status === 'Active' || c.status === 'Disputed')
+    );
+
+    if (contractsToCarryForward.length === 0) {
+        alert(`No active or disputed contracts found in the previous financial year (${previousFY}) to carry forward.`);
+        return;
+    }
+
+    const newContracts: SalesContract[] = contractsToCarryForward.map((c, index) => ({
+        ...c,
+        id: `sc_cf_${Date.now() + index}`,
+        scNo: `CF-${c.scNo}`,
+        financialYear: currentFinancialYear,
+        manualTerms: `Carried forward from ${c.scNo} (FY ${previousFY}). ${c.manualTerms || ''}`,
+        status: 'Active',
+    }));
+
+    const updatedOldContracts = contracts.map(c => {
+        if (contractsToCarryForward.some(cf => cf.id === c.id)) {
+            return { ...c, status: 'Carried Forward' };
+        }
+        return c;
+    });
+    
+    setContracts([...updatedOldContracts, ...newContracts]);
+    addAuditLog({
+        user: currentUser.name,
+        role: currentUser.role,
+        action: 'Carry Forward',
+        module: 'Year-End',
+        details: `Carried forward ${newContracts.length} contracts from FY ${previousFY} to FY ${currentFinancialYear}.`,
+        reason: 'Year-end process initiated by user.'
+    });
+    alert(`Successfully carried forward ${newContracts.length} contracts to the current financial year.`);
+  };
+
+  const renderPage = () => {
+    const pageKey = activePage.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
+    switch (pageKey) {
+      case 'dashboard': return <Dashboard currentUser={currentUser} onCarryForward={handleCarryForward} />;
+      case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
+      case 'invoices': return <Invoices currentUser={currentUser} />;
+      case 'payments': return <Payments currentUser={currentUser} />;
+      case 'commissions': return <Commissions currentUser={currentUser} />;
+      case 'disputes': return <Disputes currentUser={currentUser} />;
+      case 'vendors-clients': return <VendorsAndClients currentUser={currentUser} addAuditLog={addAuditLog} currentOrganization={currentOrganization} />;
+      case 'reports': return <Reports currentUser={currentUser} />;
+      case 'audit-trail': return <AuditTrail currentUser={currentUser} auditLogs={auditLogs} />;
+      case 'user-management': return <UserManagement currentUser={currentUser} />;
+      case 'roles-rights': return <RolesAndRights currentUser={currentUser} />;
+      case 'settings': return <Settings currentUser={currentUser} addAuditLog={addAuditLog} />;
+      case 'grievance-officer': return <GrievanceOfficer currentUser={currentUser} addAuditLog={addAuditLog} />;
+      case 'privacy-policy': return <PrivacyPolicy />;
+      case 'terms-of-service': return <TermsOfService />;
+      default: return <NotFound />;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-slate-50 font-sans">
+      <Sidebar onNavigate={handleNavigation} activePage={activePage} currentUser={currentUser} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header 
+          currentUser={currentUser} 
+          onUserChange={setCurrentUser}
+          organizations={organizations}
+          currentOrganization={currentOrganization}
+          onOrganizationChange={setCurrentOrganization}
+          financialYears={financialYears}
+          currentFinancialYear={currentFinancialYear}
+          onFinancialYearChange={setCurrentFinancialYear}
+        />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-8">
+          {renderPage()}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default App;
