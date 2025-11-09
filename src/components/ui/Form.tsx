@@ -24,11 +24,11 @@ export const FormInput: React.FC<FormInputProps> = ({ isReadOnly = false, compon
   const finalProps = { ...props, readOnly: isReadOnly, disabled: isReadOnly, className: finalClassName };
 
   if (component === 'select') {
-    // @ts-ignore
+    // @ts-expect-error - props.children is used for select options
     return <select {...finalProps}>{props.children}</select>;
   }
   if (component === 'textarea') {
-    // @ts-ignore
+    // @ts-expect-error - rows property is specific to textarea
     return <textarea {...finalProps} rows={props.rows || 3}></textarea>;
   }
   return <input {...finalProps} />;

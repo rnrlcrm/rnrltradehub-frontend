@@ -96,7 +96,7 @@ const SalesContractForm: React.FC<SalesContractFormProps> = ({ contract, mode, v
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    let updatedData: Partial<Omit<SalesContract, 'id'>> = { [name]: value };
+    const updatedData: Partial<Omit<SalesContract, 'id'>> = { [name]: value };
 
     if (name === 'clientId') updatedData.clientName = clients.find(c => c.id === value)?.legal_name || '';
     if (name === 'vendorId') updatedData.vendorName = vendors.find(v => v.id === value)?.legal_name || '';
