@@ -64,6 +64,28 @@ export interface MasterDataItem {
   name: string;
 }
 
+export interface Organization {
+  id: number;
+  name: string;
+  code: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  phone: string;
+  email: string;
+  gstin: string;
+  pan: string;
+  tan: string;
+  cin: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  branchName: string;
+  isActive: boolean;
+}
+
 export interface StructuredTerm {
     id: number;
     name: string;

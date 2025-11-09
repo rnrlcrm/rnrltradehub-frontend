@@ -20,10 +20,12 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RolesAndRights from './pages/RolesAndRights';
 import Chatbot from './pages/Chatbot';
-import { User, mockUsers, AuditLog, mockAuditLogs, MasterDataItem, mockOrganizations, SalesContract, mockSalesContracts, mockMasterData } from './data/mockData';
+import Login from './pages/Login';
+import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
+import { User, AuditLog, MasterDataItem, SalesContract } from './types';
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]); // Default to Admin
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activePage, setActivePage] = useState<string>('Dashboard');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(mockAuditLogs);
   const [organizations] = useState<MasterDataItem[]>(mockOrganizations);
@@ -99,8 +101,8 @@ const App: React.FC = () => {
     
     setContracts([...updatedOldContracts, ...newContracts]);
     addAuditLog({
-        user: currentUser.name,
-        role: currentUser.role,
+        user: currentUser!.name,
+        role: currentUser!.role,
         action: 'Carry Forward',
         module: 'Year-End',
         details: `Carried forward ${newContracts.length} contracts from FY ${previousFY} to FY ${currentFinancialYear}.`,
@@ -108,6 +110,35 @@ const App: React.FC = () => {
     });
     alert(`Successfully carried forward ${newContracts.length} contracts to the current financial year.`);
   };
+
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('currentUser');
+    setActivePage('Dashboard');
+    window.location.hash = '';
+  };
+
+  // Check for saved session on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('currentUser');
+      }
+    }
+  }, []);
+
+  // Show login page if not logged in
+  if (!currentUser) {
+    return <Login onLogin={handleLogin} availableUsers={mockUsers} />;
+  }
 
   const renderPage = () => {
     const pageKey = activePage.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
@@ -140,6 +171,7 @@ const App: React.FC = () => {
         <Header 
           currentUser={currentUser} 
           onUserChange={setCurrentUser}
+          onLogout={handleLogout}
           organizations={organizations}
           currentOrganization={currentOrganization}
           onOrganizationChange={setCurrentOrganization}
