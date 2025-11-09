@@ -2,10 +2,13 @@
 import React, { useState, useMemo } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
+import Modal from '../components/ui/Modal';
 import { mockCommissions } from '../data/mockData';
 import { Commission, User } from '../types';
 import { hasPermission } from '../lib/permissions';
 import { Button, Input, Select } from '../components/ui/Form';
+import CommissionForm from '../components/forms/CommissionForm';
+import CommissionPaymentForm from '../components/forms/CommissionPaymentForm';
 
 interface CommissionsProps {
   currentUser: User;
@@ -26,13 +29,21 @@ const Commissions: React.FC<CommissionsProps> = ({ currentUser }) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [amountMin, setAmountMin] = useState('');
   const [amountMax, setAmountMax] = useState('');
+  
+  // Modal states
+  const [commissions, setCommissions] = useState<Commission[]>(mockCommissions);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view' | 'payment'>('view');
+  const [selectedCommission, setSelectedCommission] = useState<Commission | null>(null);
 
   const canRead = hasPermission(currentUser.role, 'Commissions', 'read');
+  const canCreate = hasPermission(currentUser.role, 'Commissions', 'create');
   const canUpdate = hasPermission(currentUser.role, 'Commissions', 'update');
+  const canDelete = hasPermission(currentUser.role, 'Commissions', 'delete');
 
   // Filtered and searched data
   const filteredCommissions = useMemo(() => {
-    return mockCommissions.filter(commission => {
+    return commissions.filter(commission => {
       // Search filter
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = searchTerm === '' || 
@@ -49,7 +60,7 @@ const Commissions: React.FC<CommissionsProps> = ({ currentUser }) => {
       
       return matchesSearch && matchesStatus && matchesAmountMin && matchesAmountMax;
     });
-  }, [mockCommissions, searchTerm, statusFilter, amountMin, amountMax]);
+  }, [commissions, searchTerm, statusFilter, amountMin, amountMax]);
 
   // Calculate summary statistics
   const summary = useMemo(() => {
@@ -90,6 +101,61 @@ const Commissions: React.FC<CommissionsProps> = ({ currentUser }) => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleOpenModal = (mode: 'add' | 'edit' | 'view' | 'payment', commission: Commission | null = null) => {
+    setModalMode(mode);
+    setSelectedCommission(commission);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCommission(null);
+  };
+
+  const handleSaveCommission = (data: Omit<Commission, 'id'>) => {
+    if (modalMode === 'add') {
+      const newCommission = { ...data, id: Math.max(...commissions.map(c => c.id)) + 1 };
+      setCommissions([newCommission, ...commissions]);
+    } else if (modalMode === 'edit' && selectedCommission) {
+      setCommissions(commissions.map(c => c.id === selectedCommission.id ? { ...data, id: selectedCommission.id } : c));
+    }
+    handleCloseModal();
+  };
+
+  const handleSavePayment = (paymentData: any) => {
+    // Update commission status to Paid
+    setCommissions(commissions.map(c => 
+      c.commissionId === paymentData.commissionId 
+        ? { ...c, status: 'Paid' as const, paidDate: paymentData.paymentDate }
+        : c
+    ));
+    alert(`Payment recorded successfully!\n\nPayment ID: ${paymentData.paymentId}\nAmount: ₹${paymentData.amount.toLocaleString('en-IN')}\nMethod: ${paymentData.paymentMethod}`);
+    handleCloseModal();
+  };
+
+  const handleMarkAsPaid = (commission: Commission) => {
+    if (window.confirm(`Mark commission ${commission.commissionId} as paid?`)) {
+      setCommissions(commissions.map(c => 
+        c.id === commission.id 
+          ? { ...c, status: 'Paid' as const, paidDate: new Date().toISOString().split('T')[0] }
+          : c
+      ));
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this commission?')) {
+      setCommissions(commissions.filter(c => c.id !== id));
+    }
+  };
+
+  const getModalTitle = () => {
+    if (modalMode === 'add') return 'Create New Commission';
+    if (modalMode === 'edit') return `Edit Commission: ${selectedCommission?.commissionId}`;
+    if (modalMode === 'payment') return 'Record Commission Payment';
+    return `View Commission: ${selectedCommission?.commissionId}`;
+  };
+
   if (!canRead) {
     return (
       <Card title="Access Denied">
@@ -113,9 +179,12 @@ const Commissions: React.FC<CommissionsProps> = ({ currentUser }) => {
     {
       header: 'Actions',
       accessor: (item: Commission) => (
-        <div className="space-x-4">
-          {item.status === 'Due' && canUpdate && <button className="text-blue-600 hover:underline text-sm font-medium">Mark as Paid</button>}
-          <button className="text-blue-600 hover:underline text-sm font-medium">View Details</button>
+        <div className="space-x-2">
+          {canRead && <button onClick={() => handleOpenModal('view', item)} className="text-blue-600 hover:underline text-sm font-medium">View</button>}
+          {item.status === 'Due' && canUpdate && <button onClick={() => handleMarkAsPaid(item)} className="text-green-600 hover:underline text-sm font-medium">Mark Paid</button>}
+          {item.status === 'Due' && canUpdate && <button onClick={() => handleOpenModal('payment', item)} className="text-purple-600 hover:underline text-sm font-medium">Record Payment</button>}
+          {canUpdate && <button onClick={() => handleOpenModal('edit', item)} className="text-blue-600 hover:underline text-sm font-medium">Edit</button>}
+          {canDelete && <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline text-sm font-medium">Delete</button>}
         </div>
       ),
     },
@@ -206,11 +275,35 @@ const Commissions: React.FC<CommissionsProps> = ({ currentUser }) => {
       <Card 
         title={`All Commissions (${filteredCommissions.length})`}
         actions={
-          <Button className="text-sm">Generate Report</Button>
+          <div className="flex gap-2">
+            {canCreate && <Button onClick={() => handleOpenModal('add')} className="text-sm">Create Commission</Button>}
+            {canCreate && <Button onClick={() => handleOpenModal('payment')} className="text-sm bg-purple-600 hover:bg-purple-700">Record Payment</Button>}
+            <Button onClick={exportToCSV} className="text-sm bg-green-600 hover:bg-green-700">Generate Report</Button>
+          </div>
         }
       >
         <Table<Commission> data={filteredCommissions} columns={columns} />
       </Card>
+
+      {/* Modal for Commission CRUD and Payment */}
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={getModalTitle()}>
+        {modalMode === 'payment' ? (
+          <CommissionPaymentForm
+            commissions={commissions}
+            payment={null}
+            readOnly={false}
+            onSave={handleSavePayment}
+            onCancel={handleCloseModal}
+          />
+        ) : (
+          <CommissionForm
+            commission={selectedCommission}
+            readOnly={modalMode === 'view'}
+            onSave={handleSaveCommission}
+            onCancel={handleCloseModal}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

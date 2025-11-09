@@ -13,9 +13,30 @@ interface ReportsProps {
 
 const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
   const [activeReport, setActiveReport] = useState<string>('overview');
-  const [selectedParty, setSelectedParty] = useState<string>('');
+  const [selectedParty, setSelectedParty] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<string>('all');
+
+  if (!hasPermission(currentUser.role, 'Reports', 'read')) {
+    return (
+      <Card title="Access Denied">
+        <p className="text-red-600">You do not have permission to view this page.</p>
+      </Card>
+    );
+  }
+
+  // Role-based report access
+  const isAdmin = currentUser.role === 'Admin';
+  const isAccounts = currentUser.role === 'Accounts';
+  const isSales = currentUser.role === 'Sales';
+
+  // Get unique parties for filter
+  const allParties = useMemo(() => {
+    const parties = new Set<string>();
+    mockBusinessPartners.forEach(bp => parties.add(bp.name));
+    return ['all', ...Array.from(parties)];
+  }, []);
 
   if (!hasPermission(currentUser.role, 'Reports', 'read')) {
     return (
@@ -30,8 +51,17 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
     const entries: LedgerEntry[] = [];
     let runningBalance = 0;
 
+    // Filter invoices by date range and party
+    let filteredInvoices = [...mockInvoices];
+    if (dateFrom) {
+      filteredInvoices = filteredInvoices.filter(inv => inv.date >= dateFrom);
+    }
+    if (dateTo) {
+      filteredInvoices = filteredInvoices.filter(inv => inv.date <= dateTo);
+    }
+
     // Invoices create debit entries (money owed to us)
-    mockInvoices.forEach(inv => {
+    filteredInvoices.forEach(inv => {
       runningBalance += inv.amount;
       entries.push({
         id: `ledger_${inv.id}`,
@@ -49,8 +79,17 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
       });
     });
 
+    // Filter payments by date range
+    let filteredPayments = [...mockPayments];
+    if (dateFrom) {
+      filteredPayments = filteredPayments.filter(pay => pay.date >= dateFrom);
+    }
+    if (dateTo) {
+      filteredPayments = filteredPayments.filter(pay => pay.date <= dateTo);
+    }
+
     // Payments create credit entries (money received)
-    mockPayments.forEach(pay => {
+    filteredPayments.forEach(pay => {
       runningBalance -= pay.amount;
       entries.push({
         id: `ledger_${pay.id}`,
@@ -68,7 +107,13 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
       });
     });
 
-    return entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Filter by selected party
+    let finalEntries = entries;
+    if (selectedParty && selectedParty !== 'all') {
+      finalEntries = entries.filter(entry => entry.partyName === selectedParty);
+    }
+
+    return finalEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
   const ledgerEntries = useMemo(() => generateLedgerEntries(), []);
@@ -309,8 +354,69 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-800">Financial Reports & Analytics</h1>
-      <p className="text-slate-600 -mt-4">Comprehensive accounting reports with debit/credit balances</p>
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-800">Financial Reports & Analytics</h1>
+        <p className="text-slate-600 mt-1">Comprehensive accounting reports with debit/credit balances</p>
+        {!isAdmin && (
+          <p className="text-sm text-blue-600 mt-1">
+            {isSales && "📊 Sales role: View sales-related reports"}
+            {isAccounts && "📊 Accounts role: View financial reports"}
+            {!isSales && !isAccounts && "📊 Limited access: Contact admin for full reports"}
+          </p>
+        )}
+      </div>
+
+      {/* Filters Panel */}
+      <Card title="Report Filters">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Party</label>
+            <Select
+              value={selectedParty}
+              onChange={(e) => setSelectedParty(e.target.value)}
+            >
+              {allParties.map(party => (
+                <option key={party} value={party}>
+                  {party === 'all' ? 'All Parties' : party}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date From</label>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date To</label>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </div>
+          <div className="flex items-end">
+            <Button 
+              onClick={() => {
+                setSelectedParty('all');
+                setDateFrom('');
+                setDateTo('');
+              }} 
+              className="text-sm bg-slate-500 hover:bg-slate-600 w-full"
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+        <div className="px-4 pb-4">
+          <p className="text-xs text-slate-500">
+            💡 Filters apply to all reports. No selection needed - reports are generated automatically based on current filters.
+          </p>
+        </div>
+      </Card>
 
       {/* Report selector */}
       <Card>
