@@ -8,7 +8,7 @@ import { mockBusinessPartners, mockOrganizations, mockMasterData } from '../data
 import { SalesContract, User, BusinessPartner, MasterDataItem, CciTerm, StructuredTerm, GstRate, CommissionStructure } from '../types';
 import { hasPermission } from '../lib/permissions';
 import { Button, FormLabel, FormInput } from '../components/ui/Form';
-import SalesContractPDF from '../components/pdf/SalesContractPDF';
+import SalesContractPDF from '../components/forms/SalesContractPDF';
 
 interface SalesContractsProps {
   currentUser: User;
