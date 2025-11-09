@@ -1,76 +1,60 @@
+
 import { UserRole, Module, Permission, PermissionsMap } from '../types';
 
 export const mockPermissions: PermissionsMap = {
   'Admin': {
-    'Sales Contracts': ['create', 'read', 'update', 'delete', 'approve'],
+    'Sales Contracts': ['create', 'read', 'update', 'delete'],
     'Invoices': ['create', 'read', 'update', 'delete'],
     'Payments': ['create', 'read', 'update', 'delete'],
     'Disputes': ['create', 'read', 'update', 'delete'],
     'Commissions': ['create', 'read', 'update', 'delete'],
-    'Vendors & Clients': ['create', 'read', 'update', 'delete'],
+    'Vendors & Clients': ['create', 'read', 'update', 'delete', 'approve', 'share'],
     'User Management': ['create', 'read', 'update', 'delete'],
-    'Settings': ['create', 'read', 'update', 'delete'],
+    'Settings': ['read', 'update'],
     'Reports': ['read'],
     'Audit Trail': ['read'],
     'Roles & Rights': ['read', 'update'],
-    'Grievance Officer': ['read', 'update'],
+    'Grievance Officer': ['read'],
     'Business Partner': ['create', 'read', 'update', 'delete', 'approve', 'share'],
   },
   'Sales': {
     'Sales Contracts': ['create', 'read', 'update'],
-    'Invoices': ['read'],
-    'Payments': ['read'],
+    'Vendors & Clients': ['create', 'read', 'update', 'share'],
     'Disputes': ['create', 'read'],
-    'Commissions': ['read'],
-    'Vendors & Clients': ['create', 'read', 'update'],
-    'User Management': ['read'],
-    'Settings': ['read'],
     'Reports': ['read'],
-    'Audit Trail': ['read'],
+    'Grievance Officer': ['read'],
     'Business Partner': ['create', 'read', 'update', 'share'],
   },
   'Accounts': {
     'Sales Contracts': ['read'],
     'Invoices': ['create', 'read', 'update'],
     'Payments': ['create', 'read', 'update'],
-    'Disputes': ['read'],
-    'Commissions': ['create', 'read', 'update'],
+    'Commissions': ['read', 'update'],
     'Vendors & Clients': ['read'],
-    'User Management': ['read'],
-    'Settings': ['read'],
     'Reports': ['read'],
-    'Audit Trail': ['read'],
+    'Grievance Officer': ['read'],
     'Business Partner': ['read'],
   },
   'Dispute Manager': {
     'Sales Contracts': ['read'],
-    'Invoices': ['read'],
-    'Payments': ['read'],
-    'Disputes': ['create', 'read', 'update'],
-    'Commissions': ['read'],
-    'Vendors & Clients': ['read'],
-    'User Management': ['read'],
-    'Settings': ['read'],
-    'Reports': ['read'],
-    'Audit Trail': ['read'],
-    'Business Partner': ['read'],
+    'Disputes': ['read', 'update'],
+    'Grievance Officer': ['read'],
   },
   'Vendor/Client': {
     'Sales Contracts': ['read'],
     'Invoices': ['read'],
     'Payments': ['read'],
-    'Disputes': ['create', 'read'],
-    'Commissions': ['read'],
-    'Vendors & Clients': ['read'],
-    'Reports': ['read'],
-    'Business Partner': ['read'],
+    'Grievance Officer': ['read'],
   },
 };
 
-export const hasPermission = (
-  role: UserRole,
-  module: Module,
-  permission: Permission
-): boolean => {
-  return mockPermissions[role]?.[module]?.includes(permission) ?? false;
+export const hasPermission = (role: UserRole, module: Module, permission: Permission): boolean => {
+  if (role === 'Admin') return true; // Admin has all permissions
+  const rolePermissions = mockPermissions[role];
+  if (!rolePermissions) return false;
+
+  const modulePermissions = rolePermissions[module];
+  if (!modulePermissions) return false;
+
+  return modulePermissions.includes(permission);
 };
