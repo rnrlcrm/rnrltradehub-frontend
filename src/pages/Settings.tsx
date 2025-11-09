@@ -1,11 +1,11 @@
 
 import React from 'react';
-import MasterDataManagement from '../components/management/MasterDataManagement';
-import LocationManagement from '../components/management/LocationManagement';
-import CommissionMasterManagement from '../components/management/CommissionMasterManagement';
-import StructuredTermManagement from '../components/management/StructuredTermManagement';
-import CciTermManagement from '../components/management/CciTermManagement';
-import GstRateManagement from '../components/management/GstRateManagement';
+import MasterDataManagement from '../components/forms/MasterDataManagement';
+import LocationManagement from '../components/forms/LocationManagement';
+import CommissionMasterManagement from '../components/forms/CommissionMasterManagement';
+import StructuredTermManagement from '../components/forms/StructuredTermManagement';
+import CciTermManagement from '../components/forms/CciTermManagement';
+import GstRateManagement from '../components/forms/GstRateManagement';
 import { mockMasterData, mockLocations } from '../data/mockData';
 import { User, AuditLog } from '../types';
 import Card from '../components/ui/Card';
