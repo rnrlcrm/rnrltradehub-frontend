@@ -50,8 +50,18 @@ export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { 
     };
 
     return (
-        <button {...props} className={`${baseClasses} ${variantClasses[variant]} ${props.className}`}>
+        <button {...props} className={`${baseClasses} ${variantClasses[variant]} ${props.className || ''}`}>
             {props.children}
         </button>
     );
+};
+
+export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => {
+    const baseClasses = "block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 sm:text-sm";
+    return <input {...props} className={`${baseClasses} ${props.className || ''}`} />;
+};
+
+export const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => {
+    const baseClasses = "block w-full border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 sm:text-sm";
+    return <select {...props} className={`${baseClasses} ${props.className || ''}`}>{props.children}</select>;
 };
