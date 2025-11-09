@@ -22,6 +22,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
   });
   
   const [selectedContract, setSelectedContract] = useState<SalesContract | null>(null);
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [autoForward, setAutoForward] = useState(true);
   
   // Get only active and completed sales contracts for invoice generation
   const availableContracts = mockSalesContracts.filter(
@@ -66,6 +68,30 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
     setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) : value }));
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type (PDF, images)
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please upload a PDF or image file (JPG, PNG)');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+      
+      setInvoiceFile(file);
+      
+      // In real implementation, this would extract data from the invoice
+      // For now, we'll show a placeholder
+      console.log('Invoice file uploaded:', file.name);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -85,7 +111,20 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
       return;
     }
     
+    // Simulate email forwarding
+    if (autoForward && selectedContract) {
+      console.log('Auto-forwarding invoice to buyer:', selectedContract.clientName);
+      console.log('Buyer email would be:', selectedContract.clientId); // In real app, get from business partner
+      // Backend would handle actual email sending
+    }
+    
     onSave(formData);
+  };
+
+  const handleEmailToBuyer = () => {
+    if (selectedContract) {
+      alert(`Invoice will be emailed to ${selectedContract.clientName}\n\nIn production, this will:\n1. Attach the invoice PDF\n2. Include contract details\n3. Send to buyer's registered email\n4. CC: relevant parties\n5. Log in audit trail`);
+    }
   };
 
   return (
@@ -140,6 +179,35 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
           </>
         )}
         
+        {!readOnly && (
+          <FormRow>
+            <FormLabel htmlFor="invoiceUpload">Upload Invoice (Optional)</FormLabel>
+            <div className="md:col-span-2">
+              <input
+                type="file"
+                id="invoiceUpload"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-slate-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  cursor-pointer"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Upload invoice received from seller (PDF, JPG, PNG - Max 10MB)
+              </p>
+              {invoiceFile && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Uploaded: {invoiceFile.name}
+                </p>
+              )}
+            </div>
+          </FormRow>
+        )}
+        
         <FormRow>
           <FormLabel htmlFor="date">Invoice Date *</FormLabel>
           <FormInput 
@@ -183,12 +251,39 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
             <option value="Paid">Paid</option>
           </FormInput>
         </FormRow>
+        
+        {!readOnly && selectedContract && (
+          <FormRow>
+            <FormLabel htmlFor="autoForward">Email Automation</FormLabel>
+            <div className="md:col-span-2 space-y-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={autoForward}
+                  onChange={(e) => setAutoForward(e.target.checked)}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-slate-700">
+                  Auto-forward invoice to buyer via email after saving
+                </span>
+              </label>
+              <p className="text-xs text-slate-500">
+                System will automatically email invoice to {selectedContract.clientName}
+              </p>
+            </div>
+          </FormRow>
+        )}
       </div>
       
       <FormActions>
         <Button type="button" variant="secondary" onClick={onCancel}>
           {readOnly ? 'Close' : 'Cancel'}
         </Button>
+        {readOnly && selectedContract && (
+          <Button type="button" onClick={handleEmailToBuyer} className="bg-green-600 hover:bg-green-700">
+            Email to Buyer
+          </Button>
+        )}
         {!readOnly && <Button type="submit">Save Invoice</Button>}
       </FormActions>
     </form>

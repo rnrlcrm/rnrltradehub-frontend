@@ -19,6 +19,7 @@ import GrievanceOfficer from './pages/GrievanceOfficer';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RolesAndRights from './pages/RolesAndRights';
+import Chatbot from './pages/Chatbot';
 import { User, mockUsers, AuditLog, mockAuditLogs, MasterDataItem, mockOrganizations, SalesContract, mockSalesContracts, mockMasterData } from './data/mockData';
 
 const App: React.FC = () => {
@@ -112,6 +113,7 @@ const App: React.FC = () => {
     const pageKey = activePage.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
     switch (pageKey) {
       case 'dashboard': return <Dashboard currentUser={currentUser} onCarryForward={handleCarryForward} />;
+      case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
       case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
       case 'invoices': return <Invoices currentUser={currentUser} />;
       case 'payments': return <Payments currentUser={currentUser} />;

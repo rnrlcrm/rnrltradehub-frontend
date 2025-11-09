@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DashboardIcon, ContractIcon, UsersIcon, SettingsIcon, InvoiceIcon, PaymentIcon, DisputeIcon, CommissionIcon, ReportIcon, AuditIcon } from '../ui/icons';
+import { DashboardIcon, ContractIcon, UsersIcon, SettingsIcon, InvoiceIcon, PaymentIcon, DisputeIcon, CommissionIcon, ReportIcon, AuditIcon, ChatIcon } from '../ui/icons';
 import { User } from '../../types';
 
 interface SidebarProps {
@@ -32,6 +32,7 @@ const NavItem: React.FC<{
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }) => {
   const navItems = [
     { name: 'Dashboard', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
+    { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
     { name: 'Sales Contracts', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
     { name: 'Invoices', icon: InvoiceIcon, roles: ['Admin', 'Accounts', 'Vendor/Client'] },
     { name: 'Payments', icon: PaymentIcon, roles: ['Admin', 'Accounts', 'Vendor/Client'] },
