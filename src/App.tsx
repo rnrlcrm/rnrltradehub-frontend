@@ -12,6 +12,7 @@ import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
 import Disputes from './pages/Disputes';
 import Commissions from './pages/Commissions';
+import CommissionAccounting from './pages/CommissionAccounting';
 import Reports from './pages/Reports';
 import AuditTrail from './pages/AuditTrail';
 import GrievanceOfficer from './pages/GrievanceOfficer';
@@ -115,6 +116,7 @@ const App: React.FC = () => {
       case 'invoices': return <Invoices currentUser={currentUser} />;
       case 'payments': return <Payments currentUser={currentUser} />;
       case 'commissions': return <Commissions currentUser={currentUser} />;
+      case 'commission-accounting': return <CommissionAccounting currentUser={currentUser} />;
       case 'disputes': return <Disputes currentUser={currentUser} />;
       case 'vendors-clients': return <VendorsAndClients currentUser={currentUser} addAuditLog={addAuditLog} currentOrganization={currentOrganization} />;
       case 'reports': return <Reports currentUser={currentUser} />;
