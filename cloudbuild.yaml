@@ -1,17 +1,14 @@
-# cloudbuild.yaml - frontend CI/CD (autodetect by trigger)
-# IMPORTANT: save this at repo root and push to main branch so the trigger picks it up.
-
 options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
   # Build the docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/frontend-nonprod:latest', '.']
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/frontend-nonprod/rnrltradehub-frontend:latest', '.']
 
   # Push the image to regional Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/frontend-nonprod:latest']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/frontend-nonprod/rnrltradehub-frontend:latest']
 
   # Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -21,11 +18,10 @@ steps:
       - |
         set -euo pipefail
         gcloud run deploy rnrltradehub-frontend-nonprod \
-          --image=us-central1-docker.pkg.dev/$PROJECT_ID/frontend-nonprod:latest \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/frontend-nonprod/rnrltradehub-frontend:latest \
           --region=us-central1 \
           --platform=managed \
           --allow-unauthenticated
 
-# optional substitutions if you want to change later
 substitutions:
   _REGION: 'us-central1'
