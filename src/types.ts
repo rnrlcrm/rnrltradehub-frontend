@@ -196,6 +196,43 @@ export interface BusinessPartner {
   compliance_notes: string;
 }
 
+// Accounting and Ledger Types
+export interface LedgerEntry {
+  id: string;
+  date: string;
+  transactionType: 'Invoice' | 'Payment' | 'Commission' | 'Adjustment';
+  referenceNo: string; // Invoice No, Payment ID, etc.
+  salesContractId: string;
+  partyId: string; // Business Partner ID
+  partyName: string;
+  partyType: 'BUYER' | 'SELLER';
+  debit: number;
+  credit: number;
+  balance: number; // Running balance
+  description: string;
+}
+
+export interface AccountStatement {
+  partyId: string;
+  partyName: string;
+  partyType: 'BUYER' | 'SELLER';
+  openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  closingBalance: number;
+  entries: LedgerEntry[];
+}
+
+export interface AgingReport {
+  partyId: string;
+  partyName: string;
+  current: number; // 0-30 days
+  days30to60: number;
+  days60to90: number;
+  days90plus: number;
+  total: number;
+}
+
 export type Module = 'Sales Contracts' | 'Invoices' | 'Payments' | 'Disputes' | 'Commissions' | 'Vendors & Clients' | 'User Management' | 'Settings' | 'Reports' | 'Audit Trail' | 'Roles & Rights' | 'Grievance Officer' | 'Business Partner';
 export type Permission = 'create' | 'read' | 'update' | 'delete' | 'approve' | 'share';
 export type PermissionsMap = {
