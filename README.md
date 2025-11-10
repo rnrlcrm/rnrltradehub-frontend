@@ -1,33 +1,62 @@
 # RNRL Trade Hub Frontend
 
-A React-based frontend application for RNRL ERP Trade Hub built with Vite and TypeScript.
+A React-based frontend application for RNRL ERP Trade Hub built with Vite and TypeScript. Features an enterprise-grade design system following patterns from SAP Fiori 3.0, Odoo 17, Oracle Fusion Cloud, and Microsoft Dynamics 365.
+
+## 🎨 Design System
+
+A comprehensive design system with:
+- **Design Tokens**: Single source of truth for colors, typography, spacing
+- **Component Library**: 20+ enterprise-grade UI components built with Radix UI
+- **Responsive Layouts**: Mobile-first, adaptive designs
+- **Dark Mode**: Full theme support with CSS variables
+- **Accessibility**: WCAG AA compliant components
+
+📖 **[View Design System Documentation](docs/DESIGN_SYSTEM.md)**  
+📝 **[View Implementation Summary](DESIGN_SYSTEM_IMPLEMENTATION.md)**
 
 ## Project Structure
 
 ```
 rnrltradehub-frontend/
 ├── src/                          # Source code directory
+│   ├── design-system/            # Design tokens and theme
 │   ├── components/               # React components
 │   │   ├── forms/               # Form components for data entry
-│   │   ├── layout/              # Layout components (Header, Sidebar)
-│   │   └── ui/                  # Reusable UI components (Card, Modal, Form, Table, icons)
+│   │   ├── layout/              # Layout components (Header, Sidebar, PageShell)
+│   │   └── ui/
+│   │       └── shadcn/          # Enterprise UI components
 │   ├── pages/                   # Page components
 │   ├── data/                    # Data and mock data files
 │   ├── hooks/                   # Custom React hooks
+│   ├── lib/                     # Utility libraries
 │   ├── utils/                   # Utility functions (CCI calculations, GST, notifications)
+│   ├── examples/                # Component examples
 │   ├── types.ts                 # TypeScript type definitions
 │   ├── App.tsx                  # Main application component
-│   └── index.tsx                # Application entry point
+│   ├── index.tsx                # Application entry point
+│   └── index.css                # Global styles
 ├── docs/                        # Documentation
+│   ├── DESIGN_SYSTEM.md         # Design system documentation
 │   └── CCI_SETTING_MASTER.md   # CCI Setting Master developer guide
 ├── index.html                   # HTML template
 ├── package.json                 # Project dependencies
+├── tailwind.config.js           # Tailwind CSS configuration
+├── postcss.config.js            # PostCSS configuration
 ├── tsconfig.json                # TypeScript configuration
 ├── vite.config.ts               # Vite configuration
 └── README.md                    # This file
 ```
 
 ## Key Features
+
+### Enterprise Design System
+A complete design system with:
+- **20+ UI Components**: Button, Input, Select, Card, Dialog, Drawer, etc.
+- **Collapsible Sidebar**: Space-efficient navigation with tooltips
+- **Global Search**: Quick access with Ctrl+K
+- **Responsive Grid**: 12-column adaptive layout
+- **Theme Support**: Light/dark mode ready
+- **Accessibility**: Screen reader friendly, keyboard navigation
 
 ### CCI Setting Master
 A comprehensive configuration system for Cotton Corporation of India (CCI) trade operations:
@@ -71,11 +100,50 @@ npm run lint
 
 ## Technology Stack
 
-- **React** - UI framework
+- **React** (v18+) - UI framework
 - **TypeScript** - Type-safe JavaScript
 - **Vite** - Build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
+- **Tailwind CSS** (v3) - Utility-first CSS framework
+- **Radix UI** - Headless accessible components
+- **Lucide React** - Icon library (400+ icons)
+- **React Hook Form** - Form management
+- **Zod** - Schema validation
+- **TanStack Table** - Advanced data tables
+- **Recharts** - Data visualization
 - **ESLint** - Code linting
+
+## Design System Components
+
+### Layout
+- `PageShell` - Consistent page wrapper with breadcrumbs
+- `Sidebar` - Collapsible navigation
+- `Header` - Global header with search
+
+### Form Components
+- `Button` - 8 variants, 5 sizes
+- `Input` - Text input with validation states
+- `Select` - Dropdown with search
+- `Textarea` - Multi-line input
+- `Switch` - Toggle component
+- `Label` - Accessible labels
+
+### Data Display
+- `Card` - Container with sections
+- `Badge` - Status chips
+- `Avatar` - User avatars
+
+### Feedback
+- `Alert` - Notification banners
+- `Dialog` - Modal dialogs
+- `Spinner` - Loading indicators
+
+### Navigation
+- `Breadcrumbs` - Navigation trail
+- `Tabs` - Tabbed interface
+
+### Utilities
+- `Drawer` - Side panels
+- `Tooltip` - Hover tooltips
 
 ## Folder Organization
 
