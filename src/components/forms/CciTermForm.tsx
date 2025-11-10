@@ -27,6 +27,9 @@ const CciTermForm: React.FC<CciTermFormProps> = ({ item, onSave, onCancel }) => 
     late_lifting_tier2_days: 60,
     late_lifting_tier2_percent: 0.75,
     late_lifting_tier3_percent: 1.0,
+    moisture_lower_limit: 7,
+    moisture_upper_limit: 9,
+    moisture_tolerance_sample_count: 10,
   });
 
   useEffect(() => {
@@ -118,6 +121,27 @@ const CciTermForm: React.FC<CciTermFormProps> = ({ item, onSave, onCancel }) => 
             <FormLabel htmlFor="late_lifting_tier3_percent">Tier 3: Charge (%) thereafter</FormLabel>
             <FormInput id="late_lifting_tier3_percent" name="late_lifting_tier3_percent" type="number" step="0.01" value={formData.late_lifting_tier3_percent} onChange={handleChange} required />
           </FormRow>
+        </div>
+
+        <div>
+          <h4 className="font-semibold text-slate-700 border-b pb-1 mb-2">Moisture Adjustment</h4>
+          <FormRow>
+            <FormLabel htmlFor="moisture_lower_limit">Moisture Lower Limit (%)</FormLabel>
+            <FormInput id="moisture_lower_limit" name="moisture_lower_limit" type="number" step="0.01" value={formData.moisture_lower_limit} onChange={handleChange} required />
+          </FormRow>
+          <FormRow>
+            <FormLabel htmlFor="moisture_upper_limit">Moisture Upper Limit (%)</FormLabel>
+            <FormInput id="moisture_upper_limit" name="moisture_upper_limit" type="number" step="0.01" value={formData.moisture_upper_limit} onChange={handleChange} required />
+          </FormRow>
+          <FormRow>
+            <FormLabel htmlFor="moisture_tolerance_sample_count">Moisture Tolerance Sample Count</FormLabel>
+            <FormInput id="moisture_tolerance_sample_count" name="moisture_tolerance_sample_count" type="number" value={formData.moisture_tolerance_sample_count} onChange={handleChange} required />
+          </FormRow>
+          <div className="text-xs text-slate-500 mt-2 p-2 bg-slate-50 rounded">
+            <strong>Formula:</strong><br/>
+            • Discount (if moisture &gt; upper limit): (Actual % - Upper Limit) × Net Weight × Sale Rate/qtl<br/>
+            • Premium (if moisture &lt; lower limit): (Lower Limit - Actual %) × Net Weight × Sale Rate/qtl
+          </div>
         </div>
       </div>
       <FormActions>

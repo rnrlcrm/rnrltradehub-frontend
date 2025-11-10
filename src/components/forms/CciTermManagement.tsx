@@ -54,6 +54,7 @@ const CciTermManagement: React.FC<CciTermManagementProps> = ({ initialData, curr
     { header: 'Name', accessor: 'name' },
     { header: 'Contract Period', accessor: (item: CciTerm) => `${item.contract_period_days} days` },
     { header: 'Cash Discount', accessor: (item: CciTerm) => `${item.cash_discount_percentage}%` },
+    { header: 'Moisture Limits', accessor: (item: CciTerm) => `${item.moisture_lower_limit}% - ${item.moisture_upper_limit}%` },
     {
       header: 'Actions',
       accessor: (item: CciTerm) => (

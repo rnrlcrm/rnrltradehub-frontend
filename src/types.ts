@@ -17,6 +17,9 @@ export interface CciTerm {
   late_lifting_tier2_days: number;
   late_lifting_tier2_percent: number;
   late_lifting_tier3_percent: number;
+  moisture_lower_limit: number;
+  moisture_upper_limit: number;
+  moisture_tolerance_sample_count: number;
 }
 
 export interface CommissionStructure {
@@ -43,13 +46,37 @@ export interface Dispute {
   dateRaised: string;
 }
 
+export interface MoistureSample {
+  baleNo: string;
+  moisturePercent: number;
+}
+
+export interface DeliveryLot {
+  id: string;
+  deliveryOrderNo: string;
+  salesContractId: string;
+  date: string;
+  netDeliveryWeight: number;
+  moistureSamples: MoistureSample[];
+  averageMoisturePercent?: number;
+  moistureAdjustmentAmount?: number;
+  moistureAdjustmentType?: 'discount' | 'premium' | 'none';
+  verifiedBy?: string;
+}
+
 export interface Invoice {
   id: string;
   invoiceNo: string;
   salesContractId: string;
+  deliveryLotId?: string;
   date: string;
   amount: number;
   status: 'Unpaid' | 'Partially Paid' | 'Paid';
+  averageMoisturePercent?: number;
+  moistureAdjustmentAmount?: number;
+  moistureAdjustmentType?: 'discount' | 'premium' | 'none';
+  netInvoiceExclGst?: number;
+  cciIndentNo?: string;
 }
 
 export interface Location {

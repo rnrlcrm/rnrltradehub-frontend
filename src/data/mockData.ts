@@ -1,5 +1,5 @@
 
-import { User, SalesContract, BusinessPartner, Invoice, Payment, Dispute, Commission, AuditLog, MasterDataItem, Location, CommissionStructure, StructuredTerm, CciTerm, GstRate } from '../types';
+import { User, SalesContract, BusinessPartner, Invoice, Payment, Dispute, Commission, AuditLog, MasterDataItem, Location, CommissionStructure, StructuredTerm, CciTerm, GstRate, DeliveryLot } from '../types';
 
 export const mockUsers: User[] = [
   { id: 1, name: 'Admin User', email: 'admin@rnrl.com', role: 'Admin' },
@@ -89,8 +89,70 @@ export const mockSalesContracts: SalesContract[] = [
   },
 ];
 
+export const mockDeliveryLots: DeliveryLot[] = [
+  {
+    id: 'lot_001',
+    deliveryOrderNo: 'DO-2024-001',
+    salesContractId: 'SC-2024-001',
+    date: '2024-07-18',
+    netDeliveryWeight: 162,
+    moistureSamples: [
+      { baleNo: 'B001', moisturePercent: 10.0 },
+      { baleNo: 'B002', moisturePercent: 10.2 },
+      { baleNo: 'B003', moisturePercent: 9.8 },
+      { baleNo: 'B004', moisturePercent: 10.1 },
+      { baleNo: 'B005', moisturePercent: 10.0 },
+      { baleNo: 'B006', moisturePercent: 9.9 },
+      { baleNo: 'B007', moisturePercent: 10.0 },
+      { baleNo: 'B008', moisturePercent: 10.1 },
+      { baleNo: 'B009', moisturePercent: 10.0 },
+      { baleNo: 'B010', moisturePercent: 9.9 },
+    ],
+    averageMoisturePercent: 10.0,
+    moistureAdjustmentAmount: 2818800,
+    moistureAdjustmentType: 'discount',
+    verifiedBy: 'Quality Inspector A',
+  },
+  {
+    id: 'lot_002',
+    deliveryOrderNo: 'DO-2024-002',
+    salesContractId: 'SC-2024-001',
+    date: '2024-07-25',
+    netDeliveryWeight: 150,
+    moistureSamples: [
+      { baleNo: 'B011', moisturePercent: 6.5 },
+      { baleNo: 'B012', moisturePercent: 6.4 },
+      { baleNo: 'B013', moisturePercent: 6.6 },
+      { baleNo: 'B014', moisturePercent: 6.5 },
+      { baleNo: 'B015', moisturePercent: 6.5 },
+      { baleNo: 'B016', moisturePercent: 6.4 },
+      { baleNo: 'B017', moisturePercent: 6.6 },
+      { baleNo: 'B018', moisturePercent: 6.5 },
+      { baleNo: 'B019', moisturePercent: 6.5 },
+      { baleNo: 'B020', moisturePercent: 6.5 },
+    ],
+    averageMoisturePercent: 6.5,
+    moistureAdjustmentAmount: 1305000,
+    moistureAdjustmentType: 'premium',
+    verifiedBy: 'Quality Inspector B',
+  },
+];
+
 export const mockInvoices: Invoice[] = [
-  { id: 'inv_001', invoiceNo: 'INV-2024-001', salesContractId: 'SC-2024-001', date: '2024-07-20', amount: 31000000, status: 'Paid' },
+  { 
+    id: 'inv_001', 
+    invoiceNo: 'INV-2024-001', 
+    salesContractId: 'SC-2024-001', 
+    deliveryLotId: 'lot_001',
+    date: '2024-07-20', 
+    amount: 31000000, 
+    status: 'Paid',
+    cciIndentNo: 'CCI-123',
+    averageMoisturePercent: 10.0,
+    moistureAdjustmentAmount: 2818800,
+    moistureAdjustmentType: 'discount',
+    netInvoiceExclGst: 28181200,
+  },
   { id: 'inv_002', invoiceNo: 'INV-2024-002', salesContractId: 'SC-2024-002', date: '2024-07-16', amount: 15000000, status: 'Paid' },
   { id: 'inv_003', invoiceNo: 'INV-2023-003', salesContractId: 'SC-2023-003', date: '2024-03-25', amount: 61500000, status: 'Unpaid' },
 ];
@@ -144,7 +206,8 @@ const cciTerms: CciTerm[] = [
         id: 1, name: 'Standard CCI 2023-24', contract_period_days: 45, emd_payment_days: 3, cash_discount_percentage: 1.25,
         carrying_charge_tier1_days: 30, carrying_charge_tier1_percent: 1.25, carrying_charge_tier2_days: 15, carrying_charge_tier2_percent: 1.5,
         additional_deposit_percent: 10, deposit_interest_percent: 6, free_lifting_period_days: 21,
-        late_lifting_tier1_days: 15, late_lifting_tier1_percent: 0.5, late_lifting_tier2_days: 15, late_lifting_tier2_percent: 0.75, late_lifting_tier3_percent: 1.0
+        late_lifting_tier1_days: 15, late_lifting_tier1_percent: 0.5, late_lifting_tier2_days: 15, late_lifting_tier2_percent: 0.75, late_lifting_tier3_percent: 1.0,
+        moisture_lower_limit: 7, moisture_upper_limit: 9, moisture_tolerance_sample_count: 10
     }
 ];
 
