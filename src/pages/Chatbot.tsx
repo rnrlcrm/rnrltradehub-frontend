@@ -35,6 +35,110 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
   const simulateBotResponse = (userInput: string): string => {
     const input = userInput.toLowerCase();
     
+    // Trade cycle and full workflow queries
+    if (input.includes('trade cycle') || input.includes('full cycle') || input.includes('workflow')) {
+      return '📊 Complete Trade Cycle Tracking:\n\n' +
+             '✅ BOTH CCI & Normal Trade Supported!\n\n' +
+             '🔄 Normal Trade Flow:\n' +
+             '1. Contract Creation & Approval\n' +
+             '2. Delivery (Quality check optional)\n' +
+             '3. Payment against delivery\n' +
+             '4. Accounts Reconciliation\n' +
+             '5. Dispute handling (if any)\n\n' +
+             '🔄 CCI Trade Flow:\n' +
+             '1. Contract Creation & Approval\n' +
+             '2. EMD Payment (Mandatory)\n' +
+             '3. Quality Passing (Mandatory)\n' +
+             '4. Delivery Order Creation\n' +
+             '5. Delivery & Payment\n' +
+             '6. Accounts Reconciliation\n' +
+             '7. Dispute handling (if any)\n\n' +
+             '🔔 Automated Reminders:\n' +
+             '• Payment due notifications (3, 1, 0 days before)\n' +
+             '• Delivery reminders\n' +
+             '• Quality check alerts (CCI Trade)\n' +
+             '• Reconciliation pending alerts\n\n' +
+             '👁️ Full Transparency:\n' +
+             'Buyer & Seller can see real-time updates at every stage!';
+    }
+    
+    // CCI vs Normal Trade queries
+    if (input.includes('cci') || input.includes('normal trade') || input.includes('trade type')) {
+      return '🏷️ CCI vs Normal Trade:\n\n' +
+             '📋 Normal Trade:\n' +
+             '• Quality passing: Optional\n' +
+             '• EMD payment: Not required\n' +
+             '• Workflow: Simpler, faster\n' +
+             '• Reminders: Standard schedule\n\n' +
+             '📋 CCI Trade:\n' +
+             '• Quality passing: Mandatory\n' +
+             '• EMD payment: Required before DO\n' +
+             '• Workflow: CCI policy compliant\n' +
+             '• Reminders: More frequent\n\n' +
+             '✅ Both fully supported with automated lifecycle tracking, reminders, and transparency!';
+    }
+    
+    // Delivery and quality queries
+    if (input.includes('delivery') || input.includes('quality') || input.includes('passing')) {
+      return '📦 Delivery & Quality Tracking:\n\n' +
+             '🔍 Quality Passing:\n' +
+             '• CCI Trade: Mandatory quality check\n' +
+             '• Normal Trade: Optional\n' +
+             '• Automated reminders sent before deadline\n' +
+             '• Results visible to both parties\n\n' +
+             '🚚 Delivery Orders:\n' +
+             '• Track all delivery orders\n' +
+             '• Partial delivery support\n' +
+             '• Real-time status updates\n' +
+             '• Delivery progress percentage\n\n' +
+             '🔔 Automatic Notifications:\n' +
+             '• Delivery reminders (7, 3, 1 days before)\n' +
+             '• Quality check alerts\n' +
+             '• Completion confirmations';
+    }
+    
+    // Automated reminders and notifications
+    if (input.includes('reminder') || input.includes('notification') || input.includes('alert')) {
+      return '🔔 Automated Reminders & Notifications:\n\n' +
+             '📬 Channels:\n' +
+             '• Chat (Real-time)\n' +
+             '• Email\n' +
+             '• WhatsApp\n' +
+             '• Dashboard alerts\n\n' +
+             '⏰ Payment Reminders:\n' +
+             '• 3 days before due date\n' +
+             '• 1 day before due date\n' +
+             '• On due date\n' +
+             '• Sent to buyer automatically\n\n' +
+             '📦 Delivery Reminders:\n' +
+             '• 7, 3, 1 days before expected delivery\n' +
+             '• Sent to seller\n\n' +
+             '✅ Quality Check Alerts (CCI Trade):\n' +
+             '• 3, 2, 1 days before deadline\n' +
+             '• Sent to both parties\n\n' +
+             '🔄 All reminders are automated based on contract dates and terms!';
+    }
+    
+    // Reconciliation queries
+    if (input.includes('reconcil') || input.includes('accounts')) {
+      return '💼 Accounts Reconciliation:\n\n' +
+             '📊 Automated Tracking:\n' +
+             '• All invoices tracked\n' +
+             '• All payments recorded\n' +
+             '• Outstanding amount calculated\n' +
+             '• Reconciliation status visible\n\n' +
+             '✅ Reconciliation Process:\n' +
+             '1. All invoices created\n' +
+             '2. All payments received\n' +
+             '3. Amounts matched and verified\n' +
+             '4. Status updated to "Reconciled"\n' +
+             '5. Contract marked complete\n\n' +
+             '🔔 Reminders:\n' +
+             '• Pending reconciliation alerts\n' +
+             '• Outstanding amount notifications\n' +
+             '• Sent to accounts team';
+    }
+    
     // Invoice-related queries
     if (input.includes('invoice') || input.includes('bill')) {
       return 'I can help you with invoices!\n\nTo create an invoice:\n1. Forward the seller\'s invoice email to invoices@rnrltradehub.com\n2. I\'ll extract the details automatically\n3. You\'ll get a confirmation email\n4. The invoice will be auto-forwarded to the buyer\n\nOr you can say "I have an invoice for SC-2024-001" and I\'ll create it for you.';
@@ -47,7 +151,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     
     // Contract-related queries
     if (input.includes('contract') || input.includes('sc-') || input.includes('agreement')) {
-      return 'I can check contract status for you!\n\nJust provide:\n• Contract number (e.g., SC-2024-001)\n• Or party name (buyer/seller)\n\nI\'ll show you:\n✓ Real-time contract lifecycle status\n✓ Business rule validation results\n✓ Pending approvals and escalations\n✓ All invoices, payments, and outstanding amounts\n✓ Complete audit trail with automated and manual updates';
+      return 'I can check contract status for you!\n\nJust provide:\n• Contract number (e.g., SC-2024-001)\n• Or party name (buyer/seller)\n\nI\'ll show you:\n✓ Real-time contract lifecycle status\n✓ Business rule validation results\n✓ Pending approvals and escalations\n✓ All invoices, payments, and outstanding amounts\n✓ Complete audit trail with automated and manual updates\n✓ Full trade cycle from contract to reconciliation';
     }
     
     // Lifecycle and automation queries
@@ -57,7 +161,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     
     // Status tracking
     if (input.includes('status') || input.includes('track') || input.includes('where')) {
-      return 'I can track your shipments and transactions!\n\nTell me:\n• Contract number, or\n• Invoice number, or\n• LR number\n\nI\'ll provide real-time status updates.';
+      return 'I can track your shipments and transactions!\n\nTell me:\n• Contract number, or\n• Invoice number, or\n• LR number\n\nI\'ll provide real-time status updates including:\n• Delivery progress\n• Payment status\n• Quality check results (CCI Trade)\n• Reconciliation status';
     }
     
     // Email upload
@@ -67,11 +171,11 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     
     // Help
     if (input.includes('help') || input.includes('what can') || input.includes('how')) {
-      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Shipment Tracking\n   - LR number updates\n   - Delivery status\n   - Documents\n\n4. 🤖 Smart Contract Automation\n   - Automated validation & approval\n   - Real-time lifecycle tracking\n   - Exception handling & escalations\n   - Manual override requests\n   - Full transparency & audit trail\n\n5. 📊 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n\nJust tell me what you need!';
+      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Delivery & Quality Tracking\n   - Delivery order status\n   - Quality check reminders (CCI Trade)\n   - Progress tracking\n\n4. 🤖 Smart Contract Automation\n   - Automated validation & approval\n   - Real-time lifecycle tracking\n   - Exception handling & escalations\n   - Manual override requests\n   - Full transparency & audit trail\n\n5. 🔔 Automated Reminders\n   - Payment due alerts\n   - Delivery reminders\n   - Quality check notifications\n   - Reconciliation pending\n\n6. 📊 Complete Trade Cycle\n   - CCI & Normal Trade support\n   - Full workflow tracking\n   - Buyer/Seller transparency\n   - Automated notifications\n\n7. 📈 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n   - Trade cycle progress\n\nJust tell me what you need!';
     }
     
     // Default response
-    return 'I understand you\'re asking about: "' + userInput + '"\n\nCould you provide more details? I can help you with:\n• Creating invoices\n• Recording payments\n• Checking contracts\n• Tracking shipments\n• Email integration\n\nType "help" to see all my capabilities!';
+    return 'I understand you\'re asking about: "' + userInput + '"\n\nCould you provide more details? I can help you with:\n• Creating invoices\n• Recording payments\n• Checking contracts\n• Tracking shipments\n• Email integration\n• Trade cycle tracking\n• Automated reminders\n\nType "help" to see all my capabilities!';
   };
 
   const handleSendMessage = () => {

@@ -4,12 +4,15 @@ import { Button } from '../components/ui/Form';
 import SmartContractRuleDisplay from '../components/ui/SmartContractRuleDisplay';
 import ContractLifecycleTracker from '../components/ui/ContractLifecycleTracker';
 import EscalationManager from '../components/ui/EscalationManager';
+import CompleteTradeCycleTracker from '../components/ui/CompleteTradeCycleTracker';
 import { 
   evaluateBusinessRules, 
   DEFAULT_BUSINESS_RULES,
   LifecycleEvent,
   Escalation,
   transitionState,
+  getTradeCycleStatus,
+  getTradeTypeConfig,
 } from '../lib/smartContract';
 import { SalesContract, User } from '../types';
 
@@ -102,9 +105,40 @@ const SmartContractDemo: React.FC<SmartContractDemoProps> = ({ currentUser }) =>
     },
   ]);
 
+  // Sample trade cycle data
+  const sampleInvoices = [
+    { invoiceNo: 'INV-2024-001', amount: 337500, date: '2024-11-05', status: 'Paid' },
+    { invoiceNo: 'INV-2024-002', amount: 337500, date: '2024-11-08', status: 'Partially Paid' },
+  ];
+
+  const samplePayments = [
+    { paymentId: 'PAY-001', amount: 337500, date: '2024-11-07', method: 'Bank Transfer' },
+    { paymentId: 'PAY-002', amount: 200000, date: '2024-11-09', method: 'Bank Transfer' },
+  ];
+
+  const sampleDeliveryOrders = [
+    { doNo: 'DO-2024-001', quantityBales: 75, date: '2024-11-06', status: 'Completed' },
+    { doNo: 'DO-2024-002', quantityBales: 75, date: '2024-11-10', status: 'In Transit' },
+  ];
+
+  const sampleDisputes: any[] = [];
+
+  // Get complete trade cycle status
+  const tradeCycleStatus = getTradeCycleStatus(
+    sampleContract,
+    sampleInvoices,
+    samplePayments,
+    sampleDeliveryOrders,
+    sampleDisputes
+  );
+
   // Evaluate rules
   const [ruleResults] = useState(() => evaluateBusinessRules(sampleContract, DEFAULT_BUSINESS_RULES));
   const [showValidation, setShowValidation] = useState(false);
+  const [showTradeCycle, setShowTradeCycle] = useState(false);
+
+  // Get trade type config
+  const tradeConfig = getTradeTypeConfig(sampleContract.tradeType as 'Normal Trade' | 'CCI Trade');
 
   const handleResolveEscalation = (escalationId: string, resolution: string) => {
     setEscalations(prev => prev.map(e => 
@@ -218,12 +252,75 @@ const SmartContractDemo: React.FC<SmartContractDemoProps> = ({ currentUser }) =>
             <p className="text-sm font-medium text-slate-800">{sampleContract.location}</p>
           </div>
         </div>
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end space-x-2">
+          <Button variant="secondary" onClick={() => setShowTradeCycle(!showTradeCycle)}>
+            {showTradeCycle ? 'Hide' : 'Show'} Complete Trade Cycle
+          </Button>
           <Button onClick={() => setShowValidation(!showValidation)}>
             {showValidation ? 'Hide' : 'Show'} Business Rule Validation
           </Button>
         </div>
       </Card>
+
+      {/* CCI vs Normal Trade Comparison */}
+      <Card title="CCI vs Normal Trade Support">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="border-l-4 border-blue-500 pl-4 bg-blue-50 p-4 rounded-r">
+            <h3 className="font-semibold text-blue-900 mb-3">Normal Trade</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center">
+                <span className="text-blue-700 mr-2">✓</span>
+                <span className="text-blue-800">Quality passing: Optional</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-blue-700 mr-2">✓</span>
+                <span className="text-blue-800">EMD payment: Not required</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-blue-700 mr-2">✓</span>
+                <span className="text-blue-800">Simpler workflow, faster processing</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-blue-700 mr-2">🔔</span>
+                <span className="text-blue-800">Automated reminders: Payment (3,1,0 days)</span>
+              </div>
+            </div>
+          </div>
+          <div className="border-l-4 border-green-500 pl-4 bg-green-50 p-4 rounded-r">
+            <h3 className="font-semibold text-green-900 mb-3">CCI Trade</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center">
+                <span className="text-green-700 mr-2">✓</span>
+                <span className="text-green-800">Quality passing: Mandatory</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-green-700 mr-2">✓</span>
+                <span className="text-green-800">EMD payment: Required before DO</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-green-700 mr-2">✓</span>
+                <span className="text-green-800">CCI policy compliant workflow</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-green-700 mr-2">🔔</span>
+                <span className="text-green-800">Automated reminders: Payment (5,3,1,0 days)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-md">
+          <p className="text-sm text-slate-700">
+            <strong>Current Demo Contract:</strong> {sampleContract.tradeType}
+            {' '}- Quality Check: {tradeConfig.requiresQualityPassing ? 'Required' : 'Optional'}
+            {' '}- EMD Payment: {tradeConfig.requiresEMDPayment ? 'Required' : 'Not Required'}
+          </p>
+        </div>
+      </Card>
+
+      {/* Complete Trade Cycle Tracker */}
+      {showTradeCycle && (
+        <CompleteTradeCycleTracker tradeCycleStatus={tradeCycleStatus} />
+      )}
 
       {/* Business Rule Validation */}
       {showValidation && (

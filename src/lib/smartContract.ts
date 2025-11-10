@@ -50,7 +50,7 @@ export type RuleEvaluationResult = {
   escalateTo?: string;
 };
 
-// Contract Lifecycle States
+// Contract Lifecycle States - Enhanced for Full Trade Cycle
 export type ContractLifecycleState = 
   | 'DRAFT'
   | 'PENDING_VALIDATION'
@@ -58,8 +58,18 @@ export type ContractLifecycleState =
   | 'PENDING_APPROVAL'
   | 'APPROVED'
   | 'ACTIVE'
-  | 'PENDING_EXECUTION'
-  | 'IN_EXECUTION'
+  // Execution phase - detailed trade cycle
+  | 'AWAITING_QUALITY_PASSING'  // Optional quality check
+  | 'QUALITY_PASSED'
+  | 'QUALITY_FAILED'
+  | 'AWAITING_DELIVERY'
+  | 'PARTIAL_DELIVERY'
+  | 'DELIVERED'
+  | 'AWAITING_PAYMENT'
+  | 'PARTIAL_PAYMENT'
+  | 'PAYMENT_RECEIVED'
+  | 'RECONCILIATION_PENDING'
+  | 'RECONCILED'
   | 'COMPLETED'
   | 'DISPUTED'
   | 'CANCELLED'
@@ -108,6 +118,109 @@ export type Escalation = {
   resolvedAt?: string;
   resolution?: string;
   status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+};
+
+// Automated Notification/Reminder System
+export type NotificationType = 
+  | 'PAYMENT_DUE'
+  | 'DELIVERY_PENDING'
+  | 'QUALITY_CHECK_REQUIRED'
+  | 'RECONCILIATION_PENDING'
+  | 'CONTRACT_EXPIRING'
+  | 'DISPUTE_RAISED'
+  | 'STATE_CHANGE'
+  | 'APPROVAL_REQUIRED'
+  | 'OVERRIDE_REQUESTED';
+
+export type NotificationChannel = 'CHAT' | 'EMAIL' | 'SMS' | 'WHATSAPP' | 'DASHBOARD';
+
+export type AutomatedNotification = {
+  id: string;
+  contractId: string;
+  type: NotificationType;
+  recipient: string; // User or role
+  recipientType: 'BUYER' | 'SELLER' | 'ADMIN' | 'BOTH_PARTIES';
+  channel: NotificationChannel[];
+  message: string;
+  scheduledAt: string;
+  sentAt?: string;
+  status: 'SCHEDULED' | 'SENT' | 'FAILED' | 'CANCELLED';
+  metadata?: Record<string, string | number | boolean>;
+};
+
+// Trade Type Specific Configuration
+export type TradeTypeConfig = {
+  tradeType: 'Normal Trade' | 'CCI Trade';
+  requiresQualityPassing: boolean;
+  requiresEMDPayment: boolean;
+  automaticReminders: {
+    paymentDueDays: number[];
+    deliveryReminderDays: number[];
+    qualityCheckDays: number[];
+  };
+  workflowSteps: ContractLifecycleState[];
+};
+
+// Complete Trade Cycle Tracker
+export type TradeCycleStatus = {
+  contractId: string;
+  contractNo: string;
+  tradeType: 'Normal Trade' | 'CCI Trade';
+  currentState: ContractLifecycleState;
+  
+  // Contract phase
+  contractCreated: boolean;
+  contractApproved: boolean;
+  
+  // Quality phase (optional for Normal Trade)
+  qualityCheckRequired: boolean;
+  qualityCheckPassed?: boolean;
+  qualityCheckDate?: string;
+  
+  // Delivery phase
+  deliveryOrders: {
+    doNo: string;
+    quantity: number;
+    date: string;
+    status: string;
+  }[];
+  totalDelivered: number;
+  deliveryComplete: boolean;
+  
+  // Payment phase
+  invoices: {
+    invoiceNo: string;
+    amount: number;
+    date: string;
+    status: string;
+  }[];
+  payments: {
+    paymentId: string;
+    amount: number;
+    date: string;
+    method: string;
+  }[];
+  totalInvoiced: number;
+  totalPaid: number;
+  paymentComplete: boolean;
+  
+  // Reconciliation phase
+  reconciled: boolean;
+  reconciliationDate?: string;
+  
+  // Dispute tracking
+  disputes: {
+    disputeId: string;
+    reason: string;
+    status: string;
+    raisedDate: string;
+  }[];
+  
+  // Transparency flags
+  buyerCanView: boolean;
+  sellerCanView: boolean;
+  lastUpdated: string;
+  nextReminderDue?: string;
 };
 
 // Default Business Rules
@@ -347,5 +460,264 @@ export function createOverrideRequest(
     requestedAt: new Date().toISOString(),
     reason,
     status: 'PENDING',
+  };
+}
+
+// Trade Type Configurations
+export const TRADE_TYPE_CONFIGS: TradeTypeConfig[] = [
+  {
+    tradeType: 'Normal Trade',
+    requiresQualityPassing: false, // Optional for normal trade
+    requiresEMDPayment: false,
+    automaticReminders: {
+      paymentDueDays: [3, 1, 0], // 3 days before, 1 day before, on due date
+      deliveryReminderDays: [7, 3, 1],
+      qualityCheckDays: [2, 1],
+    },
+    workflowSteps: [
+      'DRAFT',
+      'PENDING_VALIDATION',
+      'PENDING_APPROVAL',
+      'APPROVED',
+      'ACTIVE',
+      'AWAITING_DELIVERY',
+      'DELIVERED',
+      'AWAITING_PAYMENT',
+      'PAYMENT_RECEIVED',
+      'RECONCILIATION_PENDING',
+      'RECONCILED',
+      'COMPLETED',
+    ],
+  },
+  {
+    tradeType: 'CCI Trade',
+    requiresQualityPassing: true, // Mandatory for CCI trade
+    requiresEMDPayment: true,
+    automaticReminders: {
+      paymentDueDays: [5, 3, 1, 0],
+      deliveryReminderDays: [10, 7, 3, 1],
+      qualityCheckDays: [3, 2, 1],
+    },
+    workflowSteps: [
+      'DRAFT',
+      'PENDING_VALIDATION',
+      'PENDING_APPROVAL',
+      'APPROVED',
+      'ACTIVE',
+      'AWAITING_QUALITY_PASSING',
+      'QUALITY_PASSED',
+      'AWAITING_DELIVERY',
+      'DELIVERED',
+      'AWAITING_PAYMENT',
+      'PAYMENT_RECEIVED',
+      'RECONCILIATION_PENDING',
+      'RECONCILED',
+      'COMPLETED',
+    ],
+  },
+];
+
+/**
+ * Get trade type configuration
+ */
+export function getTradeTypeConfig(tradeType: 'Normal Trade' | 'CCI Trade'): TradeTypeConfig {
+  const config = TRADE_TYPE_CONFIGS.find(c => c.tradeType === tradeType);
+  if (!config) {
+    return TRADE_TYPE_CONFIGS[0]; // Default to Normal Trade
+  }
+  return config;
+}
+
+/**
+ * Get next expected lifecycle state based on trade type and current state
+ */
+export function getNextLifecycleState(
+  currentState: ContractLifecycleState,
+  tradeType: 'Normal Trade' | 'CCI Trade'
+): ContractLifecycleState | null {
+  const config = getTradeTypeConfig(tradeType);
+  const currentIndex = config.workflowSteps.indexOf(currentState);
+  
+  if (currentIndex === -1 || currentIndex === config.workflowSteps.length - 1) {
+    return null; // Current state not in workflow or already at end
+  }
+  
+  return config.workflowSteps[currentIndex + 1];
+}
+
+/**
+ * Check if quality passing is required for this trade type
+ */
+export function requiresQualityPassing(tradeType: 'Normal Trade' | 'CCI Trade'): boolean {
+  const config = getTradeTypeConfig(tradeType);
+  return config.requiresQualityPassing;
+}
+
+/**
+ * Create automated notification/reminder
+ */
+export function createAutomatedNotification(
+  contractId: string,
+  type: NotificationType,
+  recipient: string,
+  recipientType: 'BUYER' | 'SELLER' | 'ADMIN' | 'BOTH_PARTIES',
+  message: string,
+  channels: NotificationChannel[] = ['CHAT', 'DASHBOARD']
+): AutomatedNotification {
+  return {
+    id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    contractId,
+    type,
+    recipient,
+    recipientType,
+    channel: channels,
+    message,
+    scheduledAt: new Date().toISOString(),
+    status: 'SCHEDULED',
+  };
+}
+
+/**
+ * Generate reminders based on trade type and current state
+ */
+export function generateAutomatedReminders(
+  contractId: string,
+  tradeType: 'Normal Trade' | 'CCI Trade',
+  currentState: ContractLifecycleState,
+  dueDate: Date,
+  buyer: string,
+  seller: string
+): AutomatedNotification[] {
+  const config = getTradeTypeConfig(tradeType);
+  const reminders: AutomatedNotification[] = [];
+  const now = new Date();
+  const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Payment reminders
+  if (currentState === 'AWAITING_PAYMENT') {
+    config.automaticReminders.paymentDueDays.forEach(daysBefore => {
+      if (daysUntilDue <= daysBefore) {
+        const message = daysBefore === 0
+          ? `Payment is due today for contract ${contractId}`
+          : `Payment is due in ${daysBefore} days for contract ${contractId}`;
+        
+        reminders.push(createAutomatedNotification(
+          contractId,
+          'PAYMENT_DUE',
+          buyer,
+          'BUYER',
+          message,
+          ['CHAT', 'EMAIL', 'DASHBOARD']
+        ));
+      }
+    });
+  }
+
+  // Delivery reminders
+  if (currentState === 'AWAITING_DELIVERY' || currentState === 'QUALITY_PASSED') {
+    config.automaticReminders.deliveryReminderDays.forEach(daysBefore => {
+      if (daysUntilDue <= daysBefore) {
+        const message = `Delivery is expected in ${daysBefore} days for contract ${contractId}`;
+        
+        reminders.push(createAutomatedNotification(
+          contractId,
+          'DELIVERY_PENDING',
+          seller,
+          'SELLER',
+          message,
+          ['CHAT', 'DASHBOARD']
+        ));
+      }
+    });
+  }
+
+  // Quality check reminders (for CCI Trade)
+  if (currentState === 'AWAITING_QUALITY_PASSING' && config.requiresQualityPassing) {
+    config.automaticReminders.qualityCheckDays.forEach(daysBefore => {
+      if (daysUntilDue <= daysBefore) {
+        const message = `Quality check required in ${daysBefore} days for contract ${contractId}`;
+        
+        reminders.push(createAutomatedNotification(
+          contractId,
+          'QUALITY_CHECK_REQUIRED',
+          buyer,
+          'BOTH_PARTIES',
+          message,
+          ['CHAT', 'DASHBOARD']
+        ));
+      }
+    });
+  }
+
+  return reminders;
+}
+
+/**
+ * Get complete trade cycle status
+ */
+export function getTradeCycleStatus(
+  contract: any,
+  invoices: any[],
+  payments: any[],
+  deliveryOrders: any[],
+  disputes: any[]
+): TradeCycleStatus {
+  const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalPaid = payments.reduce((sum, pay) => sum + pay.amount, 0);
+  const totalDelivered = deliveryOrders.reduce((sum, _do) => sum + _do.quantityBales, 0);
+  
+  const config = getTradeTypeConfig(contract.tradeType);
+  
+  return {
+    contractId: contract.id,
+    contractNo: contract.scNo,
+    tradeType: contract.tradeType,
+    currentState: contract.status,
+    
+    contractCreated: true,
+    contractApproved: ['APPROVED', 'ACTIVE'].includes(contract.status),
+    
+    qualityCheckRequired: config.requiresQualityPassing,
+    qualityCheckPassed: contract.qualityCheckPassed,
+    qualityCheckDate: contract.qualityCheckDate,
+    
+    deliveryOrders: deliveryOrders.map(dO => ({
+      doNo: dO.doNo,
+      quantity: dO.quantityBales,
+      date: dO.date,
+      status: dO.status,
+    })),
+    totalDelivered,
+    deliveryComplete: totalDelivered >= contract.quantityBales,
+    
+    invoices: invoices.map(inv => ({
+      invoiceNo: inv.invoiceNo,
+      amount: inv.amount,
+      date: inv.date,
+      status: inv.status,
+    })),
+    payments: payments.map(pay => ({
+      paymentId: pay.paymentId,
+      amount: pay.amount,
+      date: pay.date,
+      method: pay.method,
+    })),
+    totalInvoiced,
+    totalPaid,
+    paymentComplete: totalPaid >= totalInvoiced && totalInvoiced > 0,
+    
+    reconciled: contract.status === 'RECONCILED' || contract.status === 'COMPLETED',
+    reconciliationDate: contract.reconciliationDate,
+    
+    disputes: disputes.map(d => ({
+      disputeId: d.disputeId,
+      reason: d.reason,
+      status: d.status,
+      raisedDate: d.dateRaised,
+    })),
+    
+    buyerCanView: true, // Always transparent to buyer
+    sellerCanView: true, // Always transparent to seller
+    lastUpdated: new Date().toISOString(),
   };
 }
