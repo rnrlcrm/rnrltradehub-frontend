@@ -581,3 +581,203 @@ export function calculateCarryingChargeWithEmdStatus(
   };
 }
 
+/**
+ * PROVISIONAL/APPROXIMATE CALCULATIONS
+ * Using 0.48 candy per bale as standard approximation factor
+ */
+
+/**
+ * Calculate approximate contract value using 0.48 candy per bale
+ * @param totalBales - Total number of bales in contract
+ * @param ratePerCandy - Rate per candy
+ * @returns Approximate contract value
+ */
+export function calculateApproximateContractValue(
+  totalBales: number,
+  ratePerCandy: number
+): number {
+  const APPROX_CANDY_PER_BALE = 0.48; // Standard approximation factor
+  return totalBales * APPROX_CANDY_PER_BALE * ratePerCandy;
+}
+
+/**
+ * Calculate approximate DO value using 0.48 candy per bale
+ * @param doBales - Number of bales in DO
+ * @param ratePerCandy - Rate per candy
+ * @returns Approximate DO value
+ */
+export function calculateApproximateDoValue(
+  doBales: number,
+  ratePerCandy: number
+): number {
+  const APPROX_CANDY_PER_BALE = 0.48; // Standard approximation factor
+  return doBales * APPROX_CANDY_PER_BALE * ratePerCandy;
+}
+
+/**
+ * EMD PER-BALE ALLOCATION & DO CALCULATIONS
+ */
+
+/**
+ * Calculate EMD per bale
+ * @param totalEmd - Total EMD amount
+ * @param totalBales - Total number of bales in contract
+ * @returns EMD amount per bale
+ */
+export function calculateEmdPerBale(
+  totalEmd: number,
+  totalBales: number
+): number {
+  return totalEmd / totalBales;
+}
+
+/**
+ * Calculate EMD allocated for a specific DO
+ * @param emdPerBale - EMD per bale
+ * @param doBales - Number of bales in DO
+ * @returns EMD allocated for this DO
+ */
+export function calculateEmdAllocatedForDo(
+  emdPerBale: number,
+  doBales: number
+): number {
+  return emdPerBale * doBales;
+}
+
+/**
+ * Calculate unlifted value for carrying charge calculation
+ * This is the value of unlifted bales minus the EMD portion securing those bales
+ * @param contractValueApprox - Approximate total contract value
+ * @param doValueApprox - Approximate DO value
+ * @param emdPerBale - EMD per bale
+ * @param unliftedBales - Number of unlifted bales
+ * @returns Unlifted value for carrying charge base
+ */
+export function calculateUnliftedValueForCarrying(
+  contractValueApprox: number,
+  doValueApprox: number,
+  emdPerBale: number,
+  unliftedBales: number
+): number {
+  const valueOfUnliftedBales = contractValueApprox - doValueApprox;
+  const emdAllocatedToUnlifted = emdPerBale * unliftedBales;
+  return valueOfUnliftedBales - emdAllocatedToUnlifted;
+}
+
+/**
+ * Calculate carrying charges with per-quantity breakdown
+ * @param cciSetting - The CCI setting to use
+ * @param unliftedValueForCarrying - Unlifted value (after EMD allocation)
+ * @param unliftedBales - Number of unlifted bales
+ * @param days - Number of days
+ * @returns Carrying charge breakdown (total, per bale, per 100 bales, with GST)
+ */
+export function calculateCarryingWithBreakdown(
+  cciSetting: CciTerm,
+  unliftedValueForCarrying: number,
+  unliftedBales: number,
+  days: number
+): {
+  totalExclGst: number;
+  totalGst: number;
+  totalInclGst: number;
+  perBaleExclGst: number;
+  per100BalesExclGst: number;
+  per100BalesGst: number;
+  per100BalesInclGst: number;
+} {
+  // Calculate carrying charge factor based on days
+  let factor = 0;
+  
+  if (days <= cciSetting.carrying_charge_tier1_days) {
+    // Tier 1
+    factor = (cciSetting.carrying_charge_tier1_percent / 100) * (days / 30);
+  } else {
+    // Tier 1 + Tier 2
+    const tier1Factor = (cciSetting.carrying_charge_tier1_percent / 100) * 
+                        (cciSetting.carrying_charge_tier1_days / 30);
+    const tier2Days = days - cciSetting.carrying_charge_tier1_days;
+    const tier2Factor = (cciSetting.carrying_charge_tier2_percent / 100) * 
+                        (tier2Days / 30);
+    factor = tier1Factor + tier2Factor;
+  }
+  
+  // Total carrying
+  const totalExclGst = unliftedValueForCarrying * factor;
+  const totalGst = totalExclGst * (cciSetting.gst_rate / 100);
+  const totalInclGst = totalExclGst + totalGst;
+  
+  // Per bale
+  const perBaleExclGst = totalExclGst / unliftedBales;
+  
+  // Per 100 bales
+  const per100BalesExclGst = perBaleExclGst * 100;
+  const per100BalesGst = per100BalesExclGst * (cciSetting.gst_rate / 100);
+  const per100BalesInclGst = per100BalesExclGst + per100BalesGst;
+  
+  return {
+    totalExclGst,
+    totalGst,
+    totalInclGst,
+    perBaleExclGst,
+    per100BalesExclGst,
+    per100BalesGst,
+    per100BalesInclGst
+  };
+}
+
+/**
+ * Calculate carrying for a specific DO quantity
+ * @param perBaleExclGst - Carrying charge per bale (excl GST)
+ * @param doBales - Number of bales in DO
+ * @param gstRate - GST rate percentage
+ * @returns Carrying charge for DO (excl GST, GST, incl GST)
+ */
+export function calculateCarryingForDo(
+  perBaleExclGst: number,
+  doBales: number,
+  gstRate: number
+): {
+  exclGst: number;
+  gst: number;
+  inclGst: number;
+} {
+  const exclGst = perBaleExclGst * doBales;
+  const gst = exclGst * (gstRate / 100);
+  const inclGst = exclGst + gst;
+  
+  return { exclGst, gst, inclGst };
+}
+
+/**
+ * Calculate DO payable after EMD allocation
+ * @param doValueApprox - Approximate DO value (excl GST)
+ * @param gstRate - GST rate percentage
+ * @param emdAllocatedForDo - EMD allocated for this DO
+ * @returns DO payable breakdown
+ */
+export function calculateDoPayableAfterEmd(
+  doValueApprox: number,
+  gstRate: number,
+  emdAllocatedForDo: number
+): {
+  doValueExclGst: number;
+  doGst: number;
+  doValueInclGst: number;
+  lessEmdAllocated: number;
+  doPayableAfterEmd: number;
+} {
+  const doValueExclGst = doValueApprox;
+  const doGst = doValueExclGst * (gstRate / 100);
+  const doValueInclGst = doValueExclGst + doGst;
+  const doPayableAfterEmd = doValueInclGst - emdAllocatedForDo;
+  
+  return {
+    doValueExclGst,
+    doGst,
+    doValueInclGst,
+    lessEmdAllocated: emdAllocatedForDo,
+    doPayableAfterEmd
+  };
+}
+

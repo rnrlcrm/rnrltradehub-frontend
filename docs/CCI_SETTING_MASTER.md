@@ -26,6 +26,22 @@ The CCI Setting Master is a comprehensive configuration system that centralizes 
 
 These rules are enforced in the calculation functions through parameter naming (`invoiceAmountExclGst`, `netInvoiceExclGst`, `amountPaidExclGst`).
 
+## Important: Approximate vs. Final Calculations
+
+**Provisional/Approximate Calculations** (Contract & DO stages):
+- Use **0.48 candy per bale** as standard approximation factor
+- Applied for: Contract value, DO value, EMD calculation, Carrying charges, Late lifting
+
+**Final Invoice Calculations** (After actual weighment):
+- Use **actual weight (quintals) × 0.2812** (candy factor from CCI Setting Master)
+- Applied for: Final net invoice, Final reconciliation
+
+**EMD Per-Bale Allocation**:
+- EMD is allocated per bale across the entire contract
+- Formula: `EMD_per_bale = Total_EMD ÷ Total_Bales`
+- When DO requested: `EMD_for_DO = EMD_per_bale × DO_Bales`
+- Unlifted value for carrying: `Value_of_unlifted - EMD_allocated_to_unlifted`
+
 ## Architecture
 
 ### Core Components
@@ -240,6 +256,191 @@ const carryingResult = calculateCarryingChargeWithEmdStatus(
 | Late EMD Interest | Buyer A/c | EMD Interest Income | Non-GST |
 | DO Approval | Buyer Payment | Sales Advance | After EMD cleared |
 | EMD Refund | Security Deposit | Bank | Post-trade completion |
+
+## EMD Per-Bale Allocation & Carrying Charge Per-Quantity
+
+### Concept
+
+EMD is allocated per bale across the entire contract, not as a lump sum. This affects:
+1. How much EMD secures each DO
+2. The base value for carrying charge calculations
+3. Payment advice breakdown
+
+### Key Formulas
+
+```typescript
+// 1. EMD per bale
+EMD_per_bale = Total_EMD ÷ Total_Bales
+
+// 2. EMD allocated for a DO
+EMD_for_DO = EMD_per_bale × DO_Bales
+
+// 3. EMD allocated to unlifted bales
+EMD_for_unlifted = EMD_per_bale × Unlifted_Bales
+
+// 4. Unlifted value for carrying
+Unlifted_Value_for_Carrying = Value_of_unlifted_bales - EMD_for_unlifted
+
+// 5. Carrying per bale
+Carrying_per_bale = Total_Carrying ÷ Unlifted_Bales
+
+// 6. Carrying per 100 bales
+Carrying_per_100 = Carrying_per_bale × 100
+
+// 7. Carrying for specific DO
+Carrying_for_DO = Carrying_per_bale × DO_Bales
+```
+
+### Example: 1000 Bales Contract, 200 Bales DO
+
+**Contract Details:**
+- Total Bales: 1,000
+- Rate per Candy: ₹62,000
+- Approx Candy per Bale: 0.48
+- Contract Value (Approx): 1,000 × 0.48 × 62,000 = ₹29,760,000
+- EMD %: 10%
+- Total EMD: ₹2,976,000
+
+**EMD Per-Bale Allocation:**
+```
+EMD_per_bale = 2,976,000 ÷ 1,000 = ₹2,976 per bale
+
+For DO (200 bales):
+  EMD_for_DO = 2,976 × 200 = ₹595,200
+
+For Unlifted (800 bales):
+  EMD_for_unlifted = 2,976 × 800 = ₹2,380,800
+
+Verification: 595,200 + 2,380,800 = 2,976,000 ✓
+```
+
+**DO Value:**
+```
+DO_Value = 200 × 0.48 × 62,000 = ₹5,952,000 (excl GST)
+DO_GST = 5,952,000 × 5% = ₹297,600
+DO_Total = 5,952,000 + 297,600 = ₹6,249,600
+
+Less EMD_for_DO = ₹595,200
+DO Payable = ₹5,654,400 (what buyer pays now)
+```
+
+**Carrying Charge Calculation:**
+```
+Value_of_unlifted = 29,760,000 - 5,952,000 = ₹23,808,000
+
+Unlifted_Value_for_Carrying = 23,808,000 - 2,380,800 = ₹21,427,200
+
+Carrying (15 days @ 1.25% per month):
+  Factor = 1.25% × (15/30) = 0.625%
+  Total_exclGST = 21,427,200 × 0.625% = ₹133,920
+  Total_GST = 133,920 × 5% = ₹6,696
+  Total_inclGST = ₹140,616
+
+Per Bale (800 unlifted):
+  Per_bale_exclGST = 133,920 ÷ 800 = ₹167.40
+
+Per 100 Bales:
+  Per_100_exclGST = 167.40 × 100 = ₹16,740
+  Per_100_GST = 16,740 × 5% = ₹837
+  Per_100_inclGST = ₹17,577
+
+For DO (200 bales):
+  For_DO_exclGST = 167.40 × 200 = ₹33,480
+  For_DO_GST = 33,480 × 5% = ₹1,674
+  For_DO_inclGST = ₹35,154
+```
+
+**Payment Advice for DO (200 bales):**
+```
+DO Value (excl GST):              ₹5,952,000
+GST @ 5%:                         ₹297,600
+DO Value (incl GST):              ₹6,249,600
+
+Less: EMD Allocated (200 bales):  (₹595,200)
+                                  ─────────────
+DO Payable After EMD:             ₹5,654,400
+
+Carrying for DO (excl GST):       ₹33,480
+GST on Carrying:                  ₹1,674
+Carrying for DO (incl GST):       ₹35,154
+                                  ═════════════
+TOTAL PAYABLE FOR DO:             ₹5,689,554
+```
+
+### Code Example
+
+```typescript
+import {
+  calculateApproximateContractValue,
+  calculateEmdAmount,
+  calculateEmdPerBale,
+  calculateEmdAllocatedForDo,
+  calculateUnliftedValueForCarrying,
+  calculateCarryingWithBreakdown,
+  calculateCarryingForDo,
+  calculateDoPayableAfterEmd
+} from '../utils/cciCalculations';
+
+// Contract setup
+const contractQty = 1000;
+const ratePerCandy = 62000;
+const doBales = 200;
+
+// Approximate contract value (using 0.48 candy per bale)
+const contractValue = calculateApproximateContractValue(contractQty, ratePerCandy);
+// Returns: 29,760,000
+
+// EMD calculation
+const emdTotal = calculateEmdAmount(cciSetting, contractValue, 'privateMill');
+const emdPerBale = calculateEmdPerBale(emdTotal, contractQty);
+// Returns: 2,976 per bale
+
+// DO EMD allocation
+const emdForDo = calculateEmdAllocatedForDo(emdPerBale, doBales);
+// Returns: 595,200
+
+// Unlifted value for carrying
+const unliftedBales = contractQty - doBales;
+const doValue = calculateApproximateDoValue(doBales, ratePerCandy);
+const unliftedValue = calculateUnliftedValueForCarrying(
+  contractValue,
+  doValue,
+  emdPerBale,
+  unliftedBales
+);
+// Returns: 21,427,200
+
+// Carrying breakdown
+const carrying = calculateCarryingWithBreakdown(
+  cciSetting,
+  unliftedValue,
+  unliftedBales,
+  15 // days
+);
+// Returns: {
+//   totalExclGst: 133920,
+//   totalInclGst: 140616,
+//   perBaleExclGst: 167.40,
+//   per100BalesInclGst: 17577,
+//   ...
+// }
+
+// Carrying for DO
+const carryingForDo = calculateCarryingForDo(
+  carrying.perBaleExclGst,
+  doBales,
+  cciSetting.gst_rate
+);
+// Returns: { exclGst: 33480, gst: 1674, inclGst: 35154 }
+
+// DO payable
+const doPayable = calculateDoPayableAfterEmd(
+  doValue,
+  cciSetting.gst_rate,
+  emdForDo
+);
+// Returns: { doPayableAfterEmd: 5654400, ... }
+```
 
 ## Usage Examples
 
