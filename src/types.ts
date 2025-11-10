@@ -50,6 +50,16 @@ export interface Invoice {
   date: string;
   amount: number;
   status: 'Unpaid' | 'Partially Paid' | 'Paid';
+  // GST fields
+  taxableAmount?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  gstRate?: number;
+  totalAmount?: number;
+  sellerState?: string;
+  buyerState?: string;
+  isInterState?: boolean;
 }
 
 export interface Location {
@@ -170,6 +180,18 @@ export interface Commission {
   agent: string;
   amount: number;
   status: 'Due' | 'Paid';
+  dueDate?: string;
+  paidDate?: string;
+  // GST fields
+  taxableAmount?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  gstRate?: number;
+  totalAmount?: number;
+  agentState?: string;
+  companyState?: string;
+  isInterState?: boolean;
 }
 
 export interface Address {

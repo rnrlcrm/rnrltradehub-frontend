@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Invoice, SalesContract } from '../../types';
+import { Invoice, SalesContract, BusinessPartner } from '../../types';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
-import { mockSalesContracts } from '../../data/mockData';
+import { mockSalesContracts, mockBusinessPartners } from '../../data/mockData';
+import { calculateGST, formatGSTBreakdown, GST_RATES } from '../../utils/gstCalculations';
 
 interface InvoiceFormProps {
   invoice?: Invoice | null;
@@ -18,12 +19,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
     salesContractId: '', 
     date: new Date().toISOString().split('T')[0], 
     amount: 0, 
-    status: 'Unpaid' 
+    status: 'Unpaid',
+    taxableAmount: 0,
+    cgst: 0,
+    sgst: 0,
+    igst: 0,
+    gstRate: GST_RATES.DEFAULT,
+    totalAmount: 0,
+    sellerState: '',
+    buyerState: '',
+    isInterState: false,
   });
   
   const [selectedContract, setSelectedContract] = useState<SalesContract | null>(null);
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [autoForward, setAutoForward] = useState(true);
+  const [sellerPartner, setSellerPartner] = useState<BusinessPartner | null>(null);
+  const [buyerPartner, setBuyerPartner] = useState<BusinessPartner | null>(null);
   
   // Get only active and completed sales contracts for invoice generation
   const availableContracts = mockSalesContracts.filter(
@@ -45,20 +57,54 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
     
     if (contract) {
       setSelectedContract(contract);
+      
+      // Get seller and buyer business partners to determine states
+      const seller = mockBusinessPartners.find(bp => bp.id === contract.vendorId || bp.name === contract.vendorName);
+      const buyer = mockBusinessPartners.find(bp => bp.id === contract.clientId || bp.name === contract.clientName);
+      
+      setSellerPartner(seller || null);
+      setBuyerPartner(buyer || null);
+      
       // Auto-calculate invoice amount (contract value = quantity * rate)
-      const totalAmount = contract.quantityBales * contract.rate;
+      const baseAmount = contract.quantityBales * contract.rate;
+      
+      // Determine GST rate (5% for cotton products by default)
+      const gstRate = GST_RATES.COTTON; // Can be customized based on product type
+      
+      // Get states for GST calculation
+      const sellerState = seller?.state || 'Maharashtra'; // Default if not found
+      const buyerState = buyer?.state || 'Gujarat'; // Default if not found
+      
+      // Calculate GST
+      const gstCalc = calculateGST(baseAmount, sellerState, buyerState, gstRate);
       
       setFormData(prev => ({
         ...prev,
         salesContractId: contract.scNo,
-        amount: totalAmount,
+        amount: baseAmount,
+        taxableAmount: gstCalc.taxableAmount,
+        cgst: gstCalc.cgst,
+        sgst: gstCalc.sgst,
+        igst: gstCalc.igst,
+        gstRate: gstCalc.gstRate,
+        totalAmount: gstCalc.totalAmount,
+        sellerState: sellerState,
+        buyerState: buyerState,
+        isInterState: gstCalc.isInterState,
       }));
     } else {
       setSelectedContract(null);
+      setSellerPartner(null);
+      setBuyerPartner(null);
       setFormData(prev => ({
         ...prev,
         salesContractId: '',
         amount: 0,
+        taxableAmount: 0,
+        cgst: 0,
+        sgst: 0,
+        igst: 0,
+        totalAmount: 0,
       }));
     }
   };
@@ -222,19 +268,70 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, readOnly, onSave, on
         </FormRow>
         
         <FormRow>
-          <FormLabel htmlFor="amount">Amount (₹) *</FormLabel>
+          <FormLabel htmlFor="amount">Taxable Amount (₹) *</FormLabel>
           <FormInput 
             name="amount" 
             id="amount" 
             type="number" 
             value={formData.amount} 
             onChange={handleChange} 
-            isReadOnly={readOnly}
+            isReadOnly={true}
             step="0.01"
             min="0"
             required 
           />
         </FormRow>
+        
+        {selectedContract && formData.amount > 0 && (
+          <>
+            <FormRow>
+              <FormLabel>GST Details</FormLabel>
+              <div className="md:col-span-2 bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span><strong>Seller State:</strong></span>
+                  <span>{formData.sellerState || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span><strong>Buyer State:</strong></span>
+                  <span>{formData.buyerState || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span><strong>Transaction Type:</strong></span>
+                  <span className="font-semibold text-blue-600">
+                    {formData.isInterState ? 'Inter-State (IGST)' : 'Intra-State (CGST + SGST)'}
+                  </span>
+                </div>
+                <hr className="border-yellow-300" />
+                <div className="flex justify-between">
+                  <span><strong>Taxable Amount:</strong></span>
+                  <span>₹{formData.taxableAmount?.toLocaleString('en-IN') || '0'}</span>
+                </div>
+                {formData.isInterState ? (
+                  <div className="flex justify-between text-green-700">
+                    <span><strong>IGST @ {formData.gstRate}%:</strong></span>
+                    <span>₹{formData.igst?.toLocaleString('en-IN') || '0'}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-green-700">
+                      <span><strong>CGST @ {(formData.gstRate || 0) / 2}%:</strong></span>
+                      <span>₹{formData.cgst?.toLocaleString('en-IN') || '0'}</span>
+                    </div>
+                    <div className="flex justify-between text-green-700">
+                      <span><strong>SGST @ {(formData.gstRate || 0) / 2}%:</strong></span>
+                      <span>₹{formData.sgst?.toLocaleString('en-IN') || '0'}</span>
+                    </div>
+                  </>
+                )}
+                <hr className="border-yellow-300" />
+                <div className="flex justify-between font-bold text-lg text-blue-800">
+                  <span>Total Amount (including GST):</span>
+                  <span>₹{formData.totalAmount?.toLocaleString('en-IN') || '0'}</span>
+                </div>
+              </div>
+            </FormRow>
+          </>
+        )}
         
         <FormRow>
           <FormLabel htmlFor="status">Status</FormLabel>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Commission } from '../../types';
+import { Commission, BusinessPartner } from '../../types';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
-import { mockSalesContracts } from '../../data/mockData';
+import { mockSalesContracts, mockBusinessPartners } from '../../data/mockData';
+import { calculateGST, GST_RATES } from '../../utils/gstCalculations';
 
 interface CommissionFormProps {
   commission?: Commission | null;
@@ -18,6 +19,15 @@ const getInitialState = (): Omit<Commission, 'id'> => ({
   status: 'Due',
   dueDate: '',
   paidDate: '',
+  taxableAmount: 0,
+  cgst: 0,
+  sgst: 0,
+  igst: 0,
+  gstRate: GST_RATES.STANDARD_SERVICES,
+  totalAmount: 0,
+  agentState: '',
+  companyState: 'Maharashtra', // Our company's default state
+  isInterState: false,
 });
 
 const CommissionForm: React.FC<CommissionFormProps> = ({ commission, readOnly, onSave, onCancel }) => {
@@ -52,16 +62,40 @@ const CommissionForm: React.FC<CommissionFormProps> = ({ commission, readOnly, o
     if (contract) {
       setSelectedContract(contract);
       
+      // Get agent's business partner to determine state
+      const agent = mockBusinessPartners.find(bp => 
+        bp.name === contract.agent || 
+        (contract.agentId && bp.id === contract.agentId)
+      );
+      
       // Auto-calculate commission based on contract
-      // Assuming commission is calculated from contract value
       const commissionRate = 0.02; // 2% default commission rate
-      const calculatedCommission = contract.quantity * contract.rate * commissionRate;
+      const baseCommission = contract.quantityBales * contract.rate * commissionRate;
+      
+      // Commission GST rate is 18% (service)
+      const gstRate = GST_RATES.STANDARD_SERVICES;
+      
+      // Our company state (receiver of commission)
+      const companyState = 'Maharashtra';
+      const agentState = agent?.state || 'Gujarat'; // Default if not found
+      
+      // Calculate GST on commission
+      const gstCalc = calculateGST(baseCommission, agentState, companyState, gstRate);
       
       setFormData(prev => ({
         ...prev,
         salesContractId: scNo,
-        amount: calculatedCommission,
+        amount: baseCommission,
         agent: contract.agent || '',
+        taxableAmount: gstCalc.taxableAmount,
+        cgst: gstCalc.cgst,
+        sgst: gstCalc.sgst,
+        igst: gstCalc.igst,
+        gstRate: gstCalc.gstRate,
+        totalAmount: gstCalc.totalAmount,
+        agentState: agentState,
+        companyState: companyState,
+        isInterState: gstCalc.isInterState,
       }));
     }
   };
@@ -140,13 +174,65 @@ const CommissionForm: React.FC<CommissionFormProps> = ({ commission, readOnly, o
             type="number" 
             value={formData.amount} 
             onChange={handleChange} 
-            isReadOnly={readOnly}
+            isReadOnly={true}
             required
             min="0"
             step="0.01"
           />
         </FormRow>
-
+        
+        {selectedContract && formData.amount > 0 && (
+          <FormRow>
+            <FormLabel>GST on Commission</FormLabel>
+            <div className="md:col-span-2 bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm space-y-2">
+              <div className="flex justify-between">
+                <span><strong>Agent State:</strong></span>
+                <span>{formData.agentState || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span><strong>Company State:</strong></span>
+                <span>{formData.companyState || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span><strong>Transaction Type:</strong></span>
+                <span className="font-semibold text-blue-600">
+                  {formData.isInterState ? 'Inter-State (IGST)' : 'Intra-State (CGST + SGST)'}
+                </span>
+              </div>
+              <hr className="border-yellow-300" />
+              <div className="flex justify-between">
+                <span><strong>Commission Amount:</strong></span>
+                <span>₹{formData.taxableAmount?.toLocaleString('en-IN') || '0'}</span>
+              </div>
+              {formData.isInterState ? (
+                <div className="flex justify-between text-green-700">
+                  <span><strong>IGST @ {formData.gstRate}%:</strong></span>
+                  <span>₹{formData.igst?.toLocaleString('en-IN') || '0'}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between text-green-700">
+                    <span><strong>CGST @ {(formData.gstRate || 0) / 2}%:</strong></span>
+                    <span>₹{formData.cgst?.toLocaleString('en-IN') || '0'}</span>
+                  </div>
+                  <div className="flex justify-between text-green-700">
+                    <span><strong>SGST @ {(formData.gstRate || 0) / 2}%:</strong></span>
+                    <span>₹{formData.sgst?.toLocaleString('en-IN') || '0'}</span>
+                  </div>
+                </>
+              )}
+              <hr className="border-yellow-300" />
+              <div className="flex justify-between font-bold text-lg text-blue-800">
+                <span>Total Commission (including GST):</span>
+                <span>₹{formData.totalAmount?.toLocaleString('en-IN') || '0'}</span>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                * GST @ {formData.gstRate}% is applicable on commission services
+              </p>
+            </div>
+          </FormRow>
+        )}
+        
         <FormRow>
           <FormLabel htmlFor="status">Status *</FormLabel>
           <FormInput 
