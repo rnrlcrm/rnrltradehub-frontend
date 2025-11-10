@@ -41,6 +41,10 @@ export interface Dispute {
   status: 'Open' | 'Resolved' | 'Closed';
   resolution: string;
   dateRaised: string;
+  // FY tracking
+  financialYear?: string;
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export interface Invoice {
@@ -60,6 +64,10 @@ export interface Invoice {
   sellerState?: string;
   buyerState?: string;
   isInterState?: boolean;
+  // FY tracking
+  financialYear?: string;
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export interface Location {
@@ -151,6 +159,13 @@ export interface SalesContract {
   status: 'Active' | 'Completed' | 'Disputed' | 'Carried Forward' | 'Amended' | 'Pending Approval' | 'Rejected';
   cciContractNo?: string;
   cciTermId?: number | null;
+  // Sub-broker assignment
+  subBrokerId?: string;
+  subBrokerName?: string;
+  commissionSharePercent?: number; // % of commission to share with sub-broker (0-100)
+  // FY tracking
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export type UserRole = 'Admin' | 'Sales' | 'Accounts' | 'Dispute Manager' | 'Vendor/Client';
@@ -192,6 +207,20 @@ export interface Commission {
   agentState?: string;
   companyState?: string;
   isInterState?: boolean;
+  // Sub-broker commission sharing
+  subBrokerId?: string;
+  subBrokerName?: string;
+  subBrokerShare?: number; // Percentage (0-100)
+  subBrokerAmount?: number; // Calculated amount
+  companyShare?: number; // Percentage (0-100)
+  companyAmount?: number; // Calculated amount
+  // Communication tracking
+  lastCommunication?: string;
+  communicationNotes?: string;
+  // FY tracking
+  financialYear?: string;
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export interface Address {
@@ -284,3 +313,34 @@ export type PermissionsMap = {
     [key in Module]?: Permission[];
   };
 };
+
+// Financial Year Management Types
+export interface FinancialYear {
+  id: number;
+  fyCode: string; // e.g., "2024-2025"
+  startDate: string;
+  endDate: string;
+  status: 'ACTIVE' | 'CLOSED';
+  closedBy?: string;
+  closedDate?: string;
+  createdAt: string;
+}
+
+export interface FYPendingItems {
+  unpaidInvoices: { count: number; totalAmount: number; items: Invoice[] };
+  dueCommissions: { count: number; totalAmount: number; items: Commission[] };
+  openDisputes: { count: number; items: Dispute[] };
+  activeContracts: { count: number; items: SalesContract[] };
+}
+
+export interface FYSplitSummary {
+  fromFY: string;
+  toFY: string;
+  executedBy: string;
+  executedAt: string;
+  invoicesMigrated: number;
+  commissionsMigrated: number;
+  contractsMigrated: number;
+  disputesMigrated: number;
+  notes: string;
+}

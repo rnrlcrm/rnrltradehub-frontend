@@ -28,6 +28,18 @@ const getInitialState = (): Omit<Commission, 'id'> => ({
   agentState: '',
   companyState: 'Maharashtra', // Our company's default state
   isInterState: false,
+  // Sub-broker fields
+  subBrokerId: '',
+  subBrokerName: '',
+  subBrokerShare: 0,
+  subBrokerAmount: 0,
+  companyShare: 100,
+  companyAmount: 0,
+  lastCommunication: '',
+  communicationNotes: '',
+  // FY tracking
+  financialYear: '2024-2025',
+  isCarriedForward: false,
 });
 
 const CommissionForm: React.FC<CommissionFormProps> = ({ commission, readOnly, onSave, onCancel }) => {
@@ -232,6 +244,120 @@ const CommissionForm: React.FC<CommissionFormProps> = ({ commission, readOnly, o
             </div>
           </FormRow>
         )}
+        
+        {/* Sub-Broker Commission Sharing Section */}
+        <div className="col-span-full border-t pt-4 mt-4">
+          <h4 className="font-semibold text-gray-700 mb-3">Sub-Broker Commission Sharing</h4>
+          
+          <FormRow>
+            <FormLabel htmlFor="subBrokerName">Sub-Broker (Optional)</FormLabel>
+            <FormInput 
+              component="select"
+              id="subBrokerName" 
+              name="subBrokerName" 
+              value={formData.subBrokerName || ''} 
+              onChange={(e) => {
+                const subBrokerName = e.target.value;
+                const subBroker = mockBusinessPartners.find(bp => bp.legal_name === subBrokerName && bp.business_type === 'AGENT');
+                setFormData(prev => ({
+                  ...prev,
+                  subBrokerName,
+                  subBrokerId: subBroker?.id || '',
+                }));
+              }}
+              isReadOnly={readOnly}
+            >
+              <option value="">-- No Sub-Broker --</option>
+              {mockBusinessPartners
+                .filter(bp => bp.business_type === 'AGENT')
+                .map(bp => (
+                  <option key={bp.id} value={bp.legal_name}>
+                    {bp.legal_name}
+                  </option>
+                ))}
+            </FormInput>
+          </FormRow>
+
+          {formData.subBrokerName && (
+            <>
+              <FormRow>
+                <FormLabel htmlFor="subBrokerShare">Sub-Broker Share (%)</FormLabel>
+                <FormInput 
+                  id="subBrokerShare" 
+                  name="subBrokerShare" 
+                  type="number" 
+                  value={formData.subBrokerShare || 0} 
+                  onChange={(e) => {
+                    const share = parseFloat(e.target.value) || 0;
+                    const totalAmt = formData.totalAmount || 0;
+                    setFormData(prev => ({
+                      ...prev,
+                      subBrokerShare: share,
+                      subBrokerAmount: (totalAmt * share) / 100,
+                      companyShare: 100 - share,
+                      companyAmount: (totalAmt * (100 - share)) / 100,
+                    }));
+                  }}
+                  isReadOnly={readOnly}
+                  min="0"
+                  max="100"
+                  step="0.01"
+                />
+              </FormRow>
+
+              <div className="col-span-full bg-green-50 border border-green-200 rounded-md p-4">
+                <p className="font-semibold text-green-900 mb-2">Commission Split Breakdown:</p>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Total Commission (with GST):</p>
+                    <p className="text-lg font-bold text-blue-600">₹{(formData.totalAmount || 0).toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="border-l pl-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-700">Sub-Broker Share ({formData.subBrokerShare || 0}%):</span>
+                        <span className="font-semibold">₹{(formData.subBrokerAmount || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-700">Company Share ({formData.companyShare || 100}%):</span>
+                        <span className="font-semibold">₹{(formData.companyAmount || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  * Commission split is calculated on total commission including GST
+                </p>
+              </div>
+
+              <FormRow>
+                <FormLabel htmlFor="lastCommunication">Last Communication Date</FormLabel>
+                <FormInput 
+                  id="lastCommunication" 
+                  name="lastCommunication" 
+                  type="date" 
+                  value={formData.lastCommunication || ''} 
+                  onChange={handleChange}
+                  isReadOnly={readOnly}
+                />
+              </FormRow>
+
+              <FormRow>
+                <FormLabel htmlFor="communicationNotes">Trade Communication Notes</FormLabel>
+                <textarea
+                  id="communicationNotes"
+                  name="communicationNotes"
+                  value={formData.communicationNotes || ''}
+                  onChange={handleChange}
+                  disabled={readOnly}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Log any trade-related communications through sub-broker..."
+                />
+              </FormRow>
+            </>
+          )}
+        </div>
         
         <FormRow>
           <FormLabel htmlFor="status">Status *</FormLabel>
