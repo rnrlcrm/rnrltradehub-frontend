@@ -141,10 +141,136 @@ const commissions: CommissionStructure[] = [
 
 const cciTerms: CciTerm[] = [
     {
-        id: 1, name: 'Standard CCI 2023-24', contract_period_days: 45, emd_payment_days: 3, cash_discount_percentage: 1.25,
-        carrying_charge_tier1_days: 30, carrying_charge_tier1_percent: 1.25, carrying_charge_tier2_days: 15, carrying_charge_tier2_percent: 1.5,
-        additional_deposit_percent: 10, deposit_interest_percent: 6, free_lifting_period_days: 21,
-        late_lifting_tier1_days: 15, late_lifting_tier1_percent: 0.5, late_lifting_tier2_days: 15, late_lifting_tier2_percent: 0.75, late_lifting_tier3_percent: 1.0
+        id: 1, 
+        name: 'Standard CCI 2024-25', 
+        
+        // Versioning
+        effectiveFrom: '2024-04-01',
+        effectiveTo: undefined,
+        version: 1,
+        isActive: true,
+        
+        // Core Financial Parameters
+        candy_factor: 0.2812, // Conversion from quintal to candy
+        gst_rate: 5, // 5% GST on cotton
+        
+        // EMD Configuration
+        emd_by_buyer_type: {
+            kvic: 10, // 10% for KVIC
+            privateMill: 12.5, // 10-15% for Private Mill (using mid-point)
+            trader: 17.5, // 15-20% for Trader (using mid-point)
+        },
+        emd_payment_days: 5,
+        emd_interest_percent: 5, // 5% annual interest on timely EMD
+        emd_late_interest_percent: 10, // 10% if EMD paid late
+        
+        // Carrying Charges
+        carrying_charge_tier1_days: 30,
+        carrying_charge_tier1_percent: 1.25, // 1.25% per month for 0-30 days
+        carrying_charge_tier2_days: 60,
+        carrying_charge_tier2_percent: 1.35, // 1.35% per month for >30 days
+        
+        // Late Lifting Charges
+        free_lifting_period_days: 21,
+        late_lifting_tier1_days: 30,
+        late_lifting_tier1_percent: 0.5, // 0.5% per month for 0-30 days
+        late_lifting_tier2_days: 60,
+        late_lifting_tier2_percent: 0.75, // 0.75% per month for 31-60 days
+        late_lifting_tier3_percent: 1.0, // 1.0% per month for >60 days
+        
+        // Payment & Discount Terms
+        cash_discount_percentage: 5, // 5% annual cash discount
+        
+        // Interest Rates
+        interest_lc_bg_percent: 10, // 10% annual interest for LC/BG
+        penal_interest_lc_bg_percent: 11, // 11% penal interest
+        
+        // Additional Deposits
+        additional_deposit_percent: 10,
+        deposit_interest_percent: 5,
+        
+        // Lifting & Contract Period
+        lifting_period_days: 45, // 30-60 days (using mid-point)
+        contract_period_days: 45,
+        
+        // Lock-in Period Charges
+        lockin_charge_min: 350, // Rs/bale
+        lockin_charge_max: 700, // Rs/bale
+        
+        // Moisture Adjustment Parameters
+        moisture_lower_limit: 7, // Below 7%, premium charged
+        moisture_upper_limit: 9, // Above 9%, discount applied
+        moisture_sample_count: 10, // Sample 10 bales
+        
+        // Email Configuration
+        email_reminder_days: 5,
+        email_template_emd_reminder: '<p>Dear Partner, This is a reminder that EMD payment is due within {days} days.</p>',
+        email_template_payment_due: '<p>Dear Partner, Payment for invoice {invoice_no} is now due.</p>',
+    },
+    {
+        id: 2, 
+        name: 'Standard CCI 2023-24 (Historical)', 
+        
+        // Versioning
+        effectiveFrom: '2023-04-01',
+        effectiveTo: '2024-03-31',
+        version: 1,
+        isActive: false,
+        
+        // Core Financial Parameters
+        candy_factor: 0.2812,
+        gst_rate: 5,
+        
+        // EMD Configuration
+        emd_by_buyer_type: {
+            kvic: 10,
+            privateMill: 12.5,
+            trader: 17.5,
+        },
+        emd_payment_days: 3,
+        emd_interest_percent: 5,
+        emd_late_interest_percent: 10,
+        
+        // Carrying Charges
+        carrying_charge_tier1_days: 30,
+        carrying_charge_tier1_percent: 1.25,
+        carrying_charge_tier2_days: 60,
+        carrying_charge_tier2_percent: 1.5,
+        
+        // Late Lifting Charges
+        free_lifting_period_days: 21,
+        late_lifting_tier1_days: 15,
+        late_lifting_tier1_percent: 0.5,
+        late_lifting_tier2_days: 30,
+        late_lifting_tier2_percent: 0.75,
+        late_lifting_tier3_percent: 1.0,
+        
+        // Payment & Discount Terms
+        cash_discount_percentage: 5,
+        
+        // Interest Rates
+        interest_lc_bg_percent: 10,
+        penal_interest_lc_bg_percent: 11,
+        
+        // Additional Deposits
+        additional_deposit_percent: 10,
+        deposit_interest_percent: 6,
+        
+        // Lifting & Contract Period
+        lifting_period_days: 45,
+        contract_period_days: 45,
+        
+        // Lock-in Period Charges
+        lockin_charge_min: 350,
+        lockin_charge_max: 700,
+        
+        // Moisture Adjustment Parameters
+        moisture_lower_limit: 7,
+        moisture_upper_limit: 9,
+        moisture_sample_count: 10,
+        
+        // Email Configuration
+        email_reminder_days: 5,
     }
 ];
 
