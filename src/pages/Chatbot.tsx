@@ -47,7 +47,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     
     // Contract-related queries
     if (input.includes('contract') || input.includes('sc-') || input.includes('agreement')) {
-      return 'I can check contract status for you!\n\nJust provide:\n• Contract number (e.g., SC-2024-001)\n• Or party name (buyer/seller)\n\nI\'ll show you all relevant details including invoices, payments, and outstanding amounts.';
+      return 'I can check contract status for you!\n\nJust provide:\n• Contract number (e.g., SC-2024-001)\n• Or party name (buyer/seller)\n\nI\'ll show you:\n✓ Real-time contract lifecycle status\n✓ Business rule validation results\n✓ Pending approvals and escalations\n✓ All invoices, payments, and outstanding amounts\n✓ Complete audit trail with automated and manual updates';
+    }
+    
+    // Lifecycle and automation queries
+    if (input.includes('lifecycle') || input.includes('automated') || input.includes('approval') || input.includes('escalation')) {
+      return 'Smart Contract Lifecycle Tracking:\n\n📊 Real-time Updates:\n• Automated validation and approval\n• Manual override tracking\n• Exception escalations\n• Supervisor approvals\n\n🔔 Notifications:\n• Contract state changes\n• Approval requests\n• Rule violations\n• Escalation assignments\n\nAll updates are visible in real-time to buyers/sellers through this chat and the dashboard for full transparency!';
     }
     
     // Status tracking
@@ -62,7 +67,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     
     // Help
     if (input.includes('help') || input.includes('what can') || input.includes('how')) {
-      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Shipment Tracking\n   - LR number updates\n   - Delivery status\n   - Documents\n\n4. 📊 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n\nJust tell me what you need!';
+      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Shipment Tracking\n   - LR number updates\n   - Delivery status\n   - Documents\n\n4. 🤖 Smart Contract Automation\n   - Automated validation & approval\n   - Real-time lifecycle tracking\n   - Exception handling & escalations\n   - Manual override requests\n   - Full transparency & audit trail\n\n5. 📊 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n\nJust tell me what you need!';
     }
     
     // Default response

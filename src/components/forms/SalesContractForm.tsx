@@ -5,6 +5,9 @@ import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
 import { useGemini } from '../../hooks/useGemini';
 import { AIIcon, LoadingSpinner } from '../ui/icons';
 import Modal from '../ui/Modal';
+import SmartContractRuleDisplay from '../ui/SmartContractRuleDisplay';
+import OverrideRequestModal from '../ui/OverrideRequestModal';
+import { evaluateBusinessRules, canProceed, requiresManualApproval, canAutoApprove } from '../../lib/smartContract';
 
 interface SalesContractFormProps {
   contract?: SalesContract | null;
@@ -85,6 +88,10 @@ const SalesContractForm: React.FC<SalesContractFormProps> = ({ contract, mode, v
   const [amendmentReason, setAmendmentReason] = useState('');
   const { status: aiStatus, response: aiResponse, error: aiError, generateContent: generateAiReview } = useGemini();
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [showRuleValidation, setShowRuleValidation] = useState(false);
+  const [ruleResults, setRuleResults] = useState<any[]>([]);
+  const [overrideModalOpen, setOverrideModalOpen] = useState(false);
+  const [selectedRuleForOverride, setSelectedRuleForOverride] = useState<{ id: string; name: string } | null>(null);
 
   const clients = vendorsClients.filter(vc => vc.business_type === 'BUYER' || vc.business_type === 'BOTH');
   const vendors = vendorsClients.filter(vc => vc.business_type === 'SELLER' || vc.business_type === 'BOTH');
@@ -139,6 +146,27 @@ const SalesContractForm: React.FC<SalesContractFormProps> = ({ contract, mode, v
     setIsAiModalOpen(true);
   };
 
+  const handleValidateRules = () => {
+    const results = evaluateBusinessRules(formData as SalesContract);
+    setRuleResults(results);
+    setShowRuleValidation(true);
+  };
+
+  const handleRequestOverride = (ruleId: string) => {
+    const rule = ruleResults.find(r => r.ruleId === ruleId);
+    if (rule) {
+      setSelectedRuleForOverride({ id: rule.ruleId, name: rule.ruleName });
+      setOverrideModalOpen(true);
+    }
+  };
+
+  const handleSubmitOverride = (reason: string) => {
+    // In a real implementation, this would submit the override request to the backend
+    alert(`Override request submitted:\n\nRule: ${selectedRuleForOverride?.name}\nReason: ${reason}\n\nThis request will be sent to supervisors for approval.`);
+    setOverrideModalOpen(false);
+    setSelectedRuleForOverride(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === 'amend' && !amendmentReason) {
@@ -149,6 +177,26 @@ const SalesContractForm: React.FC<SalesContractFormProps> = ({ contract, mode, v
         alert('Rate must be greater than zero.');
         return;
     }
+
+    // Validate business rules before saving
+    const results = evaluateBusinessRules(formData as SalesContract);
+    const canProceedWithSave = canProceed(results);
+    const needsApproval = requiresManualApproval(results);
+    const canBeAutoApproved = canAutoApprove(results);
+
+    if (!canProceedWithSave) {
+      setRuleResults(results);
+      setShowRuleValidation(true);
+      alert('Contract cannot be saved due to blocking business rule violations. Please review the validation results.');
+      return;
+    }
+
+    if (canBeAutoApproved) {
+      alert('✅ Contract passed all validation rules and can be auto-approved!');
+    } else if (needsApproval) {
+      alert('⚠️ Contract requires manual approval. It will be sent for supervisor review.');
+    }
+
     onSave(formData as SalesContract, amendmentReason);
   };
 
@@ -228,13 +276,40 @@ const SalesContractForm: React.FC<SalesContractFormProps> = ({ contract, mode, v
                 </FormRow>
             </div>
         )}
+
+        {/* Smart Contract Rule Validation */}
+        {showRuleValidation && ruleResults.length > 0 && (
+          <div className="mt-4">
+            <SmartContractRuleDisplay 
+              results={ruleResults}
+              onRequestOverride={handleRequestOverride}
+            />
+          </div>
+        )}
       </div>
       <FormActions>
+        {!readOnly && <Button type="button" variant="secondary" onClick={handleValidateRules} className="mr-2">🔍 Validate Rules</Button>}
         {!readOnly && <Button type="button" variant="secondary" onClick={handleAiReview} className="mr-auto" disabled={aiStatus === 'loading'}>{aiStatus === 'loading' ? <LoadingSpinner className="w-5 h-5" /> : <AIIcon className="w-5 h-5" />}<span className="ml-2">AI Review</span></Button>}
         <Button type="button" variant="secondary" onClick={onCancel}>{readOnly ? 'Close' : 'Cancel'}</Button>
         {!readOnly && <Button type="submit">{mode === 'amend' ? 'Save Amendment' : 'Save'}</Button>}
       </FormActions>
     </form>
+    
+    {/* Override Request Modal */}
+    {selectedRuleForOverride && (
+      <OverrideRequestModal
+        isOpen={overrideModalOpen}
+        onClose={() => setOverrideModalOpen(false)}
+        ruleId={selectedRuleForOverride.id}
+        ruleName={selectedRuleForOverride.name}
+        contractId={formData.id || 'NEW'}
+        contractNo={formData.scNo || 'NEW CONTRACT'}
+        currentUser="Current User"
+        onSubmit={handleSubmitOverride}
+      />
+    )}
+    
+    {/* AI Review Modal */}
     <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} title="AI Compliance Assistant">
         {aiStatus === 'loading' && <div className="flex items-center"><LoadingSpinner className="w-5 h-5 mr-3" /><span>Analyzing contract...</span></div>}
         {aiStatus === 'error' && <p className="text-red-600">{aiError}</p>}
