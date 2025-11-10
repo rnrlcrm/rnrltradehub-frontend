@@ -6,6 +6,7 @@ import { User, mockUsers, MasterDataItem } from '../../data/mockData';
 interface HeaderProps {
   currentUser: User;
   onUserChange: (user: User) => void;
+  onLogout: () => void;
   organizations: MasterDataItem[];
   currentOrganization: string;
   onOrganizationChange: (organization: string) => void;
@@ -15,7 +16,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-    currentUser, onUserChange, 
+    currentUser, onUserChange, onLogout,
     organizations, currentOrganization, onOrganizationChange,
     financialYears, currentFinancialYear, onFinancialYearChange
 }) => {
@@ -116,8 +117,8 @@ const Header: React.FC<HeaderProps> = ({
                   ))}
                 </div>
                 <div className="border-t border-slate-200 py-1">
-                  <a href="#" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors">
-                    <LogoutIcon className="w-5 h-5 mr-2.5 text-slate-500" />
+                  <a href="#" onClick={(e) => { e.preventDefault(); onLogout(); }} className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <LogoutIcon className="w-5 h-5 mr-2.5" />
                     Logout
                   </a>
                 </div>

@@ -12,16 +12,20 @@ import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
 import Disputes from './pages/Disputes';
 import Commissions from './pages/Commissions';
+import CommissionAccounting from './pages/CommissionAccounting';
 import Reports from './pages/Reports';
 import AuditTrail from './pages/AuditTrail';
 import GrievanceOfficer from './pages/GrievanceOfficer';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RolesAndRights from './pages/RolesAndRights';
-import { User, mockUsers, AuditLog, mockAuditLogs, MasterDataItem, mockOrganizations, SalesContract, mockSalesContracts, mockMasterData } from './data/mockData';
+import Chatbot from './pages/Chatbot';
+import Login from './pages/Login';
+import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
+import { User, AuditLog, MasterDataItem, SalesContract } from './types';
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]); // Default to Admin
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activePage, setActivePage] = useState<string>('Dashboard');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(mockAuditLogs);
   const [organizations] = useState<MasterDataItem[]>(mockOrganizations);
@@ -97,8 +101,8 @@ const App: React.FC = () => {
     
     setContracts([...updatedOldContracts, ...newContracts]);
     addAuditLog({
-        user: currentUser.name,
-        role: currentUser.role,
+        user: currentUser!.name,
+        role: currentUser!.role,
         action: 'Carry Forward',
         module: 'Year-End',
         details: `Carried forward ${newContracts.length} contracts from FY ${previousFY} to FY ${currentFinancialYear}.`,
@@ -107,14 +111,45 @@ const App: React.FC = () => {
     alert(`Successfully carried forward ${newContracts.length} contracts to the current financial year.`);
   };
 
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('currentUser');
+    setActivePage('Dashboard');
+    window.location.hash = '';
+  };
+
+  // Check for saved session on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('currentUser');
+      }
+    }
+  }, []);
+
+  // Show login page if not logged in
+  if (!currentUser) {
+    return <Login onLogin={handleLogin} availableUsers={mockUsers} />;
+  }
+
   const renderPage = () => {
     const pageKey = activePage.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
     switch (pageKey) {
       case 'dashboard': return <Dashboard currentUser={currentUser} onCarryForward={handleCarryForward} />;
+      case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
       case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
       case 'invoices': return <Invoices currentUser={currentUser} />;
       case 'payments': return <Payments currentUser={currentUser} />;
       case 'commissions': return <Commissions currentUser={currentUser} />;
+      case 'commission-accounting': return <CommissionAccounting currentUser={currentUser} />;
       case 'disputes': return <Disputes currentUser={currentUser} />;
       case 'vendors-clients': return <VendorsAndClients currentUser={currentUser} addAuditLog={addAuditLog} currentOrganization={currentOrganization} />;
       case 'reports': return <Reports currentUser={currentUser} />;
@@ -136,6 +171,7 @@ const App: React.FC = () => {
         <Header 
           currentUser={currentUser} 
           onUserChange={setCurrentUser}
+          onLogout={handleLogout}
           organizations={organizations}
           currentOrganization={currentOrganization}
           onOrganizationChange={setCurrentOrganization}

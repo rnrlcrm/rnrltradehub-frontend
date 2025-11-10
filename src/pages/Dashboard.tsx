@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Card from '../components/ui/Card';
-import { mockSalesContracts } from '../data/mockData';
+import { mockSalesContracts, mockInvoices, mockPayments, mockDisputes, mockCommissions } from '../data/mockData';
 import { useGemini } from '../hooks/useGemini';
 import { AIIcon, LoadingSpinner } from '../components/ui/icons';
 import { Button } from '../components/ui/Form';
@@ -13,10 +13,11 @@ interface DashboardProps {
     onCarryForward: () => void;
 }
 
-const StatCard: React.FC<{ title: string; value: string; change?: string; changeType?: 'increase' | 'decrease' }> = ({ title, value, change, changeType }) => (
+const StatCard: React.FC<{ title: string; value: string; subtitle?: string; change?: string; changeType?: 'increase' | 'decrease'; color?: string }> = ({ title, value, subtitle, change, changeType, color = 'slate' }) => (
   <Card className="!shadow-sm">
     <h4 className="text-sm font-semibold text-slate-500 truncate uppercase tracking-wider">{title}</h4>
-    <p className="mt-2 text-3xl font-bold text-slate-800">{value}</p>
+    <p className={`mt-2 text-3xl font-bold text-${color}-800`}>{value}</p>
+    {subtitle && <p className="text-sm text-slate-600 mt-1">{subtitle}</p>}
     {change && (
       <p className={`mt-1 text-sm flex items-center ${changeType === 'increase' ? 'text-green-600' : 'text-red-600'}`}>
         {changeType === 'increase' ? 
@@ -30,9 +31,25 @@ const StatCard: React.FC<{ title: string; value: string; change?: string; change
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ currentUser, onCarryForward }) => {
+  // Sales Contract Metrics
   const totalSalesValue = mockSalesContracts.reduce((acc, c) => acc + c.rate * c.quantityBales, 0);
   const activeContracts = mockSalesContracts.filter(c => c.status === 'Active').length;
   const disputedContracts = mockSalesContracts.filter(c => c.status === 'Disputed').length;
+  const cciContracts = mockSalesContracts.filter(c => c.tradeType === 'CCI Trade').length;
+  const normalContracts = mockSalesContracts.filter(c => c.tradeType === 'Normal Trade').length;
+
+  // Financial Metrics
+  const totalInvoices = mockInvoices.length;
+  const unpaidInvoices = mockInvoices.filter(inv => inv.status === 'Unpaid').length;
+  const totalInvoiceAmount = mockInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+  const unpaidAmount = mockInvoices.filter(inv => inv.status === 'Unpaid').reduce((sum, inv) => sum + inv.amount, 0);
+  
+  const totalPayments = mockPayments.length;
+  const totalPaidAmount = mockPayments.reduce((sum, pay) => sum + pay.amount, 0);
+  
+  // Commission Metrics
+  const totalCommissions = mockCommissions.reduce((sum, comm) => sum + comm.amount, 0);
+  const dueCommissions = mockCommissions.filter(c => c.status === 'Due').reduce((sum, c) => sum + c.amount, 0);
 
   const { status, response, error, generateContent } = useGemini();
   const [query, setQuery] = useState('');
@@ -53,12 +70,96 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, onCarryForward }) =>
   return (
     <>
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
+        <p className="text-sm text-slate-600 mt-1">Welcome back, {currentUser.name}! Here&apos;s your business overview.</p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard title="Total Sales Value" value={`₹${(totalSalesValue / 10000000).toFixed(2)} Cr`} change="+5.4%" changeType="increase" />
-        <StatCard title="Active Contracts" value={String(activeContracts)} change="-2" changeType="decrease" />
-        <StatCard title="Disputed Contracts" value={String(disputedContracts)} />
+      {/* Sales Contracts Overview */}
+      <div>
+        <h2 className="text-lg font-semibold text-slate-700 mb-3">Sales Contracts</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            title="Total Sales Value" 
+            value={`₹${(totalSalesValue / 10000000).toFixed(2)} Cr`} 
+            subtitle={`${mockSalesContracts.length} contracts`}
+            change="+5.4%" 
+            changeType="increase" 
+          />
+          <StatCard 
+            title="Active Contracts" 
+            value={String(activeContracts)} 
+            change="-2" 
+            changeType="decrease" 
+          />
+          <StatCard 
+            title="CCI Contracts" 
+            value={String(cciContracts)} 
+            subtitle={`${normalContracts} normal`}
+            color="blue"
+          />
+          <StatCard 
+            title="Disputed" 
+            value={String(disputedContracts)} 
+            color="red"
+          />
+        </div>
+      </div>
+
+      {/* Financial Overview */}
+      <div>
+        <h2 className="text-lg font-semibold text-slate-700 mb-3">Financial Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            title="Total Invoices" 
+            value={`₹${(totalInvoiceAmount / 10000000).toFixed(2)} Cr`} 
+            subtitle={`${totalInvoices} invoices`}
+          />
+          <StatCard 
+            title="Outstanding" 
+            value={`₹${(unpaidAmount / 10000000).toFixed(2)} Cr`} 
+            subtitle={`${unpaidInvoices} unpaid`}
+            color="red"
+          />
+          <StatCard 
+            title="Payments Received" 
+            value={`₹${(totalPaidAmount / 10000000).toFixed(2)} Cr`} 
+            subtitle={`${totalPayments} payments`}
+            color="green"
+          />
+          <StatCard 
+            title="Collection Rate" 
+            value={`${((totalPaidAmount / totalInvoiceAmount) * 100).toFixed(1)}%`}
+            color="blue"
+          />
+        </div>
+      </div>
+
+      {/* Commission & Disputes */}
+      <div>
+        <h2 className="text-lg font-semibold text-slate-700 mb-3">Commission & Disputes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            title="Total Commissions" 
+            value={`₹${(totalCommissions / 100000).toFixed(2)} L`} 
+            subtitle={`${mockCommissions.length} entries`}
+          />
+          <StatCard 
+            title="Due Commissions" 
+            value={`₹${(dueCommissions / 100000).toFixed(2)} L`} 
+            color="yellow"
+          />
+          <StatCard 
+            title="Active Disputes" 
+            value={String(mockDisputes.filter(d => d.status === 'Open').length)} 
+            color="red"
+          />
+          <StatCard 
+            title="Resolved Disputes" 
+            value={String(mockDisputes.filter(d => d.status === 'Resolved' || d.status === 'Closed').length)} 
+            color="green"
+          />
+        </div>
       </div>
 
       {currentUser.role === 'Admin' && (
@@ -113,9 +214,9 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser, onCarryForward }) =>
         <div>
             <p className="text-slate-700">Are you sure you want to proceed? This action will:</p>
             <ul className="list-disc list-inside my-4 text-slate-600 space-y-1">
-                <li>Identify all 'Active' and 'Disputed' contracts from the previous financial year.</li>
+                <li>Identify all &apos;Active&apos; and &apos;Disputed&apos; contracts from the previous financial year.</li>
                 <li>Create new corresponding contracts in the current financial year.</li>
-                <li>Mark the old contracts as 'Carried Forward'.</li>
+                <li>Mark the old contracts as &apos;Carried Forward&apos;.</li>
             </ul>
             <p className="font-semibold text-red-600">This is a simulation and the action cannot be undone within this session.</p>
         </div>

@@ -1,5 +1,5 @@
 
-import { User, SalesContract, BusinessPartner, Invoice, Payment, Dispute, Commission, AuditLog, MasterDataItem, Location, CommissionStructure, StructuredTerm, CciTerm, GstRate } from '../types';
+import { User, SalesContract, BusinessPartner, Invoice, Payment, Dispute, Commission, AuditLog, MasterDataItem, Location, CommissionStructure, StructuredTerm, CciTerm, GstRate, Organization } from '../types';
 
 export const mockUsers: User[] = [
   { id: 1, name: 'Admin User', email: 'admin@rnrl.com', role: 'Admin' },
@@ -151,6 +151,51 @@ const cciTerms: CciTerm[] = [
 const gstRates: GstRate[] = [
     { id: 1, rate: 5, description: 'GST on Cotton', hsnCode: '5201' },
     { id: 2, rate: 18, description: 'GST on Services', hsnCode: '9983' },
+];
+
+export const mockOrganizationsDetailed: Organization[] = [
+    {
+        id: 1,
+        name: 'RNRL Trade Hub Pvt. Ltd.',
+        code: 'RNRL-HO',
+        address: '123 Trade Center, Commercial Complex',
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        pincode: '400001',
+        country: 'India',
+        phone: '022-12345678',
+        email: 'info@rnrlhub.com',
+        gstin: '27AABCR1234K1Z5',
+        pan: 'AABCR1234K',
+        tan: 'MUMR12345A',
+        cin: 'U51909MH2020PTC123456',
+        bankName: 'HDFC Bank Ltd',
+        accountNumber: '50200012345678',
+        ifscCode: 'HDFC0001234',
+        branchName: 'Fort, Mumbai',
+        isActive: true,
+    },
+    {
+        id: 2,
+        name: 'RNRL Agro Solutions',
+        code: 'RNRL-AS',
+        address: '456 Agricultural Park, MIDC Area',
+        city: 'Akola',
+        state: 'Maharashtra',
+        pincode: '444001',
+        country: 'India',
+        phone: '0724-2234567',
+        email: 'agro@rnrl.com',
+        gstin: '27AABCR5678M1Z8',
+        pan: 'AABCR5678M',
+        tan: 'AKOR56789B',
+        cin: 'U01100MH2021PTC234567',
+        bankName: 'State Bank of India',
+        accountNumber: '12345678901',
+        ifscCode: 'SBIN0005678',
+        branchName: 'Akola Main Branch',
+        isActive: true,
+    },
 ];
 
 export const mockMasterData = {

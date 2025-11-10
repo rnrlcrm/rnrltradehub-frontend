@@ -62,7 +62,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   const columns = [
     { header: 'Name', accessor: 'name' },
     { header: 'Email', accessor: 'email' },
-    { header: 'Role', accessor: 'role' },
+    { 
+      header: 'Role', 
+      accessor: (user: User) => {
+        const hasCustomPerms = !!(user as any).customPermissions && Object.keys((user as any).customPermissions).length > 0;
+        return (
+          <div className="flex items-center gap-2">
+            <span>{user.role}</span>
+            {hasCustomPerms && (
+              <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full font-medium" title="Has custom permissions">
+                Custom
+              </span>
+            )}
+          </div>
+        );
+      }
+    },
     {
       header: 'Actions',
       accessor: (user: User) => (
@@ -87,7 +102,24 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-800">User Management</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-800">User Management</h1>
+        <p className="text-slate-600 mt-1">Manage system users and their permissions</p>
+      </div>
+
+      <Card title="Permission Modes" className="bg-blue-50 border-blue-200">
+        <div className="p-4 space-y-2 text-sm">
+          <div className="flex items-start gap-2">
+            <span className="px-2 py-0.5 text-xs bg-slate-200 text-slate-700 rounded font-medium mt-0.5">Role-Based</span>
+            <p className="text-slate-700">Users inherit permissions from their assigned role (configured in Roles & Rights)</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded font-medium mt-0.5">Custom</span>
+            <p className="text-slate-700">Users with custom permissions have module-specific access that overrides role defaults</p>
+          </div>
+        </div>
+      </Card>
+
       <Card title="System Users" actions={cardActions}>
         <Table<User> data={users} columns={columns} />
       </Card>

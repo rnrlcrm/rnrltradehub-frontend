@@ -207,7 +207,7 @@ const SalesContractPDF: React.FC<SalesContractPDFProps> = ({ contract, buyer, se
                 <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1">
                     <li>Company shall not be legally responsible for any disputes if arises between the seller & buyer of any type.</li>
                     <li>In case of non delivery or fail to fulfill contract, the contract will be settled amicably as per CAI rules, bye laws & arbitration.</li>
-                    <li>Sale Confirmation incorporates rules & by laws of the "CAI" in force at the time this contract was entered into.</li>
+                    <li>Sale Confirmation incorporates rules & by laws of the &quot;CAI&quot; in force at the time this contract was entered into.</li>
                     <li>The brokerage is required to be paid contract-wise immediately on receipt of 100% principal amount within 15 days.</li>
                     <li>Initial KYC is mandatory between the buyer and seller.</li>
                     <li>Kindly sign & send us the same for your acceptance & if not replied within 48 hrs, it will be termed as accepted by you.</li>
@@ -215,7 +215,7 @@ const SalesContractPDF: React.FC<SalesContractPDFProps> = ({ contract, buyer, se
             </PDFSection>
 
             <div className="mt-16 pt-8">
-                <p className="mb-2">Your's Faithfully,</p>
+                <p className="mb-2">Yours Faithfully,</p>
                 <div className="w-1/3">
                     <img src={sealImageBase64} alt="Company Seal" className="h-32 w-32" />
                     <div className="border-t-2 border-slate-400 mt-2 pt-1">

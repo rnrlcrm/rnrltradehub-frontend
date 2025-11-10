@@ -41,6 +41,10 @@ export interface Dispute {
   status: 'Open' | 'Resolved' | 'Closed';
   resolution: string;
   dateRaised: string;
+  // FY tracking
+  financialYear?: string;
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export interface Invoice {
@@ -50,6 +54,20 @@ export interface Invoice {
   date: string;
   amount: number;
   status: 'Unpaid' | 'Partially Paid' | 'Paid';
+  // GST fields
+  taxableAmount?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  gstRate?: number;
+  totalAmount?: number;
+  sellerState?: string;
+  buyerState?: string;
+  isInterState?: boolean;
+  // FY tracking
+  financialYear?: string;
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export interface Location {
@@ -62,6 +80,28 @@ export interface Location {
 export interface MasterDataItem {
   id: number;
   name: string;
+}
+
+export interface Organization {
+  id: number;
+  name: string;
+  code: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  phone: string;
+  email: string;
+  gstin: string;
+  pan: string;
+  tan: string;
+  cin: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  branchName: string;
+  isActive: boolean;
 }
 
 export interface StructuredTerm {
@@ -119,6 +159,13 @@ export interface SalesContract {
   status: 'Active' | 'Completed' | 'Disputed' | 'Carried Forward' | 'Amended' | 'Pending Approval' | 'Rejected';
   cciContractNo?: string;
   cciTermId?: number | null;
+  // Sub-broker assignment
+  subBrokerId?: string;
+  subBrokerName?: string;
+  commissionSharePercent?: number; // % of commission to share with sub-broker (0-100)
+  // FY tracking
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export type UserRole = 'Admin' | 'Sales' | 'Accounts' | 'Dispute Manager' | 'Vendor/Client';
@@ -148,6 +195,32 @@ export interface Commission {
   agent: string;
   amount: number;
   status: 'Due' | 'Paid';
+  dueDate?: string;
+  paidDate?: string;
+  // GST fields
+  taxableAmount?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  gstRate?: number;
+  totalAmount?: number;
+  agentState?: string;
+  companyState?: string;
+  isInterState?: boolean;
+  // Sub-broker commission sharing
+  subBrokerId?: string;
+  subBrokerName?: string;
+  subBrokerShare?: number; // Percentage (0-100)
+  subBrokerAmount?: number; // Calculated amount
+  companyShare?: number; // Percentage (0-100)
+  companyAmount?: number; // Calculated amount
+  // Communication tracking
+  lastCommunication?: string;
+  communicationNotes?: string;
+  // FY tracking
+  financialYear?: string;
+  carryForwardFromId?: string;
+  isCarriedForward?: boolean;
 }
 
 export interface Address {
@@ -196,6 +269,43 @@ export interface BusinessPartner {
   compliance_notes: string;
 }
 
+// Accounting and Ledger Types
+export interface LedgerEntry {
+  id: string;
+  date: string;
+  transactionType: 'Invoice' | 'Payment' | 'Commission' | 'Adjustment';
+  referenceNo: string; // Invoice No, Payment ID, etc.
+  salesContractId: string;
+  partyId: string; // Business Partner ID
+  partyName: string;
+  partyType: 'BUYER' | 'SELLER';
+  debit: number;
+  credit: number;
+  balance: number; // Running balance
+  description: string;
+}
+
+export interface AccountStatement {
+  partyId: string;
+  partyName: string;
+  partyType: 'BUYER' | 'SELLER';
+  openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  closingBalance: number;
+  entries: LedgerEntry[];
+}
+
+export interface AgingReport {
+  partyId: string;
+  partyName: string;
+  current: number; // 0-30 days
+  days30to60: number;
+  days60to90: number;
+  days90plus: number;
+  total: number;
+}
+
 export type Module = 'Sales Contracts' | 'Invoices' | 'Payments' | 'Disputes' | 'Commissions' | 'Vendors & Clients' | 'User Management' | 'Settings' | 'Reports' | 'Audit Trail' | 'Roles & Rights' | 'Grievance Officer' | 'Business Partner';
 export type Permission = 'create' | 'read' | 'update' | 'delete' | 'approve' | 'share';
 export type PermissionsMap = {
@@ -203,3 +313,34 @@ export type PermissionsMap = {
     [key in Module]?: Permission[];
   };
 };
+
+// Financial Year Management Types
+export interface FinancialYear {
+  id: number;
+  fyCode: string; // e.g., "2024-2025"
+  startDate: string;
+  endDate: string;
+  status: 'ACTIVE' | 'CLOSED';
+  closedBy?: string;
+  closedDate?: string;
+  createdAt: string;
+}
+
+export interface FYPendingItems {
+  unpaidInvoices: { count: number; totalAmount: number; items: Invoice[] };
+  dueCommissions: { count: number; totalAmount: number; items: Commission[] };
+  openDisputes: { count: number; items: Dispute[] };
+  activeContracts: { count: number; items: SalesContract[] };
+}
+
+export interface FYSplitSummary {
+  fromFY: string;
+  toFY: string;
+  executedBy: string;
+  executedAt: string;
+  invoicesMigrated: number;
+  commissionsMigrated: number;
+  contractsMigrated: number;
+  disputesMigrated: number;
+  notes: string;
+}

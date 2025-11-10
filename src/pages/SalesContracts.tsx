@@ -83,7 +83,7 @@ const SalesContracts: React.FC<SalesContractsProps> = ({ currentUser, currentOrg
         organization: currentOrganization,
         financialYear: currentFinancialYear,
         version: 1,
-        status: 'Active' as 'Active',
+        status: 'Active' as const,
       };
       setContracts(prev => [newContract, ...prev]);
       addAuditLog({ user: currentUser.name, role: currentUser.role, action: 'Create', module: 'Sales Contracts', details: `Created contract ${newContract.scNo}`, reason: 'New contract entry' });

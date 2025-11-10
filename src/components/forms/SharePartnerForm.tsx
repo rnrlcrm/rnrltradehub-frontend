@@ -21,7 +21,7 @@ const SharePartnerForm: React.FC<SharePartnerFormProps> = ({ onSend, onCancel })
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">Share a secure PDF package of this partner's KYC documents and details with an external party.</p>
+        <p className="text-sm text-slate-600">Share a secure PDF package of this partner&apos;s KYC documents and details with an external party.</p>
         <FormRow>
           <FormLabel htmlFor="email">Recipient Email</FormLabel>
           <FormInput id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
