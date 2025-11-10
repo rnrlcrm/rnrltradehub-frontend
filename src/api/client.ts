@@ -123,4 +123,7 @@ class ApiClient {
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Export mock mode flag for development
-export const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true' || true; // Default to mock for now
+// When VITE_USE_MOCK_API is not set, defaults to true for safety
+// Set VITE_USE_MOCK_API=false in .env to use real backend
+export const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true' || 
+                            import.meta.env.VITE_USE_MOCK_API === undefined;
