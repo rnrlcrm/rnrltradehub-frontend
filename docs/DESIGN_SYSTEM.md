@@ -362,3 +362,195 @@ To migrate existing components to the design system:
 - [ ] Quick actions panel
 - [ ] Auto-save functionality
 - [ ] Keyboard shortcuts system
+
+### New Advanced Components
+
+#### DatePicker
+Date selection with calendar interface.
+
+```tsx
+<DatePicker
+  date={selectedDate}
+  onDateChange={setSelectedDate}
+  placeholder="Pick a date"
+/>
+```
+
+**Props**:
+- `date`: Currently selected date
+- `onDateChange`: Callback when date changes
+- `placeholder`: Text shown when no date selected
+- `disabled`: Disable the picker
+
+#### MultiSelect
+Select multiple options with badges and search.
+
+```tsx
+<MultiSelect
+  options={[
+    { value: '1', label: 'Option 1' },
+    { value: '2', label: 'Option 2' },
+  ]}
+  value={selectedOptions}
+  onChange={setSelectedOptions}
+  placeholder="Select items..."
+  maxDisplay={3}
+/>
+```
+
+**Props**:
+- `options`: Array of `{value, label}` objects
+- `value`: Array of selected values
+- `onChange`: Callback when selection changes
+- `maxDisplay`: Max badges to show before "+N more"
+
+#### FileUploader
+Drag & drop file upload with preview.
+
+```tsx
+<FileUploader
+  value={files}
+  onChange={setFiles}
+  accept="image/*,.pdf"
+  multiple={true}
+  maxSize={10 * 1024 * 1024} // 10MB
+  maxFiles={5}
+/>
+```
+
+**Props**:
+- `value`: Array of uploaded files
+- `onChange`: Callback when files change
+- `accept`: File type filter
+- `multiple`: Allow multiple files
+- `maxSize`: Max file size in bytes
+- `maxFiles`: Max number of files
+
+### Functional UX Components
+
+#### QuickActionsPanel
+Command palette for quick access to actions.
+
+```tsx
+const quickActions = useQuickActions();
+
+<QuickActionsPanel
+  actions={[
+    {
+      id: 'new-contract',
+      label: 'New Contract',
+      description: 'Create a new sales contract',
+      icon: FileText,
+      keywords: ['create', 'sales'],
+      onSelect: () => handleAction(),
+    },
+  ]}
+  open={quickActions.open}
+  onOpenChange={quickActions.setOpen}
+/>
+```
+
+**Keyboard Shortcut**: Ctrl+Shift+K
+
+**Features**:
+- Fuzzy search across labels, descriptions, keywords
+- Arrow key navigation
+- Enter to select
+- Icons for visual recognition
+
+#### AuditDrawer
+Version history and change tracking.
+
+```tsx
+const auditDrawer = useAuditDrawer();
+
+// Add entries
+auditDrawer.addEntry({
+  action: 'Updated',
+  user: 'John Doe',
+  details: 'Changed contract terms',
+  changes: [
+    { field: 'Status', oldValue: 'Draft', newValue: 'Active' }
+  ],
+});
+
+<AuditDrawer
+  open={auditDrawer.open}
+  onOpenChange={auditDrawer.setOpen}
+  entries={auditDrawer.entries}
+  title="Contract History"
+/>
+```
+
+**Features**:
+- Timeline view of changes
+- User and timestamp tracking
+- Field-level change highlighting
+- Category badges (Create, Update, Delete)
+
+#### KeyboardShortcuts
+Discoverable keyboard shortcuts system.
+
+```tsx
+const shortcuts = [
+  {
+    id: 'search',
+    keys: ['Ctrl', 'K'],
+    description: 'Open global search',
+    category: 'Navigation',
+    action: () => handleSearch(),
+  },
+];
+
+<KeyboardShortcuts
+  shortcuts={shortcuts}
+  open={shortcutsOpen}
+  onOpenChange={setShortcutsOpen}
+/>
+```
+
+**Keyboard Shortcut**: ? (to open)
+
+**Features**:
+- Grouped by category
+- Platform-aware (⌘ on Mac, Ctrl on Windows)
+- Auto-registration of shortcuts
+- Visual key indicators
+
+## Keyboard Shortcuts Reference
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+K` | Global search |
+| `Ctrl+Shift+K` | Quick actions panel |
+| `Ctrl+H` | Audit history |
+| `Ctrl+N` | New contract |
+| `Ctrl+S` | Save changes |
+| `?` | Show keyboard shortcuts |
+| `Esc` | Close dialogs |
+| `↑↓` | Navigate lists |
+| `Enter` | Select/Confirm |
+
+## Complete Component List
+
+### Form Components (9)
+- Button, Input, Label, Select, Textarea, Switch
+- **DatePicker**, **MultiSelect**, **FileUploader**
+
+### Data Display (3)
+- Card, Badge, Avatar
+
+### Feedback (3)
+- Alert, Dialog, Spinner
+
+### Navigation (2)
+- Breadcrumbs, Tabs
+
+### Utility (6)
+- Drawer, Tooltip
+- **QuickActionsPanel**, **AuditDrawer**, **KeyboardShortcuts**
+
+### Layout (3)
+- PageShell, Sidebar, Header
+
+**Total: 26 components**

@@ -31,6 +31,15 @@ export {
   SelectScrollDownButton,
 } from './select';
 
+export { DatePicker } from './datepicker';
+export type { DatePickerProps } from './datepicker';
+
+export { MultiSelect } from './multiselect';
+export type { MultiSelectProps, MultiSelectOption } from './multiselect';
+
+export { FileUploader } from './fileuploader';
+export type { FileUploaderProps } from './fileuploader';
+
 // Data Display Components
 export {
   Card,
@@ -92,3 +101,12 @@ export {
   TooltipContent,
   TooltipProvider,
 } from './tooltip';
+
+export { QuickActionsPanel, useQuickActions } from './quickactions';
+export type { QuickActionsPanelProps, QuickAction } from './quickactions';
+
+export { AuditDrawer, useAuditDrawer } from './auditdrawer';
+export type { AuditDrawerProps, AuditEntry } from './auditdrawer';
+
+export { KeyboardShortcuts, useKeyboardShortcuts } from './keyboardshortcuts';
+export type { KeyboardShortcutsProps, KeyboardShortcut } from './keyboardshortcuts';
