@@ -50,34 +50,36 @@ export function calculateEmdPercent(
 
 /**
  * Calculate EMD amount
+ * Note: EMD is calculated on invoice amount excluding GST. GST is NOT charged on EMD.
  * @param cciSetting - The CCI setting to use
- * @param invoiceAmount - The invoice amount
+ * @param invoiceAmountExclGst - The invoice amount EXCLUDING GST
  * @param buyerType - Type of buyer
- * @returns EMD amount
+ * @returns EMD amount (GST not applicable on EMD)
  */
 export function calculateEmdAmount(
   cciSetting: CciTerm,
-  invoiceAmount: number,
+  invoiceAmountExclGst: number,
   buyerType: 'kvic' | 'privateMill' | 'trader'
 ): number {
   const emdPercent = calculateEmdPercent(cciSetting, buyerType);
-  return (invoiceAmount * emdPercent) / 100;
+  return (invoiceAmountExclGst * emdPercent) / 100;
 }
 
 /**
  * Calculate EMD interest benefit (for timely payment)
+ * Note: EMD Interest is calculated on the amount paid excluding GST.
  * @param cciSetting - The CCI setting to use
- * @param emdAmount - The EMD amount
+ * @param emdAmountPaid - The EMD amount paid (excluding GST)
  * @param daysHeld - Number of days EMD was held
  * @returns Interest amount
  */
 export function calculateEmdInterest(
   cciSetting: CciTerm,
-  emdAmount: number,
+  emdAmountPaid: number,
   daysHeld: number
 ): number {
   const annualRate = cciSetting.emd_interest_percent / 100;
-  return (emdAmount * annualRate * daysHeld) / 365;
+  return (emdAmountPaid * annualRate * daysHeld) / 365;
 }
 
 /**
@@ -98,14 +100,16 @@ export function calculateEmdLateInterest(
 
 /**
  * Calculate carrying charges based on days
+ * Note: Initially calculated on candy basis, but reconciliation is done on 
+ * the final invoice value excluding GST.
  * @param cciSetting - The CCI setting to use
- * @param netInvoice - Net invoice amount
+ * @param netInvoiceExclGst - Net invoice amount EXCLUDING GST
  * @param days - Number of days
  * @returns Carrying charge amount
  */
 export function calculateCarryingCharge(
   cciSetting: CciTerm,
-  netInvoice: number,
+  netInvoiceExclGst: number,
   days: number
 ): number {
   let chargePercent = 0;
@@ -117,31 +121,33 @@ export function calculateCarryingCharge(
   } else {
     // Tier 2: >30 days
     // Calculate tier 1 portion
-    const tier1Charge = (netInvoice * cciSetting.carrying_charge_tier1_percent / 100) * 
+    const tier1Charge = (netInvoiceExclGst * cciSetting.carrying_charge_tier1_percent / 100) * 
                         (cciSetting.carrying_charge_tier1_days / 30);
     
     // Calculate tier 2 portion
     const tier2Days = days - cciSetting.carrying_charge_tier1_days;
-    const tier2Charge = (netInvoice * cciSetting.carrying_charge_tier2_percent / 100) * 
+    const tier2Charge = (netInvoiceExclGst * cciSetting.carrying_charge_tier2_percent / 100) * 
                         (tier2Days / 30);
     
     return tier1Charge + tier2Charge;
   }
   
   // Simple calculation for tier 1
-  return (netInvoice * chargePercent / 100) * (chargeDays / 30);
+  return (netInvoiceExclGst * chargePercent / 100) * (chargeDays / 30);
 }
 
 /**
  * Calculate late lifting charges based on days
+ * Note: Initially calculated on candy basis, but reconciliation is done on 
+ * the final invoice value excluding GST.
  * @param cciSetting - The CCI setting to use
- * @param netInvoice - Net invoice amount
+ * @param netInvoiceExclGst - Net invoice amount EXCLUDING GST
  * @param daysLate - Number of days late (after free period)
  * @returns Late lifting charge amount
  */
 export function calculateLateLiftingCharge(
   cciSetting: CciTerm,
-  netInvoice: number,
+  netInvoiceExclGst: number,
   daysLate: number
 ): number {
   if (daysLate <= 0) return 0;
@@ -150,27 +156,27 @@ export function calculateLateLiftingCharge(
   
   if (daysLate <= cciSetting.late_lifting_tier1_days) {
     // Tier 1: 0-30 days
-    totalCharge = (netInvoice * cciSetting.late_lifting_tier1_percent / 100) * (daysLate / 30);
+    totalCharge = (netInvoiceExclGst * cciSetting.late_lifting_tier1_percent / 100) * (daysLate / 30);
   } else if (daysLate <= cciSetting.late_lifting_tier1_days + cciSetting.late_lifting_tier2_days) {
     // Tier 1 + part of Tier 2
-    const tier1Charge = (netInvoice * cciSetting.late_lifting_tier1_percent / 100) * 
+    const tier1Charge = (netInvoiceExclGst * cciSetting.late_lifting_tier1_percent / 100) * 
                         (cciSetting.late_lifting_tier1_days / 30);
     
     const tier2Days = daysLate - cciSetting.late_lifting_tier1_days;
-    const tier2Charge = (netInvoice * cciSetting.late_lifting_tier2_percent / 100) * 
+    const tier2Charge = (netInvoiceExclGst * cciSetting.late_lifting_tier2_percent / 100) * 
                         (tier2Days / 30);
     
     totalCharge = tier1Charge + tier2Charge;
   } else {
     // Tier 1 + Tier 2 + Tier 3
-    const tier1Charge = (netInvoice * cciSetting.late_lifting_tier1_percent / 100) * 
+    const tier1Charge = (netInvoiceExclGst * cciSetting.late_lifting_tier1_percent / 100) * 
                         (cciSetting.late_lifting_tier1_days / 30);
     
-    const tier2Charge = (netInvoice * cciSetting.late_lifting_tier2_percent / 100) * 
+    const tier2Charge = (netInvoiceExclGst * cciSetting.late_lifting_tier2_percent / 100) * 
                         (cciSetting.late_lifting_tier2_days / 30);
     
     const tier3Days = daysLate - cciSetting.late_lifting_tier1_days - cciSetting.late_lifting_tier2_days;
-    const tier3Charge = (netInvoice * cciSetting.late_lifting_tier3_percent / 100) * 
+    const tier3Charge = (netInvoiceExclGst * cciSetting.late_lifting_tier3_percent / 100) * 
                         (tier3Days / 30);
     
     totalCharge = tier1Charge + tier2Charge + tier3Charge;
@@ -181,18 +187,19 @@ export function calculateLateLiftingCharge(
 
 /**
  * Calculate cash discount
+ * Note: Cash Discount is calculated on the amount paid excluding GST.
  * @param cciSetting - The CCI setting to use
- * @param invoiceAmount - Invoice amount
+ * @param amountPaidExclGst - Amount paid EXCLUDING GST
  * @param days - Number of days for discount calculation
  * @returns Cash discount amount
  */
 export function calculateCashDiscount(
   cciSetting: CciTerm,
-  invoiceAmount: number,
+  amountPaidExclGst: number,
   days: number
 ): number {
   const annualRate = cciSetting.cash_discount_percentage / 100;
-  return (invoiceAmount * annualRate * days) / 365;
+  return (amountPaidExclGst * annualRate * days) / 365;
 }
 
 /**

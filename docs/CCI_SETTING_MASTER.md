@@ -9,6 +9,23 @@ The CCI Setting Master is a comprehensive configuration system that centralizes 
 3. **Flexible updates** - Settings can be changed seasonally without code modifications
 4. **Consistent calculations** - All modules use the same source of truth
 
+## Important: GST Calculation Rules
+
+**Critical Note**: The following calculations must use amounts **EXCLUDING GST**:
+
+1. **EMD (Earnest Money Deposit)**:
+   - Calculated on invoice amount excluding GST
+   - **GST is NOT charged on EMD**
+   
+2. **Carrying Charges & Late Lifting Charges**:
+   - Initially calculated on candy basis
+   - Reconciliation done on final invoice value **excluding GST**
+   
+3. **EMD Interest & Cash Discount**:
+   - Calculated on amount paid **excluding GST**
+
+These rules are enforced in the calculation functions through parameter naming (`invoiceAmountExclGst`, `netInvoiceExclGst`, `amountPaidExclGst`).
+
 ## Architecture
 
 ### Core Components
@@ -114,6 +131,11 @@ The CCI Setting Master is a comprehensive configuration system that centralizes 
 
 ## Usage Examples
 
+**Important Notes on GST:**
+- **EMD**: Calculated on invoice amount EXCLUDING GST. GST is NOT charged on EMD.
+- **Carrying Charges & Late Lifting**: Initially calculated on candy basis, but reconciliation is done on final invoice value EXCLUDING GST.
+- **EMD Interest & Cash Discount**: Calculated on amount paid EXCLUDING GST.
+
 ### 1. Fetching Active CCI Setting
 
 ```typescript
@@ -132,14 +154,16 @@ if (!activeSetting) {
 ```typescript
 import { calculateEmdAmount, calculateEmdPercent } from '../utils/cciCalculations';
 
-const invoiceAmount = 3100000; // Rs 31 lakh
+// Note: Use invoice amount EXCLUDING GST for EMD calculation
+const invoiceAmountExclGst = 3100000; // Rs 31 lakh (excluding GST)
 const buyerType = 'privateMill';
 
 const emdPercent = calculateEmdPercent(activeSetting, buyerType);
 // Returns: 12.5
 
-const emdAmount = calculateEmdAmount(activeSetting, invoiceAmount, buyerType);
+const emdAmount = calculateEmdAmount(activeSetting, invoiceAmountExclGst, buyerType);
 // Returns: 387,500 (12.5% of 31 lakh)
+// Note: GST is NOT charged on EMD
 ```
 
 ### 3. Carrying Charge Calculation
@@ -147,10 +171,11 @@ const emdAmount = calculateEmdAmount(activeSetting, invoiceAmount, buyerType);
 ```typescript
 import { calculateCarryingCharge } from '../utils/cciCalculations';
 
-const netInvoice = 3100000;
+// Note: Use net invoice EXCLUDING GST for reconciliation
+const netInvoiceExclGst = 3100000;
 const daysHeld = 45; // 45 days
 
-const carryingCharge = calculateCarryingCharge(activeSetting, netInvoice, daysHeld);
+const carryingCharge = calculateCarryingCharge(activeSetting, netInvoiceExclGst, daysHeld);
 // Tier 1 (0-30 days): 3,100,000 × 1.25% × (30/30) = 38,750
 // Tier 2 (31-45 days): 3,100,000 × 1.35% × (15/30) = 20,925
 // Total: 59,675
@@ -218,32 +243,39 @@ const totalInvoice = calculateTotalInvoice(activeSetting, netInvoice);
 ```typescript
 import { calculateLateLiftingCharge } from '../utils/cciCalculations';
 
-const netInvoice = 3100000;
+// Note: Use net invoice EXCLUDING GST
+const netInvoiceExclGst = 3100000;
 const daysLate = 75; // 75 days after free period
 
-const lateLiftingCharge = calculateLateLiftingCharge(activeSetting, netInvoice, daysLate);
+const lateLiftingCharge = calculateLateLiftingCharge(activeSetting, netInvoiceExclGst, daysLate);
 // Tier 1 (0-30): 3,100,000 × 0.5% × (30/30) = 15,500
 // Tier 2 (31-60): 3,100,000 × 0.75% × (30/30) = 23,250
 // Tier 3 (61-75): 3,100,000 × 1.0% × (15/30) = 15,500
 // Total: 54,250
 ```
 
-### 7. EMD Interest Calculation
+### 7. EMD Interest & Cash Discount Calculation
 
 ```typescript
-import { calculateEmdInterest, calculateEmdLateInterest } from '../utils/cciCalculations';
+import { calculateEmdInterest, calculateEmdLateInterest, calculateCashDiscount } from '../utils/cciCalculations';
 
-const emdAmount = 387500;
+// Note: Use amount paid EXCLUDING GST
+const emdAmountPaid = 387500;
 
 // Timely payment interest (benefit to buyer)
 const daysHeld = 45;
-const interest = calculateEmdInterest(activeSetting, emdAmount, daysHeld);
+const interest = calculateEmdInterest(activeSetting, emdAmountPaid, daysHeld);
 // 387,500 × 5% × (45/365) = 2,391
 
 // Late payment interest (penalty)
 const daysLate = 10;
-const lateInterest = calculateEmdLateInterest(activeSetting, emdAmount, daysLate);
+const lateInterest = calculateEmdLateInterest(activeSetting, emdAmountPaid, daysLate);
 // 387,500 × 10% × (10/365) = 1,062
+
+// Cash discount on amount paid (excluding GST)
+const amountPaidExclGst = 3100000;
+const cashDiscount = calculateCashDiscount(activeSetting, amountPaidExclGst, 30);
+// 3,100,000 × 5% × (30/365) = 12,740
 ```
 
 ## Integration Points

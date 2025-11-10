@@ -53,15 +53,17 @@ if (activeSetting) {
 // Example 2: EMD Calculation
 console.log('Example 2: EMD Calculation');
 console.log('-'.repeat(80));
-const invoiceAmount = 3100000; // Rs 31 lakh
+// Note: EMD is calculated on invoice amount EXCLUDING GST
+const invoiceAmountExclGst = 3100000; // Rs 31 lakh (excluding GST)
 
-console.log(`Invoice Amount: ${formatCurrency(invoiceAmount)}`);
+console.log(`Invoice Amount (excl GST): ${formatCurrency(invoiceAmountExclGst)}`);
+console.log('Note: GST is NOT charged on EMD');
 console.log();
 
 const buyerTypes: Array<'kvic' | 'privateMill' | 'trader'> = ['kvic', 'privateMill', 'trader'];
 buyerTypes.forEach(buyerType => {
   const emdPercent = calculateEmdPercent(activeSetting, buyerType);
-  const emdAmount = calculateEmdAmount(activeSetting, invoiceAmount, buyerType);
+  const emdAmount = calculateEmdAmount(activeSetting, invoiceAmountExclGst, buyerType);
   console.log(`  ${buyerType.toUpperCase()}: ${emdPercent}% = ${formatCurrency(emdAmount)}`);
 });
 console.log();
@@ -69,7 +71,9 @@ console.log();
 // Example 3: Carrying Charge Calculation
 console.log('Example 3: Carrying Charge Calculation');
 console.log('-'.repeat(80));
-const netInvoice = 3100000;
+// Note: Reconciliation is done on final invoice value EXCLUDING GST
+const netInvoiceExclGst = 3100000;
+console.log('Note: Uses net invoice EXCLUDING GST for reconciliation');
 const scenarios = [
   { days: 15, desc: 'Tier 1 (0-30 days)' },
   { days: 45, desc: 'Tier 1 + Tier 2' },
@@ -77,7 +81,7 @@ const scenarios = [
 ];
 
 scenarios.forEach(scenario => {
-  const charge = calculateCarryingCharge(activeSetting, netInvoice, scenario.days);
+  const charge = calculateCarryingCharge(activeSetting, netInvoiceExclGst, scenario.days);
   console.log(`  ${scenario.desc} (${scenario.days} days): ${formatCurrency(charge)}`);
 });
 console.log();
@@ -85,6 +89,7 @@ console.log();
 // Example 4: Late Lifting Charges
 console.log('Example 4: Late Lifting Charges');
 console.log('-'.repeat(80));
+console.log('Note: Uses net invoice EXCLUDING GST for reconciliation');
 const lateScenarios = [
   { days: 15, desc: 'Tier 1 (0-30 days)' },
   { days: 45, desc: 'Tier 2 (31-60 days)' },
@@ -92,7 +97,7 @@ const lateScenarios = [
 ];
 
 lateScenarios.forEach(scenario => {
-  const charge = calculateLateLiftingCharge(activeSetting, netInvoice, scenario.days);
+  const charge = calculateLateLiftingCharge(activeSetting, netInvoiceExclGst, scenario.days);
   console.log(`  ${scenario.desc} (${scenario.days} days late): ${formatCurrency(charge)}`);
 });
 console.log();
@@ -174,20 +179,23 @@ const buyerType = 'privateMill';
 const daysHeld = 45;
 const daysLate = 15;
 
-const emd = calculateEmdAmount(activeSetting, totalAmount, buyerType);
-const carrying = calculateCarryingCharge(activeSetting, netInvoiceAmount, daysHeld);
-const lateLifting = calculateLateLiftingCharge(activeSetting, netInvoiceAmount, daysLate);
+// Note: Use amounts excluding GST for all calculations
+const emd = calculateEmdAmount(activeSetting, netInvoiceAmount, buyerType); // excl GST
+const carrying = calculateCarryingCharge(activeSetting, netInvoiceAmount, daysHeld); // excl GST
+const lateLifting = calculateLateLiftingCharge(activeSetting, netInvoiceAmount, daysLate); // excl GST
 
-console.log(`Invoice Amount:        ${formatCurrency(totalAmount)}`);
-console.log(`EMD Required:          ${formatCurrency(emd)} (${calculateEmdPercent(activeSetting, buyerType)}%)`);
-console.log(`Carrying Charges:      ${formatCurrency(carrying)} (${daysHeld} days)`);
-console.log(`Late Lifting:          ${formatCurrency(lateLifting)} (${daysLate} days late)`);
+console.log(`Net Invoice (excl GST): ${formatCurrency(netInvoiceAmount)}`);
+console.log(`Invoice Total (incl GST): ${formatCurrency(totalAmount)}`);
+console.log(`EMD Required:          ${formatCurrency(emd)} (${calculateEmdPercent(activeSetting, buyerType)}% on excl GST, NO GST on EMD)`);
+console.log(`Carrying Charges:      ${formatCurrency(carrying)} (${daysHeld} days on excl GST)`);
+console.log(`Late Lifting:          ${formatCurrency(lateLifting)} (${daysLate} days late on excl GST)`);
 console.log('-'.repeat(80));
 console.log(`Total Charges:         ${formatCurrency(emd + carrying + lateLifting)}`);
 console.log();
 
 console.log('='.repeat(80));
 console.log('All examples completed successfully!');
+console.log('Note: All calculations use amounts EXCLUDING GST as per CCI rules');
 console.log('='.repeat(80));
 
 // Export for use in other files

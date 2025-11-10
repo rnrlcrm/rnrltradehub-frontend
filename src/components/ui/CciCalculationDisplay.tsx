@@ -2,6 +2,11 @@
  * CCI Calculation Display Component
  * 
  * Displays calculated values from CCI Setting Master for a contract or invoice
+ * 
+ * Important: All amounts passed should be EXCLUDING GST as per CCI rules:
+ * - EMD: Calculated on invoice excl GST, NO GST charged on EMD
+ * - Carrying/Late Lifting: Reconciliation on final invoice excl GST
+ * - EMD Interest/Cash Discount: On amount paid excl GST
  */
 
 import React from 'react';
@@ -17,7 +22,7 @@ import {
 
 interface CciCalculationDisplayProps {
   cciSetting: CciTerm;
-  invoiceAmount: number;
+  invoiceAmountExclGst: number; // Invoice amount EXCLUDING GST
   buyerType: 'kvic' | 'privateMill' | 'trader';
   daysHeld?: number;
   daysLate?: number;
@@ -28,7 +33,7 @@ interface CciCalculationDisplayProps {
 
 const CciCalculationDisplay: React.FC<CciCalculationDisplayProps> = ({
   cciSetting,
-  invoiceAmount,
+  invoiceAmountExclGst,
   buyerType,
   daysHeld = 0,
   daysLate = 0,
@@ -36,17 +41,17 @@ const CciCalculationDisplay: React.FC<CciCalculationDisplayProps> = ({
   netDeliveryWeight,
   saleRatePerQuintal
 }) => {
-  // Calculate EMD
-  const emdAmount = calculateEmdAmount(cciSetting, invoiceAmount, buyerType);
+  // Calculate EMD (on amount excl GST, NO GST on EMD)
+  const emdAmount = calculateEmdAmount(cciSetting, invoiceAmountExclGst, buyerType);
   
-  // Calculate carrying charges if applicable
+  // Calculate carrying charges if applicable (on amount excl GST)
   const carryingCharge = daysHeld > 0 
-    ? calculateCarryingCharge(cciSetting, invoiceAmount, daysHeld)
+    ? calculateCarryingCharge(cciSetting, invoiceAmountExclGst, daysHeld)
     : 0;
   
-  // Calculate late lifting charges if applicable
+  // Calculate late lifting charges if applicable (on amount excl GST)
   const lateLiftingCharge = daysLate > 0
-    ? calculateLateLiftingCharge(cciSetting, invoiceAmount, daysLate)
+    ? calculateLateLiftingCharge(cciSetting, invoiceAmountExclGst, daysLate)
     : 0;
   
   // Calculate moisture adjustment if data available
@@ -55,7 +60,7 @@ const CciCalculationDisplay: React.FC<CciCalculationDisplayProps> = ({
     : null;
   
   // Calculate final amounts
-  let adjustedInvoice = invoiceAmount;
+  let adjustedInvoice = invoiceAmountExclGst;
   if (moistureAdjustment) {
     if (moistureAdjustment.type === 'discount') {
       adjustedInvoice -= moistureAdjustment.amount;
@@ -87,8 +92,8 @@ const CciCalculationDisplay: React.FC<CciCalculationDisplayProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Base Invoice */}
         <div className="bg-white rounded p-3 shadow-sm">
-          <div className="text-xs text-slate-500">Base Invoice Amount</div>
-          <div className="text-lg font-semibold text-slate-800">{currencyFormat(invoiceAmount)}</div>
+          <div className="text-xs text-slate-500">Base Invoice Amount (excl GST)</div>
+          <div className="text-lg font-semibold text-slate-800">{currencyFormat(invoiceAmountExclGst)}</div>
         </div>
 
         {/* EMD */}
@@ -98,7 +103,7 @@ const CciCalculationDisplay: React.FC<CciCalculationDisplayProps> = ({
           </div>
           <div className="text-lg font-semibold text-blue-600">{currencyFormat(emdAmount)}</div>
           <div className="text-xs text-slate-500 mt-1">
-            Due within {cciSetting.emd_payment_days} days
+            Due within {cciSetting.emd_payment_days} days (NO GST on EMD)
           </div>
         </div>
 
@@ -107,7 +112,7 @@ const CciCalculationDisplay: React.FC<CciCalculationDisplayProps> = ({
           <div className="bg-white rounded p-3 shadow-sm">
             <div className="text-xs text-slate-500">Carrying Charges</div>
             <div className="text-lg font-semibold text-orange-600">{currencyFormat(carryingCharge)}</div>
-            <div className="text-xs text-slate-500 mt-1">{daysHeld} days held</div>
+            <div className="text-xs text-slate-500 mt-1">{daysHeld} days held (on excl GST)</div>
           </div>
         )}
 
@@ -116,7 +121,7 @@ const CciCalculationDisplay: React.FC<CciCalculationDisplayProps> = ({
           <div className="bg-white rounded p-3 shadow-sm">
             <div className="text-xs text-slate-500">Late Lifting Charges</div>
             <div className="text-lg font-semibold text-red-600">{currencyFormat(lateLiftingCharge)}</div>
-            <div className="text-xs text-slate-500 mt-1">{daysLate} days late</div>
+            <div className="text-xs text-slate-500 mt-1">{daysLate} days late (on excl GST)</div>
           </div>
         )}
 
