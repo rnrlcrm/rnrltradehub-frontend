@@ -72,11 +72,20 @@ These rules are enforced in the calculation functions through parameter naming (
     privateMill: 12.5,               // Private Mills: 10-15%
     trader: 17.5                     // Traders: 15-20%
   },
-  emd_payment_days: 5,               // Days to pay EMD
+  emd_payment_days: 5,               // Days to pay EMD (grace period)
   emd_interest_percent: 5,           // Interest on timely EMD (annual)
-  emd_late_interest_percent: 10      // Late payment interest (annual)
+  emd_late_interest_percent: 10,     // Late payment interest (annual)
+  emd_block_do_if_not_full: true     // Block DO creation if full EMD not paid (CCI Policy)
 }
 ```
+
+**CCI Policy - Full EMD Mandatory Before Delivery Order:**
+- No Delivery Order (DO) shall be created until full EMD is paid
+- Partial EMD or part-payment = ❌ DO Blocked
+- System automatically calculates grace period expiry date
+- Late EMD interest applies if paid after grace period
+- Email reminders triggered at grace expiry and overdue stages
+
 
 ### Carrying Charges (Tiered)
 ```typescript
@@ -129,6 +138,109 @@ These rules are enforced in the calculation functions through parameter naming (
 }
 ```
 
+## EMD Control & Delivery Order Logic
+
+**CCI Policy: Full EMD Mandatory Before Delivery Order**
+
+### Key Policy Points
+
+1. **No DO without full EMD**: Delivery Order creation is blocked until 100% EMD is paid
+2. **Partial EMD = Blocked**: Even 99% payment blocks DO creation
+3. **Grace Period**: EMD must be paid within `emd_payment_days` (typically 5 days)
+4. **Late Interest**: If paid after grace period, late interest applies at `emd_late_interest_percent`
+5. **Automatic Reminders**: System triggers emails at grace expiry and overdue stages
+
+### EMD Calculation & Validation Flow
+
+```typescript
+// Step 1: Calculate EMD Required
+const emdRequired = contractValue * (emdPercent / 100);
+
+// Step 2: Calculate grace period expiry
+const gracePeriodExpiry = calculateEmdGracePeriodExpiry(cciSetting, contractDate);
+
+// Step 3: Check EMD status
+const emdStatus = checkEmdStatus(emdRequired, emdPaid, paymentDate, gracePeriodExpiry);
+// Returns: 'Not Paid' | 'Partial' | 'Full' | 'Late Full'
+
+// Step 4: Check DO eligibility
+const doEligibility = checkDoEligibility(cciSetting, emdRequired, emdPaid);
+// Returns: { eligible: boolean, reason?: string }
+
+// Step 5: If late payment, calculate late interest
+if (emdStatus === 'Late Full') {
+  const daysLate = calculateEmdLateDays(paymentDate, gracePeriodExpiry);
+  const lateInterest = calculateEmdLateInterest(cciSetting, emdRequired, daysLate);
+}
+```
+
+### EMD Status Matrix
+
+| EMD Paid | Status | DO Allowed | Carrying Charges | Email Reminder |
+|----------|--------|------------|------------------|----------------|
+| 0% | Not Paid | ❌ Blocked | ⚙ Informational only | ✅ Yes |
+| 1-99% | Partial | ❌ Blocked | ⚙ Informational only | ✅ Yes |
+| 100% (on time) | Full | ✅ Allowed | ✅ Calculated | ❌ No |
+| 100% (late) | Late Full | ✅ Allowed | ✅ Calculated | — |
+
+### Email Notification Triggers
+
+```typescript
+// Initial notification (at contract creation)
+if (reminderType === 'initial') {
+  // Send: "Please deposit ₹XX as EMD within 5 days"
+}
+
+// Grace period expiry (day 5)
+if (reminderType === 'grace_expiry') {
+  // Send: "EMD still pending. Cannot request delivery until paid."
+}
+
+// Overdue (every 5 days after expiry)
+if (reminderType === 'overdue') {
+  // Send: "EMD overdue. Late interest @10% applicable."
+}
+
+// EMD payment confirmation
+if (emdStatus === 'Full' || emdStatus === 'Late Full') {
+  // Send: "EMD received. You can now request delivery."
+}
+```
+
+### Integration with Carrying Charges
+
+When EMD is not fully paid:
+- Carrying charges are still **calculated** (for information)
+- But marked as **"Informational only"**
+- DO creation remains **blocked**
+- Payment advice **cannot be generated**
+
+```typescript
+const carryingResult = calculateCarryingChargeWithEmdStatus(
+  cciSetting,
+  netInvoiceExclGst,
+  daysHeld,
+  emdPaid,
+  emdRequired
+);
+
+// Result:
+// {
+//   amount: 59675,
+//   informationalOnly: true,  // if EMD not full
+//   note: "Informational only - Full EMD payment required before DO creation"
+// }
+```
+
+### Ledger Posting for EMD
+
+| Event | Debit | Credit | Notes |
+|-------|-------|--------|-------|
+| EMD Payment | Bank | Security Deposit | EMD received |
+| Late EMD Interest | Buyer A/c | EMD Interest Income | Non-GST |
+| DO Approval | Buyer Payment | Sales Advance | After EMD cleared |
+| EMD Refund | Security Deposit | Bank | Post-trade completion |
+
 ## Usage Examples
 
 **Important Notes on GST:**
@@ -166,7 +278,64 @@ const emdAmount = calculateEmdAmount(activeSetting, invoiceAmountExclGst, buyerT
 // Note: GST is NOT charged on EMD
 ```
 
-### 3. Carrying Charge Calculation
+### 3. EMD Control & DO Eligibility Check
+
+```typescript
+import { 
+  calculateEmdGracePeriodExpiry,
+  checkEmdStatus,
+  checkDoEligibility,
+  calculateEmdLateDays,
+  getEmdReminderType
+} from '../utils/cciCalculations';
+
+// Contract details
+const contractDate = '2024-07-15';
+const contractValue = 29760000; // Rs 2.97 crore
+const buyerType = 'privateMill';
+
+// Step 1: Calculate EMD required
+const emdRequired = calculateEmdAmount(activeSetting, contractValue, buyerType);
+// Returns: 2,976,000 (10% for private mill)
+
+// Step 2: Calculate grace period
+const gracePeriodExpiry = calculateEmdGracePeriodExpiry(activeSetting, contractDate);
+// Returns: '2024-07-20' (5 days after contract)
+
+// Step 3: Check EMD status
+const emdPaid = 300000; // Buyer paid only 3 lakh
+const paymentDate = '2024-07-18';
+const emdStatus = checkEmdStatus(emdRequired, emdPaid, paymentDate, gracePeriodExpiry);
+// Returns: 'Partial'
+
+// Step 4: Check DO eligibility
+const doCheck = checkDoEligibility(activeSetting, emdRequired, emdPaid);
+// Returns: {
+//   eligible: false,
+//   reason: "Full EMD not received. Required: ₹29,76,000, Paid: ₹3,00,000, Shortfall: ₹26,76,000"
+// }
+
+// Step 5: Check if reminder needed
+const reminderType = getEmdReminderType(
+  activeSetting,
+  contractDate,
+  emdPaid,
+  emdRequired,
+  '2024-07-20' // current date
+);
+// Returns: 'grace_expiry' (send reminder on grace period expiry)
+
+// Step 6: If paid late, calculate late interest
+const latePaid = 2976000; // Full EMD paid late
+const latePaymentDate = '2024-07-25'; // 5 days after grace
+const daysLate = calculateEmdLateDays(latePaymentDate, gracePeriodExpiry);
+// Returns: 5 days
+
+const lateInterest = calculateEmdLateInterest(activeSetting, emdRequired, daysLate);
+// Returns: 2,976,000 × 10% × (5/365) = 4,077
+```
+
+### 4. Carrying Charge Calculation
 
 ```typescript
 import { calculateCarryingCharge } from '../utils/cciCalculations';
@@ -181,7 +350,7 @@ const carryingCharge = calculateCarryingCharge(activeSetting, netInvoiceExclGst,
 // Total: 59,675
 ```
 
-### 4. Moisture Adjustment
+### 5. Moisture Adjustment
 
 ```typescript
 import { calculateMoistureAdjustment } from '../utils/cciCalculations';

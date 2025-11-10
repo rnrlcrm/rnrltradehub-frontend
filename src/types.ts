@@ -22,9 +22,10 @@ export interface CciTerm {
   
   // EMD Configuration
   emd_by_buyer_type: EmdByBuyerType; // EMD % by buyer type
-  emd_payment_days: number; // Days within which EMD must be paid
+  emd_payment_days: number; // Days within which EMD must be paid (grace period)
   emd_interest_percent: number; // Annual interest on timely EMD (e.g., 5%)
   emd_late_interest_percent: number; // Interest if EMD paid late (e.g., 10%)
+  emd_block_do_if_not_full: boolean; // Block DO creation if full EMD not paid (default: true)
   
   // Carrying Charges
   carrying_charge_tier1_days: number; // 0-30 days
@@ -178,6 +179,40 @@ export interface Payment {
   method: 'Bank Transfer' | 'Cheque' | 'Cash';
 }
 
+/**
+ * Delivery Order - Created only when full EMD is paid
+ * As per CCI Policy: No DO shall be created until full EMD is received
+ */
+export interface DeliveryOrder {
+  id: string;
+  doNo: string;
+  salesContractId: string;
+  contractNo: string;
+  date: string;
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  sellerName: string;
+  quantityBales: number;
+  // EMD Validation (mandatory checks)
+  emdRequired: number;
+  emdPaid: number;
+  emdVerified: boolean; // System verified full EMD paid
+  emdVerificationDate?: string;
+  // DO Status
+  status: 'Pending' | 'Approved' | 'Blocked' | 'Completed' | 'Cancelled';
+  blockReason?: string; // e.g., "Full EMD not received"
+  // Payment Advice
+  paymentAdviceAmount?: number;
+  carryingCharges?: number;
+  lateLiftingCharges?: number;
+  // Delivery details
+  deliveryLocation?: string;
+  expectedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  remarks?: string;
+}
+
 export interface SalesContract {
   id: string;
   scNo: string;
@@ -223,6 +258,14 @@ export interface SalesContract {
   cciSettingEffectiveDate?: string;
   // Buyer type for EMD calculation
   buyerType?: 'kvic' | 'privateMill' | 'trader';
+  // EMD Tracking (As per CCI Policy - Full EMD Mandatory Before DO)
+  emdRequired?: number; // Total EMD required for contract
+  emdPaid?: number; // Total EMD actually paid by buyer
+  emdPaymentDate?: string; // Date when EMD was paid
+  emdStatus?: 'Not Paid' | 'Partial' | 'Full' | 'Late Full'; // EMD payment status
+  emdGracePeriodExpiry?: string; // Date when grace period expires
+  emdLateInterestApplicable?: boolean; // Whether late interest applies
+  doEligible?: boolean; // Whether Delivery Order can be created (requires full EMD)
   // Sub-broker assignment
   subBrokerId?: string;
   subBrokerName?: string;

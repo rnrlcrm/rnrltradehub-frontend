@@ -375,3 +375,209 @@ export function calculateLockinCharge(
 export function getCciSettingVersionInfo(cciSetting: CciTerm): string {
   return `${cciSetting.name} (v${cciSetting.version}) - Effective: ${cciSetting.effectiveFrom}`;
 }
+
+/**
+ * EMD CONTROL & DELIVERY ORDER LOGIC
+ * As per CCI Policy: Full EMD Mandatory Before Delivery Order
+ */
+
+/**
+ * Calculate EMD grace period expiry date
+ * @param cciSetting - The CCI setting to use
+ * @param contractDate - Contract confirmation date
+ * @returns Grace period expiry date (ISO string)
+ */
+export function calculateEmdGracePeriodExpiry(
+  cciSetting: CciTerm,
+  contractDate: string
+): string {
+  const contract = new Date(contractDate);
+  const expiryDate = new Date(contract);
+  expiryDate.setDate(expiryDate.getDate() + cciSetting.emd_payment_days);
+  return expiryDate.toISOString().split('T')[0];
+}
+
+/**
+ * Check EMD payment status
+ * @param emdRequired - Total EMD required
+ * @param emdPaid - Total EMD paid
+ * @param paymentDate - Date when EMD was paid (optional)
+ * @param gracePeriodExpiry - Grace period expiry date
+ * @returns EMD status: 'Not Paid', 'Partial', 'Full', or 'Late Full'
+ */
+export function checkEmdStatus(
+  emdRequired: number,
+  emdPaid: number,
+  paymentDate?: string,
+  gracePeriodExpiry?: string
+): 'Not Paid' | 'Partial' | 'Full' | 'Late Full' {
+  if (emdPaid === 0) {
+    return 'Not Paid';
+  }
+  
+  if (emdPaid < emdRequired) {
+    return 'Partial';
+  }
+  
+  // Full EMD paid - check if late
+  if (paymentDate && gracePeriodExpiry) {
+    const payment = new Date(paymentDate);
+    const grace = new Date(gracePeriodExpiry);
+    
+    if (payment > grace) {
+      return 'Late Full';
+    }
+  }
+  
+  return 'Full';
+}
+
+/**
+ * Check if Delivery Order can be created
+ * As per CCI Policy: DO creation requires full EMD payment
+ * @param cciSetting - The CCI setting to use
+ * @param emdRequired - Total EMD required
+ * @param emdPaid - Total EMD paid
+ * @returns Object with eligibility status and reason
+ */
+export function checkDoEligibility(
+  cciSetting: CciTerm,
+  emdRequired: number,
+  emdPaid: number
+): { eligible: boolean; reason?: string } {
+  // Check if DO blocking is enabled in CCI settings
+  if (!cciSetting.emd_block_do_if_not_full) {
+    return { eligible: true };
+  }
+  
+  // Full EMD must be paid
+  if (emdPaid < emdRequired) {
+    const shortfall = emdRequired - emdPaid;
+    return {
+      eligible: false,
+      reason: `Full EMD not received. Required: ₹${emdRequired.toLocaleString('en-IN')}, Paid: ₹${emdPaid.toLocaleString('en-IN')}, Shortfall: ₹${shortfall.toLocaleString('en-IN')}`
+    };
+  }
+  
+  return { eligible: true };
+}
+
+/**
+ * Calculate days EMD payment is late
+ * @param paymentDate - Date when EMD was paid
+ * @param gracePeriodExpiry - Grace period expiry date
+ * @returns Number of days late (0 if on time)
+ */
+export function calculateEmdLateDays(
+  paymentDate: string,
+  gracePeriodExpiry: string
+): number {
+  const payment = new Date(paymentDate);
+  const grace = new Date(gracePeriodExpiry);
+  
+  if (payment <= grace) {
+    return 0;
+  }
+  
+  const diffTime = payment.getTime() - grace.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+/**
+ * Get EMD reminder email trigger type based on days since contract
+ * @param cciSetting - The CCI setting to use
+ * @param contractDate - Contract date
+ * @param emdPaid - Amount of EMD paid
+ * @param emdRequired - Amount of EMD required
+ * @param currentDate - Current date (defaults to today)
+ * @returns Email reminder type or null if no reminder needed
+ */
+export function getEmdReminderType(
+  cciSetting: CciTerm,
+  contractDate: string,
+  emdPaid: number,
+  emdRequired: number,
+  currentDate: string = new Date().toISOString().split('T')[0]
+): 'initial' | 'grace_expiry' | 'overdue' | null {
+  // If full EMD paid, no reminder needed
+  if (emdPaid >= emdRequired) {
+    return null;
+  }
+  
+  const contract = new Date(contractDate);
+  const current = new Date(currentDate);
+  const gracePeriodExpiry = new Date(calculateEmdGracePeriodExpiry(cciSetting, contractDate));
+  
+  const daysSinceContract = Math.floor((current.getTime() - contract.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Initial notification (at contract creation)
+  if (daysSinceContract === 0) {
+    return 'initial';
+  }
+  
+  // Grace period expiry reminder (on expiry day)
+  if (current.toDateString() === gracePeriodExpiry.toDateString()) {
+    return 'grace_expiry';
+  }
+  
+  // Overdue reminder (after grace period)
+  if (current > gracePeriodExpiry && daysSinceContract % 5 === 0) {
+    return 'overdue';
+  }
+  
+  return null;
+}
+
+/**
+ * Calculate carrying charges considering EMD status
+ * Note: Carrying charges are calculated even if EMD not paid (for informational purposes)
+ * but DO cannot be created until full EMD is received
+ * @param cciSetting - The CCI setting to use
+ * @param netInvoiceExclGst - Net invoice amount EXCLUDING GST
+ * @param days - Number of days
+ * @param emdPaid - EMD paid amount
+ * @param emdRequired - EMD required amount
+ * @returns Object with carrying charge and whether it's informational only
+ */
+export function calculateCarryingChargeWithEmdStatus(
+  cciSetting: CciTerm,
+  netInvoiceExclGst: number,
+  days: number,
+  emdPaid: number,
+  emdRequired: number
+): { amount: number; informationalOnly: boolean; note?: string } {
+  let chargePercent = 0;
+  let chargeDays = days;
+  
+  if (days <= cciSetting.carrying_charge_tier1_days) {
+    chargePercent = cciSetting.carrying_charge_tier1_percent;
+  } else {
+    const tier1Charge = (netInvoiceExclGst * cciSetting.carrying_charge_tier1_percent / 100) * 
+                        (cciSetting.carrying_charge_tier1_days / 30);
+    
+    const tier2Days = days - cciSetting.carrying_charge_tier1_days;
+    const tier2Charge = (netInvoiceExclGst * cciSetting.carrying_charge_tier2_percent / 100) * 
+                        (tier2Days / 30);
+    
+    const amount = tier1Charge + tier2Charge;
+    const isInformational = emdPaid < emdRequired;
+    
+    return {
+      amount,
+      informationalOnly: isInformational,
+      note: isInformational ? 'Informational only - Full EMD payment required before DO creation' : undefined
+    };
+  }
+  
+  const amount = (netInvoiceExclGst * chargePercent / 100) * (chargeDays / 30);
+  const isInformational = emdPaid < emdRequired;
+  
+  return {
+    amount,
+    informationalOnly: isInformational,
+    note: isInformational ? 'Informational only - Full EMD payment required before DO creation' : undefined
+  };
+}
+

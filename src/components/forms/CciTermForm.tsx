@@ -32,6 +32,7 @@ const CciTermForm: React.FC<CciTermFormProps> = ({ item, onSave, onCancel }) => 
     emd_payment_days: 5,
     emd_interest_percent: 5,
     emd_late_interest_percent: 10,
+    emd_block_do_if_not_full: true, // CCI Policy: Block DO if full EMD not paid
     
     // Carrying Charges
     carrying_charge_tier1_days: 30,
@@ -175,6 +176,10 @@ const CciTermForm: React.FC<CciTermFormProps> = ({ item, onSave, onCancel }) => 
           <FormRow>
             <FormLabel htmlFor="emd_late_interest_percent">EMD Late Interest (% p.a.)</FormLabel>
             <FormInput id="emd_late_interest_percent" name="emd_late_interest_percent" type="number" step="0.01" value={formData.emd_late_interest_percent} onChange={handleChange} required />
+          </FormRow>
+          <FormRow>
+            <FormLabel htmlFor="emd_block_do_if_not_full">Block DO if Full EMD Not Paid (CCI Policy)</FormLabel>
+            <input id="emd_block_do_if_not_full" name="emd_block_do_if_not_full" type="checkbox" checked={formData.emd_block_do_if_not_full} onChange={handleChange} className="h-4 w-4" />
           </FormRow>
         </div>
 

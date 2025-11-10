@@ -163,6 +163,7 @@ const cciTerms: CciTerm[] = [
         emd_payment_days: 5,
         emd_interest_percent: 5, // 5% annual interest on timely EMD
         emd_late_interest_percent: 10, // 10% if EMD paid late
+        emd_block_do_if_not_full: true, // Block DO creation if full EMD not paid (CCI Policy)
         
         // Carrying Charges
         carrying_charge_tier1_days: 30,
@@ -230,6 +231,7 @@ const cciTerms: CciTerm[] = [
         emd_payment_days: 3,
         emd_interest_percent: 5,
         emd_late_interest_percent: 10,
+        emd_block_do_if_not_full: true, // Block DO creation if full EMD not paid
         
         // Carrying Charges
         carrying_charge_tier1_days: 30,
