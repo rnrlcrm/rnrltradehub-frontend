@@ -1,0 +1,456 @@
+# CCI Setting Master - Developer Guide
+
+## Overview
+
+The CCI Setting Master is a comprehensive configuration system that centralizes all financial parameters, calculations, and business rules for CCI (Cotton Corporation of India) trade operations. This ensures that:
+
+1. **No values are hardcoded** - All rates, percentages, and limits are configurable
+2. **Historical accuracy** - Version tracking maintains audit trail
+3. **Flexible updates** - Settings can be changed seasonally without code modifications
+4. **Consistent calculations** - All modules use the same source of truth
+
+## Architecture
+
+### Core Components
+
+1. **Type Definitions** (`src/types.ts`)
+   - `CciTerm` interface - Main setting structure
+   - `EmdByBuyerType` interface - Buyer-type-specific EMD rates
+
+2. **Calculation Utilities** (`src/utils/cciCalculations.ts`)
+   - 20+ utility functions for all CCI-related calculations
+   - Pure functions that take CCI setting as parameter
+   - Zero hardcoded values
+
+3. **UI Components**
+   - `CciTermForm.tsx` - Comprehensive form for editing settings
+   - `CciTermManagement.tsx` - List/CRUD interface
+   - Settings page integration
+
+## CCI Setting Master Structure
+
+### Versioning & Lifecycle
+```typescript
+{
+  effectiveFrom: '2024-04-01',      // Start date
+  effectiveTo: '2025-03-31',        // End date (optional, null = current)
+  version: 1,                        // Version number
+  isActive: true                     // Active status
+}
+```
+
+### Core Financial Parameters
+```typescript
+{
+  candy_factor: 0.2812,              // Quintal to Candy conversion
+  gst_rate: 5                        // GST percentage
+}
+```
+
+### EMD Configuration
+```typescript
+{
+  emd_by_buyer_type: {
+    kvic: 10,                        // KVIC buyers: 10%
+    privateMill: 12.5,               // Private Mills: 10-15%
+    trader: 17.5                     // Traders: 15-20%
+  },
+  emd_payment_days: 5,               // Days to pay EMD
+  emd_interest_percent: 5,           // Interest on timely EMD (annual)
+  emd_late_interest_percent: 10      // Late payment interest (annual)
+}
+```
+
+### Carrying Charges (Tiered)
+```typescript
+{
+  carrying_charge_tier1_days: 30,    // Days for tier 1
+  carrying_charge_tier1_percent: 1.25,  // % per month (0-30 days)
+  carrying_charge_tier2_days: 60,    // Days for tier 2
+  carrying_charge_tier2_percent: 1.35   // % per month (>30 days)
+}
+```
+
+### Late Lifting Charges (3-Tier)
+```typescript
+{
+  free_lifting_period_days: 21,      // Free period
+  late_lifting_tier1_days: 30,       // Tier 1: 0-30 days
+  late_lifting_tier1_percent: 0.5,   // % per month
+  late_lifting_tier2_days: 60,       // Tier 2: 31-60 days
+  late_lifting_tier2_percent: 0.75,  // % per month
+  late_lifting_tier3_percent: 1.0    // Tier 3: >60 days, % per month
+}
+```
+
+### Moisture Adjustment
+```typescript
+{
+  moisture_lower_limit: 7,           // Below 7% → premium charged
+  moisture_upper_limit: 9,           // Above 9% → discount applied
+  moisture_sample_count: 10          // Number of bales to sample
+}
+```
+
+### Interest Rates
+```typescript
+{
+  cash_discount_percentage: 5,      // Annual cash discount
+  interest_lc_bg_percent: 10,       // LC/BG interest (annual)
+  penal_interest_lc_bg_percent: 11  // LC/BG penal interest (annual)
+}
+```
+
+### Other Parameters
+```typescript
+{
+  lifting_period_days: 45,           // Allowed lifting period
+  contract_period_days: 45,          // Contract duration
+  lockin_charge_min: 350,            // Rs/bale minimum
+  lockin_charge_max: 700,            // Rs/bale maximum
+  email_reminder_days: 5             // Email reminder threshold
+}
+```
+
+## Usage Examples
+
+### 1. Fetching Active CCI Setting
+
+```typescript
+import { getActiveCciSetting } from '../utils/cciCalculations';
+
+const contractDate = '2024-07-15';
+const activeSetting = getActiveCciSetting(cciTerms, contractDate);
+
+if (!activeSetting) {
+  throw new Error('No active CCI setting found for this date');
+}
+```
+
+### 2. EMD Calculation
+
+```typescript
+import { calculateEmdAmount, calculateEmdPercent } from '../utils/cciCalculations';
+
+const invoiceAmount = 3100000; // Rs 31 lakh
+const buyerType = 'privateMill';
+
+const emdPercent = calculateEmdPercent(activeSetting, buyerType);
+// Returns: 12.5
+
+const emdAmount = calculateEmdAmount(activeSetting, invoiceAmount, buyerType);
+// Returns: 387,500 (12.5% of 31 lakh)
+```
+
+### 3. Carrying Charge Calculation
+
+```typescript
+import { calculateCarryingCharge } from '../utils/cciCalculations';
+
+const netInvoice = 3100000;
+const daysHeld = 45; // 45 days
+
+const carryingCharge = calculateCarryingCharge(activeSetting, netInvoice, daysHeld);
+// Tier 1 (0-30 days): 3,100,000 × 1.25% × (30/30) = 38,750
+// Tier 2 (31-45 days): 3,100,000 × 1.35% × (15/30) = 20,925
+// Total: 59,675
+```
+
+### 4. Moisture Adjustment
+
+```typescript
+import { calculateMoistureAdjustment } from '../utils/cciCalculations';
+
+const averageMoisture = 10; // 10%
+const netDeliveryWeight = 162; // quintals
+const saleRatePerQuintal = 17400;
+
+const adjustment = calculateMoistureAdjustment(
+  activeSetting,
+  averageMoisture,
+  netDeliveryWeight,
+  saleRatePerQuintal
+);
+
+// Result: { type: 'discount', amount: 2,818,800 }
+// Calculation: (10 - 9) × 162 × 17,400 = 2,818,800
+```
+
+### 5. Complete Invoice Calculation
+
+```typescript
+import { 
+  calculateNetInvoice,
+  calculateMoistureAdjustment,
+  calculateGst,
+  calculateTotalInvoice
+} from '../utils/cciCalculations';
+
+// Step 1: Calculate base invoice
+const weightQtl = 162;
+const ratePerCandy = 62000;
+let netInvoice = calculateNetInvoice(activeSetting, weightQtl, ratePerCandy);
+// 162 × 0.2812 × 62,000 = 2,824,464
+
+// Step 2: Apply moisture adjustment
+const moistureAdj = calculateMoistureAdjustment(
+  activeSetting,
+  10, // 10% moisture
+  weightQtl,
+  17400
+);
+
+if (moistureAdj.type === 'discount') {
+  netInvoice -= moistureAdj.amount;
+} else if (moistureAdj.type === 'premium') {
+  netInvoice += moistureAdj.amount;
+}
+
+// Step 3: Calculate GST
+const gst = calculateGst(activeSetting, netInvoice);
+
+// Step 4: Total invoice
+const totalInvoice = calculateTotalInvoice(activeSetting, netInvoice);
+```
+
+### 6. Late Lifting Charges
+
+```typescript
+import { calculateLateLiftingCharge } from '../utils/cciCalculations';
+
+const netInvoice = 3100000;
+const daysLate = 75; // 75 days after free period
+
+const lateLiftingCharge = calculateLateLiftingCharge(activeSetting, netInvoice, daysLate);
+// Tier 1 (0-30): 3,100,000 × 0.5% × (30/30) = 15,500
+// Tier 2 (31-60): 3,100,000 × 0.75% × (30/30) = 23,250
+// Tier 3 (61-75): 3,100,000 × 1.0% × (15/30) = 15,500
+// Total: 54,250
+```
+
+### 7. EMD Interest Calculation
+
+```typescript
+import { calculateEmdInterest, calculateEmdLateInterest } from '../utils/cciCalculations';
+
+const emdAmount = 387500;
+
+// Timely payment interest (benefit to buyer)
+const daysHeld = 45;
+const interest = calculateEmdInterest(activeSetting, emdAmount, daysHeld);
+// 387,500 × 5% × (45/365) = 2,391
+
+// Late payment interest (penalty)
+const daysLate = 10;
+const lateInterest = calculateEmdLateInterest(activeSetting, emdAmount, daysLate);
+// 387,500 × 10% × (10/365) = 1,062
+```
+
+## Integration Points
+
+### Invoice Generation
+```typescript
+// Store CCI setting info for audit
+invoice.cciSettingId = activeSetting.id;
+invoice.cciSettingVersion = activeSetting.version;
+invoice.cciSettingEffectiveDate = activeSetting.effectiveFrom;
+
+// Store moisture adjustment details
+invoice.averageMoisture = 10;
+invoice.moistureAdjustmentType = 'discount';
+invoice.moistureAdjustmentAmount = 2818800;
+```
+
+### Contract Entry
+```typescript
+// Store setting reference
+contract.cciTermId = activeSetting.id;
+contract.cciSettingVersion = activeSetting.version;
+contract.cciSettingEffectiveDate = activeSetting.effectiveFrom;
+
+// Store buyer type for EMD calculation
+contract.buyerType = 'privateMill';
+```
+
+### Payment Advice
+```typescript
+// Calculate all charges dynamically
+const carryingCharge = calculateCarryingCharge(activeSetting, netInvoice, days);
+const lateLiftingCharge = calculateLateLiftingCharge(activeSetting, netInvoice, daysLate);
+const emdInterest = calculateEmdInterest(activeSetting, emdAmount, daysHeld);
+```
+
+## Admin Operations
+
+### Creating New Season Settings
+
+1. Navigate to Settings → Master Data Management
+2. Click "Add CCI Term" in the CCI Trade Terms Master section
+3. Fill in all parameters:
+   - Set appropriate Effective From date (e.g., 2025-04-01)
+   - Set version number
+   - Configure all financial parameters
+   - Set moisture limits
+   - Configure email templates
+4. Mark as Active
+5. Save
+
+### Updating Existing Settings
+
+**Method 1: Clone & Modify (Recommended)**
+1. Edit existing setting
+2. Change Effective From to new season date
+3. Increment version number
+4. Update parameters as needed
+5. Mark old setting as Inactive (set Effective To date)
+
+**Method 2: Direct Edit (For corrections only)**
+1. Edit the active setting
+2. Update required parameters
+3. Save
+4. System automatically logs the change in Audit Trail
+
+## Best Practices
+
+### 1. Version Control
+- Always increment version number when creating new settings
+- Use effectiveTo date to close old versions
+- Never delete historical settings (needed for audit)
+
+### 2. Calculation Consistency
+```typescript
+// ✅ GOOD - Uses CCI master
+const charge = calculateCarryingCharge(activeSetting, amount, days);
+
+// ❌ BAD - Hardcoded values
+const charge = (amount * 1.25 / 100) * (days / 30);
+```
+
+### 3. Audit Trail
+Always store:
+- CCI Setting ID
+- Version number
+- Effective date used
+- Calculated amounts
+
+### 4. Error Handling
+```typescript
+const activeSetting = getActiveCciSetting(cciTerms, contractDate);
+if (!activeSetting) {
+  // Handle missing setting gracefully
+  throw new Error(`No CCI setting found for date: ${contractDate}`);
+}
+```
+
+### 5. Testing Calculations
+```typescript
+// Always test with multiple scenarios
+const testCases = [
+  { days: 15, expected: 'tier1' },
+  { days: 35, expected: 'tier2' },
+  { days: 75, expected: 'tier3' }
+];
+
+testCases.forEach(tc => {
+  const result = calculateLateLiftingCharge(setting, amount, tc.days);
+  // Verify result matches expected tier logic
+});
+```
+
+## Formula Reference
+
+### Carrying Charge
+```
+If days <= tier1_days:
+  Charge = NetInvoice × tier1_percent × (days / 30)
+Else:
+  Tier1 = NetInvoice × tier1_percent × (tier1_days / 30)
+  Tier2 = NetInvoice × tier2_percent × ((days - tier1_days) / 30)
+  Charge = Tier1 + Tier2
+```
+
+### Moisture Adjustment
+```
+If moisture > upper_limit:
+  Discount = (moisture - upper_limit) × weight × rate_per_quintal
+Else if moisture < lower_limit:
+  Premium = (lower_limit - moisture) × weight × rate_per_quintal
+Else:
+  Adjustment = 0
+```
+
+### EMD Interest
+```
+Interest = EMD_Amount × (Annual_Rate / 100) × (Days / 365)
+```
+
+### GST
+```
+GST_Amount = Net_Invoice × (GST_Rate / 100)
+Total = Net_Invoice + GST_Amount
+```
+
+## Migration Guide
+
+### For Existing Contracts
+1. Add cciSettingVersion field to all active contracts
+2. Populate with current active setting version
+3. Store effectiveDate for audit
+
+### For Invoices
+1. Add moisture tracking fields
+2. Add CCI setting reference fields
+3. Recalculate with proper setting version
+
+## Troubleshooting
+
+### Issue: No active setting found
+**Cause**: No CCI term configured for the contract date
+**Solution**: Create a CCI term with effectiveFrom <= contract date
+
+### Issue: Incorrect calculation results
+**Cause**: Using wrong buyer type or parameters
+**Solution**: Verify buyer type is correctly set on contract
+
+### Issue: Historical invoices showing wrong amounts
+**Cause**: Missing setting version reference
+**Solution**: Store setting version when creating invoice
+
+## API Examples
+
+### REST API Structure (for backend integration)
+```typescript
+// GET /api/cci-settings?date=2024-07-15
+// Returns active setting for the date
+
+// POST /api/cci-settings
+// Create new setting
+
+// PUT /api/cci-settings/:id
+// Update existing setting
+
+// GET /api/contracts/:id/calculations
+// Get all calculations for a contract using its CCI setting
+```
+
+## Future Enhancements
+
+1. **Multiple Formulas Support**: Allow custom calculation formulas
+2. **Buyer Category Master**: Link buyer types to master data
+3. **Auto-activation**: Automatically activate/deactivate based on dates
+4. **Import/Export**: Bulk upload CCI settings from spreadsheet
+5. **Simulation Mode**: Test calculation changes before applying
+6. **Notification Engine**: Auto-send emails based on CCI rules
+
+## Support
+
+For questions or issues:
+1. Check this documentation
+2. Review calculation utilities code
+3. Test with mock data examples
+4. Contact development team
+
+---
+
+**Last Updated**: 2024-11-10
+**Version**: 1.0

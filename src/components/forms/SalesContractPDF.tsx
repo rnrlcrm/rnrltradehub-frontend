@@ -50,18 +50,26 @@ const PartyDetails: React.FC<{ title: string; partner: BusinessPartner }> = ({ t
 );
 
 const CciTermDetails: React.FC<{ term: CciTerm }> = ({ term }) => (
-    <div className="text-sm text-slate-700 mt-2 grid grid-cols-2 gap-x-8 gap-y-1">
-        <p><strong>Contract Period:</strong> {term.contract_period_days} days</p>
-        <p><strong>EMD Payment:</strong> Within {term.emd_payment_days} days</p>
-        <p><strong>Cash Discount:</strong> {term.cash_discount_percentage}%</p>
-        <p><strong>Additional Deposit:</strong> {term.additional_deposit_percent}%</p>
-        <p><strong>Deposit Interest:</strong> {term.deposit_interest_percent}% p.a.</p>
-        <p><strong>Free Lifting Period:</strong> {term.free_lifting_period_days} days</p>
-        <p><strong>Carrying Charge (Tier 1):</strong> {term.carrying_charge_tier1_percent}% for first {term.carrying_charge_tier1_days} days</p>
-        <p><strong>Carrying Charge (Tier 2):</strong> {term.carrying_charge_tier2_percent}% for next {term.carrying_charge_tier2_days} days</p>
-        <p><strong>Late Lifting (Tier 1):</strong> {term.late_lifting_tier1_percent}% for first {term.late_lifting_tier1_days} days</p>
-        <p><strong>Late Lifting (Tier 2):</strong> {term.late_lifting_tier2_percent}% for next {term.late_lifting_tier2_days} days</p>
-        <p><strong>Late Lifting (Tier 3):</strong> {term.late_lifting_tier3_percent}% thereafter</p>
+    <div className="text-sm text-slate-700 mt-2">
+        <p className="mb-2 text-xs bg-slate-100 p-2 rounded">
+            <strong>CCI Setting:</strong> {term.name} (v{term.version}) - Effective: {new Date(term.effectiveFrom).toLocaleDateString()}
+        </p>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+            <p><strong>Candy Factor:</strong> {term.candy_factor}</p>
+            <p><strong>GST Rate:</strong> {term.gst_rate}%</p>
+            <p><strong>Contract Period:</strong> {term.contract_period_days} days</p>
+            <p><strong>EMD Payment:</strong> Within {term.emd_payment_days} days</p>
+            <p><strong>Cash Discount:</strong> {term.cash_discount_percentage}% p.a.</p>
+            <p><strong>Additional Deposit:</strong> {term.additional_deposit_percent}%</p>
+            <p><strong>Deposit Interest:</strong> {term.deposit_interest_percent}% p.a.</p>
+            <p><strong>Free Lifting Period:</strong> {term.free_lifting_period_days} days</p>
+            <p><strong>Carrying Charge (0-{term.carrying_charge_tier1_days} days):</strong> {term.carrying_charge_tier1_percent}% per month</p>
+            <p><strong>Carrying Charge (&gt;{term.carrying_charge_tier1_days} days):</strong> {term.carrying_charge_tier2_percent}% per month</p>
+            <p><strong>Late Lifting (0-{term.late_lifting_tier1_days} days):</strong> {term.late_lifting_tier1_percent}% per month</p>
+            <p><strong>Late Lifting ({term.late_lifting_tier1_days + 1}-{term.late_lifting_tier1_days + term.late_lifting_tier2_days} days):</strong> {term.late_lifting_tier2_percent}% per month</p>
+            <p><strong>Late Lifting (&gt;{term.late_lifting_tier1_days + term.late_lifting_tier2_days} days):</strong> {term.late_lifting_tier3_percent}% per month</p>
+            <p><strong>Moisture Range:</strong> {term.moisture_lower_limit}%-{term.moisture_upper_limit}%</p>
+        </div>
     </div>
 );
 
