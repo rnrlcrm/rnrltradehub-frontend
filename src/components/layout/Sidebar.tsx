@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import { DashboardIcon, ContractIcon, UsersIcon, SettingsIcon, InvoiceIcon, PaymentIcon, DisputeIcon, CommissionIcon, ReportIcon, AuditIcon, ChatIcon } from '../ui/icons';
 import { User } from '../../types';
+import { cn } from '../../lib/utils';
 
 interface SidebarProps {
   onNavigate: (page: string) => void;
@@ -14,22 +16,31 @@ const NavItem: React.FC<{
   label: string;
   isActive: boolean;
   onClick: () => void;
-}> = ({ icon: Icon, label, isActive, onClick }) => (
+  collapsed: boolean;
+}> = ({ icon: Icon, label, isActive, onClick, collapsed }) => (
   <li
     onClick={onClick}
-    className={`flex items-center p-3 my-1 rounded-md cursor-pointer transition-all group ${
+    className={cn(
+      'flex items-center p-3 my-1 rounded-md cursor-pointer transition-all group relative',
       isActive
-        ? 'bg-blue-800/30 text-white'
-        : 'text-slate-400 hover:bg-gray-700/50 hover:text-white'
-    }`}
+        ? 'bg-primary-500/20 text-white'
+        : 'text-neutral-400 hover:bg-neutral-700/50 hover:text-white'
+    )}
     aria-current={isActive ? 'page' : undefined}
+    title={collapsed ? label : undefined}
   >
-    <Icon className="w-5 h-5" />
-    <span className="ml-4 font-medium text-sm">{label}</span>
+    <Icon className="w-5 h-5 flex-shrink-0" />
+    {!collapsed && <span className="ml-4 font-medium text-sm">{label}</span>}
+    {collapsed && (
+      <div className="absolute left-full ml-2 px-2 py-1 bg-neutral-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+        {label}
+      </div>
+    )}
   </li>
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }) => {
+  const [collapsed, setCollapsed] = useState(false);
   const navItems = [
     { name: 'Dashboard', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
     { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
@@ -51,9 +62,22 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
   const accessibleItems = navItems.filter(item => item.roles.includes(currentUser.role));
 
   return (
-    <aside className="w-64 bg-gray-900 flex flex-col text-white">
-      <div className="flex items-center justify-center h-16 border-b border-gray-700/50">
-        <h1 className="text-xl font-bold tracking-wider">RNRL ERP</h1>
+    <aside className={cn(
+      'bg-neutral-900 flex flex-col text-white transition-all duration-300 relative',
+      collapsed ? 'w-20' : 'w-64'
+    )}>
+      <div className={cn(
+        'flex items-center h-16 border-b border-neutral-700/50 px-4',
+        collapsed ? 'justify-center' : 'justify-between'
+      )}>
+        {!collapsed && <h1 className="text-xl font-bold tracking-wider">RNRL ERP</h1>}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-2 rounded-md hover:bg-neutral-700/50 transition-colors"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
+        </button>
       </div>
       <nav className="flex-1 overflow-y-auto p-4">
         <ul>
@@ -64,18 +88,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
               label={item.name}
               isActive={activePage === item.name}
               onClick={() => onNavigate(item.name)}
+              collapsed={collapsed}
             />
           ))}
         </ul>
       </nav>
-      <div className="p-4 border-t border-gray-700/50 text-center text-xs text-slate-400">
-        <div className="space-x-4">
-          <a href="#privacy-policy" onClick={(e) => { e.preventDefault(); onNavigate('Privacy Policy'); }} className="hover:underline">Privacy Policy</a>
-          <a href="#terms-of-service" onClick={(e) => { e.preventDefault(); onNavigate('Terms of Service'); }} className="hover:underline">Terms of Service</a>
+      {!collapsed && (
+        <div className="p-4 border-t border-neutral-700/50 text-center text-xs text-neutral-400">
+          <div className="space-x-4">
+            <a href="#privacy-policy" onClick={(e) => { e.preventDefault(); onNavigate('Privacy Policy'); }} className="hover:underline">Privacy Policy</a>
+            <a href="#terms-of-service" onClick={(e) => { e.preventDefault(); onNavigate('Terms of Service'); }} className="hover:underline">Terms of Service</a>
+          </div>
+          <p className="mt-2">&copy; {new Date().getFullYear()} RNRL Trade Hub Pvt. Ltd.</p>
+          <p>ERP v3.2</p>
         </div>
-        <p className="mt-2">&copy; {new Date().getFullYear()} RNRL Trade Hub Pvt. Ltd.</p>
-        <p>ERP v3.2</p>
-      </div>
+      )}
     </aside>
   );
 };

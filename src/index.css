@@ -1,0 +1,263 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors */
+    --color-primary-50: 239 246 255;
+    --color-primary-100: 219 234 254;
+    --color-primary-200: 191 219 254;
+    --color-primary-300: 147 197 253;
+    --color-primary-400: 96 165 250;
+    --color-primary-500: 15 98 254;
+    --color-primary-600: 13 82 209;
+    --color-primary-700: 10 62 161;
+    --color-primary-800: 8 46 117;
+    --color-primary-900: 5 30 77;
+
+    /* Accent Colors */
+    --color-accent-50: 240 253 250;
+    --color-accent-100: 204 251 241;
+    --color-accent-200: 153 246 228;
+    --color-accent-300: 94 234 212;
+    --color-accent-400: 45 212 191;
+    --color-accent-500: 0 150 136;
+    --color-accent-600: 0 121 107;
+    --color-accent-700: 0 105 92;
+    --color-accent-800: 0 77 64;
+    --color-accent-900: 0 51 42;
+
+    /* Neutral Colors */
+    --color-neutral-50: 249 250 251;
+    --color-neutral-100: 243 244 246;
+    --color-neutral-200: 229 231 235;
+    --color-neutral-300: 209 213 219;
+    --color-neutral-400: 156 163 175;
+    --color-neutral-500: 107 114 128;
+    --color-neutral-600: 75 85 99;
+    --color-neutral-700: 55 65 81;
+    --color-neutral-800: 31 41 55;
+    --color-neutral-900: 17 24 39;
+
+    /* Semantic Colors */
+    --color-success: 16 185 129;
+    --color-warning: 245 158 11;
+    --color-error: 239 68 68;
+    --color-info: 59 130 246;
+
+    /* Backgrounds */
+    --background: 249 250 251;
+    --foreground: 17 24 39;
+    --card: 255 255 255;
+    --card-foreground: 17 24 39;
+
+    /* Borders */
+    --border: 229 231 235;
+    --input: 229 231 235;
+    --ring: 15 98 254;
+
+    /* Radius */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Primary Colors (slightly adjusted for dark mode) */
+    --color-primary-50: 5 30 77;
+    --color-primary-100: 8 46 117;
+    --color-primary-200: 10 62 161;
+    --color-primary-300: 13 82 209;
+    --color-primary-400: 15 98 254;
+    --color-primary-500: 96 165 250;
+    --color-primary-600: 147 197 253;
+    --color-primary-700: 191 219 254;
+    --color-primary-800: 219 234 254;
+    --color-primary-900: 239 246 255;
+
+    /* Neutral Colors (inverted) */
+    --color-neutral-50: 17 24 39;
+    --color-neutral-100: 31 41 55;
+    --color-neutral-200: 55 65 81;
+    --color-neutral-300: 75 85 99;
+    --color-neutral-400: 107 114 128;
+    --color-neutral-500: 156 163 175;
+    --color-neutral-600: 209 213 219;
+    --color-neutral-700: 229 231 235;
+    --color-neutral-800: 243 244 246;
+    --color-neutral-900: 249 250 251;
+
+    /* Backgrounds */
+    --background: 17 24 39;
+    --foreground: 249 250 251;
+    --card: 31 41 55;
+    --card-foreground: 249 250 251;
+
+    /* Borders */
+    --border: 55 65 81;
+    --input: 55 65 81;
+    --ring: 96 165 250;
+  }
+}
+
+@layer base {
+  * {
+    border-color: theme('colors.neutral.200');
+  }
+  
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-100 dark:bg-neutral-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 dark:bg-neutral-600 rounded-md;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-400 dark:bg-neutral-500;
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-in {
+    animation: enter 200ms ease-out;
+  }
+
+  .animate-out {
+    animation: exit 150ms ease-in;
+  }
+
+  .fade-in {
+    animation: fadeIn 200ms ease-out;
+  }
+
+  .fade-out {
+    animation: fadeOut 150ms ease-in;
+  }
+
+  .slide-in-from-top {
+    animation: slideInFromTop 200ms ease-out;
+  }
+
+  .slide-in-from-bottom {
+    animation: slideInFromBottom 200ms ease-out;
+  }
+
+  .slide-in-from-left {
+    animation: slideInFromLeft 200ms ease-out;
+  }
+
+  .slide-in-from-right {
+    animation: slideInFromRight 200ms ease-out;
+  }
+
+  /* Focus styles */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+
+  /* Card styles */
+  .card-elevated {
+    @apply bg-card rounded-lg shadow-md border border-border;
+  }
+
+  .card-interactive {
+    @apply card-elevated transition-all duration-base hover:shadow-lg cursor-pointer;
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes exit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
