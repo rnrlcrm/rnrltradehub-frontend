@@ -142,7 +142,7 @@ const RolesAndRights: React.FC<RolesAndRightsProps> = ({ currentUser }) => {
         <Card>
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-800">
-              <strong>Edit Mode:</strong> Click on checkboxes to toggle permissions. Click "All" to toggle all permissions for a module.
+              <strong>Edit Mode:</strong> Click on checkboxes to toggle permissions. Click &quot;All&quot; to toggle all permissions for a module.
             </p>
           </div>
         </Card>
@@ -238,7 +238,7 @@ const RolesAndRights: React.FC<RolesAndRightsProps> = ({ currentUser }) => {
           <div>
             <h3 className="font-semibold text-slate-800">User-Specific Permissions:</h3>
             <p className="text-slate-600 mt-1">
-              In User Management, you can enable "Custom Permissions" for individual users to override their role-based permissions with module-specific access.
+              In User Management, you can enable &quot;Custom Permissions&quot; for individual users to override their role-based permissions with module-specific access.
             </p>
           </div>
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
