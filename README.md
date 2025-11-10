@@ -14,15 +14,30 @@ rnrltradehub-frontend/
 │   ├── pages/                   # Page components
 │   ├── data/                    # Data and mock data files
 │   ├── hooks/                   # Custom React hooks
+│   ├── utils/                   # Utility functions (CCI calculations, GST, notifications)
 │   ├── types.ts                 # TypeScript type definitions
 │   ├── App.tsx                  # Main application component
 │   └── index.tsx                # Application entry point
+├── docs/                        # Documentation
+│   └── CCI_SETTING_MASTER.md   # CCI Setting Master developer guide
 ├── index.html                   # HTML template
 ├── package.json                 # Project dependencies
 ├── tsconfig.json                # TypeScript configuration
 ├── vite.config.ts               # Vite configuration
 └── README.md                    # This file
 ```
+
+## Key Features
+
+### CCI Setting Master
+A comprehensive configuration system for Cotton Corporation of India (CCI) trade operations:
+- **Zero Hardcoded Values**: All financial parameters are configurable
+- **Version Tracking**: Full audit trail of settings used in calculations
+- **Dynamic Calculations**: EMD, carrying charges, late lifting, moisture adjustments
+- **Buyer Type Support**: Different rates for KVIC, Private Mills, and Traders
+- **Historical Accuracy**: Old invoices retain settings valid at creation time
+
+📖 **[View CCI Setting Master Documentation](docs/CCI_SETTING_MASTER.md)**
 
 ## Getting Started
 
@@ -68,7 +83,7 @@ npm run lint
 Contains all reusable React components organized by type:
 - **forms/** - Form components for various data entry screens
 - **layout/** - Layout components like Header and Sidebar
-- **ui/** - Basic UI components like Card, Modal, Table, etc.
+- **ui/** - Basic UI components like Card, Modal, Table, CciCalculationDisplay, etc.
 
 ### `/src/pages/`
 Contains page-level components that represent different views/routes in the application.
@@ -78,6 +93,40 @@ Contains data files, mock data, and data utilities.
 
 ### `/src/hooks/`
 Contains custom React hooks for shared logic.
+
+### `/src/utils/`
+Contains utility functions:
+- **cciCalculations.ts** - CCI Setting Master calculation functions
+- **gstCalculations.ts** - GST calculation utilities
+- **notifications.ts** - Notification helpers
+- **automation.ts** - Automation utilities
+
+### `/docs/`
+Contains project documentation:
+- **CCI_SETTING_MASTER.md** - Comprehensive guide for CCI Setting Master integration
+
+## CCI Calculations
+
+All CCI-related calculations use the CCI Setting Master configuration. Example:
+
+```typescript
+import { 
+  getActiveCciSetting, 
+  calculateEmdAmount,
+  calculateCarryingCharge 
+} from './utils/cciCalculations';
+
+// Get active setting for a date
+const setting = getActiveCciSetting(cciTerms, '2024-07-15');
+
+// Calculate EMD
+const emdAmount = calculateEmdAmount(setting, invoiceAmount, 'privateMill');
+
+// Calculate carrying charges
+const carryingCharge = calculateCarryingCharge(setting, netInvoice, 45);
+```
+
+See [CCI Setting Master Documentation](docs/CCI_SETTING_MASTER.md) for complete usage guide.
 
 ## Contributing
 
