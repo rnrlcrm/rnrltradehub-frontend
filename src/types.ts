@@ -1,22 +1,74 @@
 
+// EMD percentage configuration by buyer type
+export interface EmdByBuyerType {
+  kvic: number; // KVIC buyer EMD %
+  privateMill: number; // Private Mill EMD %
+  trader: number; // Trader EMD %
+}
+
 export interface CciTerm {
   id: number;
   name: string;
-  contract_period_days: number;
-  emd_payment_days: number;
-  cash_discount_percentage: number;
-  carrying_charge_tier1_days: number;
-  carrying_charge_tier1_percent: number;
-  carrying_charge_tier2_days: number;
-  carrying_charge_tier2_percent: number;
-  additional_deposit_percent: number;
-  deposit_interest_percent: number;
-  free_lifting_period_days: number;
-  late_lifting_tier1_days: number;
-  late_lifting_tier1_percent: number;
-  late_lifting_tier2_days: number;
-  late_lifting_tier2_percent: number;
-  late_lifting_tier3_percent: number;
+  
+  // Versioning and effective date tracking
+  effectiveFrom: string; // ISO date string
+  effectiveTo?: string; // ISO date string, optional (null = current)
+  version: number;
+  isActive: boolean;
+  
+  // Core Financial Parameters
+  candy_factor: number; // Conversion from quintal to candy (e.g., 0.2812)
+  gst_rate: number; // GST percentage (e.g., 5)
+  
+  // EMD Configuration
+  emd_by_buyer_type: EmdByBuyerType; // EMD % by buyer type
+  emd_payment_days: number; // Days within which EMD must be paid (grace period)
+  emd_interest_percent: number; // Annual interest on timely EMD (e.g., 5%)
+  emd_late_interest_percent: number; // Interest if EMD paid late (e.g., 10%)
+  emd_block_do_if_not_full: boolean; // Block DO creation if full EMD not paid (default: true)
+  
+  // Carrying Charges
+  carrying_charge_tier1_days: number; // 0-30 days
+  carrying_charge_tier1_percent: number; // % per month for tier 1
+  carrying_charge_tier2_days: number; // >30 days
+  carrying_charge_tier2_percent: number; // % per month for tier 2
+  
+  // Late Lifting Charges
+  free_lifting_period_days: number; // Free lifting period
+  late_lifting_tier1_days: number; // 0-30 days
+  late_lifting_tier1_percent: number; // % per month
+  late_lifting_tier2_days: number; // 31-60 days
+  late_lifting_tier2_percent: number; // % per month
+  late_lifting_tier3_percent: number; // >60 days, % per month
+  
+  // Payment & Discount Terms
+  cash_discount_percentage: number; // Annual rate (e.g., 5%)
+  
+  // Interest Rates
+  interest_lc_bg_percent: number; // LC/BG annual interest (e.g., 10%)
+  penal_interest_lc_bg_percent: number; // LC/BG penal interest (e.g., 11%)
+  
+  // Additional Deposits
+  additional_deposit_percent: number; // Additional deposit %
+  deposit_interest_percent: number; // Interest on deposit
+  
+  // Lifting & Contract Period
+  lifting_period_days: number; // Days allowed for lifting
+  contract_period_days: number; // Overall contract period
+  
+  // Lock-in Period Charges
+  lockin_charge_min: number; // Minimum Rs/bale (e.g., 350)
+  lockin_charge_max: number; // Maximum Rs/bale (e.g., 700)
+  
+  // Moisture Adjustment Parameters
+  moisture_lower_limit: number; // Below this, premium is charged (e.g., 7%)
+  moisture_upper_limit: number; // Above this, discount is applied (e.g., 9%)
+  moisture_sample_count: number; // Number of bales to sample (e.g., 10)
+  
+  // Email Configuration
+  email_reminder_days: number; // Days after which reminder for EMD
+  email_template_emd_reminder?: string; // HTML template for EMD reminder
+  email_template_payment_due?: string; // HTML template for payment due
 }
 
 export interface CommissionStructure {
@@ -64,6 +116,14 @@ export interface Invoice {
   sellerState?: string;
   buyerState?: string;
   isInterState?: boolean;
+  // CCI Setting Master tracking for audit
+  cciSettingId?: number;
+  cciSettingVersion?: number;
+  cciSettingEffectiveDate?: string;
+  // Moisture adjustment tracking
+  averageMoisture?: number;
+  moistureAdjustmentType?: 'discount' | 'premium' | 'none';
+  moistureAdjustmentAmount?: number;
   // FY tracking
   financialYear?: string;
   carryForwardFromId?: string;
@@ -119,6 +179,40 @@ export interface Payment {
   method: 'Bank Transfer' | 'Cheque' | 'Cash';
 }
 
+/**
+ * Delivery Order - Created only when full EMD is paid
+ * As per CCI Policy: No DO shall be created until full EMD is received
+ */
+export interface DeliveryOrder {
+  id: string;
+  doNo: string;
+  salesContractId: string;
+  contractNo: string;
+  date: string;
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  sellerName: string;
+  quantityBales: number;
+  // EMD Validation (mandatory checks)
+  emdRequired: number;
+  emdPaid: number;
+  emdVerified: boolean; // System verified full EMD paid
+  emdVerificationDate?: string;
+  // DO Status
+  status: 'Pending' | 'Approved' | 'Blocked' | 'Completed' | 'Cancelled';
+  blockReason?: string; // e.g., "Full EMD not received"
+  // Payment Advice
+  paymentAdviceAmount?: number;
+  carryingCharges?: number;
+  lateLiftingCharges?: number;
+  // Delivery details
+  deliveryLocation?: string;
+  expectedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  remarks?: string;
+}
+
 export interface SalesContract {
   id: string;
   scNo: string;
@@ -159,6 +253,19 @@ export interface SalesContract {
   status: 'Active' | 'Completed' | 'Disputed' | 'Carried Forward' | 'Amended' | 'Pending Approval' | 'Rejected';
   cciContractNo?: string;
   cciTermId?: number | null;
+  // CCI Setting Master tracking for audit
+  cciSettingVersion?: number;
+  cciSettingEffectiveDate?: string;
+  // Buyer type for EMD calculation
+  buyerType?: 'kvic' | 'privateMill' | 'trader';
+  // EMD Tracking (As per CCI Policy - Full EMD Mandatory Before DO)
+  emdRequired?: number; // Total EMD required for contract
+  emdPaid?: number; // Total EMD actually paid by buyer
+  emdPaymentDate?: string; // Date when EMD was paid
+  emdStatus?: 'Not Paid' | 'Partial' | 'Full' | 'Late Full'; // EMD payment status
+  emdGracePeriodExpiry?: string; // Date when grace period expires
+  emdLateInterestApplicable?: boolean; // Whether late interest applies
+  doEligible?: boolean; // Whether Delivery Order can be created (requires full EMD)
   // Sub-broker assignment
   subBrokerId?: string;
   subBrokerName?: string;

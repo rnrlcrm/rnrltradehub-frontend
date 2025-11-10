@@ -52,8 +52,25 @@ const CciTermManagement: React.FC<CciTermManagementProps> = ({ initialData, curr
 
   const columns = [
     { header: 'Name', accessor: 'name' },
-    { header: 'Contract Period', accessor: (item: CciTerm) => `${item.contract_period_days} days` },
-    { header: 'Cash Discount', accessor: (item: CciTerm) => `${item.cash_discount_percentage}%` },
+    { 
+      header: 'Effective Period', 
+      accessor: (item: CciTerm) => {
+        const from = new Date(item.effectiveFrom).toLocaleDateString();
+        const to = item.effectiveTo ? new Date(item.effectiveTo).toLocaleDateString() : 'Current';
+        return `${from} - ${to}`;
+      }
+    },
+    { 
+      header: 'Status', 
+      accessor: (item: CciTerm) => (
+        <span className={`px-2 py-1 text-xs rounded ${item.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {item.isActive ? 'Active' : 'Inactive'}
+        </span>
+      )
+    },
+    { header: 'Version', accessor: (item: CciTerm) => `v${item.version}` },
+    { header: 'Candy Factor', accessor: (item: CciTerm) => item.candy_factor },
+    { header: 'GST Rate', accessor: (item: CciTerm) => `${item.gst_rate}%` },
     {
       header: 'Actions',
       accessor: (item: CciTerm) => (
