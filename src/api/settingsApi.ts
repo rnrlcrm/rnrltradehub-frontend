@@ -94,6 +94,7 @@ export const organizationsApi = {
 
 // ============================================================================
 // MASTER DATA (Generic)
+// Note: Financial Years removed - managed only in FY Management tab
 // ============================================================================
 
 export type MasterDataType =
@@ -102,8 +103,7 @@ export type MasterDataType =
   | 'varieties'
   | 'dispute-reasons'
   | 'weightment-terms'
-  | 'passing-terms'
-  | 'financial-years';
+  | 'passing-terms';
 
 export const masterDataApi = {
   getAll: async (type: MasterDataType): Promise<ApiResponse<MasterDataItem[]>> => {
@@ -116,7 +116,6 @@ export const masterDataApi = {
         'dispute-reasons': mockMasterData.disputeReasons,
         'weightment-terms': mockMasterData.weightmentTerms,
         'passing-terms': mockMasterData.passingTerms,
-        'financial-years': mockMasterData.financialYears,
       };
       return { data: typeMap[type] || [], success: true };
     }

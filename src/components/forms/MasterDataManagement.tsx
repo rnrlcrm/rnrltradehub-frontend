@@ -18,6 +18,7 @@ interface MasterDataManagementProps {
 }
 
 // Map display titles to API types
+// Note: Financial Years removed from here - managed only in FY Management tab
 const getTitleToApiType = (title: string): MasterDataType => {
   const typeMap: Record<string, MasterDataType> = {
     'Trade Types': 'trade-types',
@@ -26,7 +27,6 @@ const getTitleToApiType = (title: string): MasterDataType => {
     'Dispute Reasons': 'dispute-reasons',
     'Weightment Terms': 'weightment-terms',
     'Passing Terms': 'passing-terms',
-    'Financial Years': 'financial-years',
   };
   return typeMap[title] || 'trade-types';
 };

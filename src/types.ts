@@ -451,3 +451,51 @@ export interface FYSplitSummary {
   disputesMigrated: number;
   notes: string;
 }
+
+// Contract Template Types for Optimization
+export interface ContractTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: 'standard' | 'custom' | 'historical';
+  usageCount: number;
+  lastUsed?: Date;
+  
+  // Template Data
+  templateData: {
+    tradeType?: string;
+    bargainType?: string;
+    variety?: string;
+    weightmentTerms?: string;
+    passingTerms?: string;
+    deliveryTerms?: string;
+    paymentTerms?: string;
+    cciTermId?: number;
+    
+    // Quality parameters (auto-filled based on variety)
+    qualitySpecs?: {
+      length?: string;
+      micronaire?: string;
+      rd?: string;
+      trash?: string;
+      moisture?: string;
+    };
+    
+    // Additional default values
+    brokerage?: number;
+    commission?: number;
+    notes?: string;
+  };
+  
+  // Metadata
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isActive: boolean;
+}
+
+export interface TemplateLibrary {
+  templates: ContractTemplate[];
+  categories: string[];
+  mostUsed: ContractTemplate[];
+}
