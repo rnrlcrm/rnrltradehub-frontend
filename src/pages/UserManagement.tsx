@@ -24,6 +24,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   const canDelete = hasPermission(currentUser.role, 'User Management', 'delete');
   const canRead = hasPermission(currentUser.role, 'User Management', 'read');
 
+  // Check if this is a standalone page (via direct URL) or embedded in Settings
+  const isStandalone = window.location.hash === '#user-management';
+
   if (!canRead) {
     return (
       <Card title="Access Denied">
@@ -102,6 +105,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
 
   return (
     <div className="space-y-6">
+      {isStandalone && (
+        <Card className="bg-blue-50 border-blue-200">
+          <div className="p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> User Management is now part of the Settings module under the Access Control tab. 
+              Please navigate to <a href="#settings" className="underline font-semibold">Settings → Access Control → User Management</a> for the updated interface.
+            </p>
+          </div>
+        </Card>
+      )}
+      
       <Card title="Permission Modes" className="bg-blue-50 border-blue-200">
         <div className="p-4 space-y-2 text-sm">
           <div className="flex items-start gap-2">
