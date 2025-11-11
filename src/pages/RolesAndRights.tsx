@@ -33,10 +33,13 @@ const RolesAndRights: React.FC<RolesAndRightsProps> = ({ currentUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Check if this is a standalone page (via direct URL) or embedded in Settings
+  const isStandalone = window.location.hash === '#roles-rights';
+
   if (currentUser.role !== 'Admin') {
     return (
       <Card title="Access Denied">
-        <p className="text-red-600">You do not have permission to view this page. This module is for administrators only.</p>
+        <p className="text-red-600">You do not have permission to view this section. This module is for administrators only.</p>
       </Card>
     );
   }
@@ -114,10 +117,20 @@ const RolesAndRights: React.FC<RolesAndRightsProps> = ({ currentUser }) => {
 
   return (
     <div className="space-y-6">
+      {isStandalone && (
+        <Card className="bg-blue-50 border-blue-200">
+          <div className="p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> Roles & Rights is now part of the Settings module under the Access Control tab. 
+              Please navigate to <a href="#settings" className="underline font-semibold">Settings → Access Control → Roles & Rights</a> for the updated interface.
+            </p>
+          </div>
+        </Card>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Roles & Rights Management</h1>
-          <p className="text-slate-600 mt-1">Define permissions for each user role across all system modules.</p>
+          <p className="text-slate-600">Define permissions for each user role across all system modules.</p>
         </div>
         <div className="flex gap-2">
           {!isEditing && (
