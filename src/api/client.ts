@@ -5,7 +5,7 @@
  */
 
 // API base URL - configure based on environment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://erp-nonprod-backend-502095789065.us-central1.run.app';
 
 export interface ApiResponse<T> {
   data: T;
