@@ -27,7 +27,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   if (!canRead) {
     return (
       <Card title="Access Denied">
-        <p className="text-red-600">You do not have permission to view this page. Please contact an administrator.</p>
+        <p className="text-red-600">You do not have permission to view this section. Please contact an administrator.</p>
       </Card>
     );
   }
@@ -102,11 +102,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-800">User Management</h1>
-        <p className="text-slate-600 mt-1">Manage system users and their permissions</p>
-      </div>
-
       <Card title="Permission Modes" className="bg-blue-50 border-blue-200">
         <div className="p-4 space-y-2 text-sm">
           <div className="flex items-start gap-2">

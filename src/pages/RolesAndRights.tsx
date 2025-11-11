@@ -36,7 +36,7 @@ const RolesAndRights: React.FC<RolesAndRightsProps> = ({ currentUser }) => {
   if (currentUser.role !== 'Admin') {
     return (
       <Card title="Access Denied">
-        <p className="text-red-600">You do not have permission to view this page. This module is for administrators only.</p>
+        <p className="text-red-600">You do not have permission to view this section. This module is for administrators only.</p>
       </Card>
     );
   }
@@ -116,8 +116,7 @@ const RolesAndRights: React.FC<RolesAndRightsProps> = ({ currentUser }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Roles & Rights Management</h1>
-          <p className="text-slate-600 mt-1">Define permissions for each user role across all system modules.</p>
+          <p className="text-slate-600">Define permissions for each user role across all system modules.</p>
         </div>
         <div className="flex gap-2">
           {!isEditing && (

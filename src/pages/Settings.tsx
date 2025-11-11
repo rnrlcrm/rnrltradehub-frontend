@@ -8,6 +8,8 @@ import StructuredTermManagement from '../components/forms/StructuredTermManageme
 import CciTermManagement from '../components/forms/CciTermManagement';
 import GstRateManagement from '../components/forms/GstRateManagement';
 import FYManagement from '../components/forms/FYManagement';
+import UserManagement from './UserManagement';
+import RolesAndRights from './RolesAndRights';
 import { mockMasterData, mockLocations, mockOrganizationsDetailed } from '../data/mockData';
 import { User, AuditLog } from '../types';
 import Card from '../components/ui/Card';
@@ -18,7 +20,8 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
-  const [activeTab, setActiveTab] = useState<'master-data' | 'fy-management'>('master-data');
+  const [activeTab, setActiveTab] = useState<'master-data' | 'fy-management' | 'access-control'>('master-data');
+  const [accessControlSubTab, setAccessControlSubTab] = useState<'users' | 'roles'>('users');
 
   if (currentUser.role !== 'Admin') {
     return (
@@ -29,8 +32,8 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-800">Settings & Master Data</h1>
-      <p className="text-slate-600 -mt-4">Manage core system configurations. Changes here affect options available across the ERP.</p>
+      <h1 className="text-2xl font-semibold text-slate-800">Settings & Configuration</h1>
+      <p className="text-slate-600 -mt-4">Manage core system configurations, master data, and access control settings.</p>
       
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
@@ -54,6 +57,16 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
             }`}
           >
             Financial Year Management
+          </button>
+          <button
+            onClick={() => setActiveTab('access-control')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'access-control'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Access Control
           </button>
         </nav>
       </div>
@@ -105,6 +118,45 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
 
       {activeTab === 'fy-management' && (
         <FYManagement />
+      )}
+
+      {activeTab === 'access-control' && (
+        <div className="space-y-6">
+          {/* Access Control Sub-tabs */}
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setAccessControlSubTab('users')}
+                className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                  accessControlSubTab === 'users'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                User Management
+              </button>
+              <button
+                onClick={() => setAccessControlSubTab('roles')}
+                className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                  accessControlSubTab === 'roles'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Roles & Rights
+              </button>
+            </nav>
+          </div>
+
+          {/* Access Control Sub-tab Content */}
+          {accessControlSubTab === 'users' && (
+            <UserManagement currentUser={currentUser} />
+          )}
+          
+          {accessControlSubTab === 'roles' && (
+            <RolesAndRights currentUser={currentUser} />
+          )}
+        </div>
       )}
     </div>
   );
