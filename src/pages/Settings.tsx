@@ -77,7 +77,7 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
             <MasterDataManagement title="Dispute Reasons" initialData={mockMasterData.disputeReasons} currentUser={currentUser} addAuditLog={addAuditLog} />
             <MasterDataManagement title="Weightment Terms" initialData={mockMasterData.weightmentTerms} currentUser={currentUser} addAuditLog={addAuditLog} />
             <MasterDataManagement title="Passing Terms" initialData={mockMasterData.passingTerms} currentUser={currentUser} addAuditLog={addAuditLog} />
-            <MasterDataManagement title="Financial Years" initialData={mockMasterData.financialYears} currentUser={currentUser} addAuditLog={addAuditLog} />
+            {/* Financial Years removed - now managed only in FY Management tab to prevent duplication */}
           </div>
 
           <div className="mt-8">
