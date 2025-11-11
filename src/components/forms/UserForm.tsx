@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User } from '../../types';
+import { User } from '../../types/multiTenant';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
 
 interface UserFormProps {
@@ -8,6 +8,11 @@ interface UserFormProps {
   readOnly: boolean;
   onSave: (data: User) => void;
   onCancel: () => void;
+}
+
+// Extended user type with custom permissions
+interface UserWithCustomPermissions extends User {
+  customPermissions?: UserPermissions;
 }
 
 const modules = [
@@ -31,22 +36,28 @@ interface UserPermissions {
   [module: string]: string[];
 }
 
-const getInitialState = (): Omit<User, 'id'> & { customPermissions?: UserPermissions } => ({
+const getInitialState = (): Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { customPermissions?: UserPermissions } => ({
   name: '',
   email: '',
+  userType: 'back_office',
+  portal: 'back_office',
+  isSubUser: false,
+  status: 'active',
+  isVerified: false,
   role: 'Sales',
   customPermissions: {},
 });
 
 const UserForm: React.FC<UserFormProps> = ({ user, readOnly, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Omit<User, 'id'> & { customPermissions?: UserPermissions }>(getInitialState());
+  const [formData, setFormData] = useState<Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { customPermissions?: UserPermissions }>(getInitialState());
   const [useCustomPermissions, setUseCustomPermissions] = useState(false);
 
   useEffect(() => {
     if (user) {
-      const userData = { ...user, customPermissions: (user as any).customPermissions || {} };
+      const userWithPerms = user as UserWithCustomPermissions;
+      const userData = { ...user, customPermissions: userWithPerms.customPermissions || {} };
       setFormData(userData);
-      setUseCustomPermissions(!!(user as any).customPermissions && Object.keys((user as any).customPermissions).length > 0);
+      setUseCustomPermissions(!!userWithPerms.customPermissions && Object.keys(userWithPerms.customPermissions).length > 0);
     } else {
       setFormData(getInitialState());
       setUseCustomPermissions(false);
@@ -94,7 +105,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, readOnly, onSave, onCancel })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const userData = { ...formData } as any;
+    const userData: Partial<UserWithCustomPermissions> = { ...formData };
     if (!useCustomPermissions) {
       delete userData.customPermissions;
     }
@@ -129,6 +140,40 @@ const UserForm: React.FC<UserFormProps> = ({ user, readOnly, onSave, onCancel })
             required
           />
         </FormRow>
+
+        <FormRow>
+          <FormLabel htmlFor="userType">User Type *</FormLabel>
+          <FormInput 
+            component="select" 
+            id="userType" 
+            name="userType" 
+            value={formData.userType} 
+            onChange={handleChange} 
+            isReadOnly={readOnly}
+            required
+          >
+            <option value="back_office">Back Office</option>
+            <option value="client">Client</option>
+            <option value="vendor">Vendor</option>
+          </FormInput>
+        </FormRow>
+
+        <FormRow>
+          <FormLabel htmlFor="status">Status *</FormLabel>
+          <FormInput 
+            component="select" 
+            id="status" 
+            name="status" 
+            value={formData.status} 
+            onChange={handleChange} 
+            isReadOnly={readOnly}
+            required
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="suspended">Suspended</option>
+          </FormInput>
+        </FormRow>
         
         <FormRow>
           <FormLabel htmlFor="role">Default Role *</FormLabel>
@@ -136,11 +181,11 @@ const UserForm: React.FC<UserFormProps> = ({ user, readOnly, onSave, onCancel })
             component="select" 
             id="role" 
             name="role" 
-            value={formData.role} 
+            value={formData.role || ''} 
             onChange={handleChange} 
             isReadOnly={readOnly}
-            required
           >
+            <option value="">None</option>
             <option value="Admin">Admin</option>
             <option value="Sales">Sales</option>
             <option value="Accounts">Accounts</option>
