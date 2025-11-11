@@ -36,8 +36,9 @@ export function useSubUsers(): UseSubUsersReturn {
       const response = await multiTenantApi.getMyTeam();
       setSubUsers(response.subUsers);
       setLimits(response.limits);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch sub-users');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch sub-users';
+      setError(errorMessage);
       console.error('Failed to fetch sub-users:', err);
     } finally {
       setLoading(false);
@@ -62,15 +63,17 @@ export function useSubUsers(): UseSubUsersReturn {
       });
       await fetchSubUsers();
       return { success: true };
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to add sub-user';
+    } catch (err) {
+      const errorMessage = (err as { response?: { data?: { message?: string } }; message?: string }).response?.data?.message 
+        || (err as Error).message 
+        || 'Failed to add sub-user';
       return { success: false, error: errorMessage };
     }
   };
 
   const updateSubUser = async (subUserId: string, updates: { permissions?: Record<string, boolean>; isActive?: boolean }) => {
     try {
-      const updateData: any = {};
+      const updateData: { permissions?: string[]; isActive?: boolean } = {};
       if (updates.permissions !== undefined) {
         updateData.permissions = Object.keys(updates.permissions).filter(key => updates.permissions![key]);
       }
@@ -80,8 +83,10 @@ export function useSubUsers(): UseSubUsersReturn {
       await multiTenantApi.updateSubUser(subUserId, updateData);
       await fetchSubUsers();
       return { success: true };
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to update sub-user';
+    } catch (err) {
+      const errorMessage = (err as { response?: { data?: { message?: string } }; message?: string }).response?.data?.message 
+        || (err as Error).message 
+        || 'Failed to update sub-user';
       return { success: false, error: errorMessage };
     }
   };
@@ -91,8 +96,10 @@ export function useSubUsers(): UseSubUsersReturn {
       await multiTenantApi.deleteSubUser(subUserId);
       await fetchSubUsers();
       return { success: true };
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to remove sub-user';
+    } catch (err) {
+      const errorMessage = (err as { response?: { data?: { message?: string } }; message?: string }).response?.data?.message 
+        || (err as Error).message 
+        || 'Failed to remove sub-user';
       return { success: false, error: errorMessage };
     }
   };

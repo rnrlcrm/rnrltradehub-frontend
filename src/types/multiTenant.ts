@@ -85,7 +85,7 @@ export interface ActivityLogEntry {
   action: string;
   resource: string;
   resourceId?: string;
-  details?: any;
+  details?: Record<string, unknown>;
   timestamp: string;
   ipAddress?: string;
   userAgent?: string;
