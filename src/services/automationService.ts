@@ -6,7 +6,7 @@
 import { apiClient } from '../api/realApiClient';
 import type { BusinessPartner, BusinessBranch } from '../types/businessPartner';
 import type { EnhancedUser } from '../types/accessControl';
-import { generatePassword, validatePasswordStrength } from '../config/security';
+import { generatePassword, DEFAULT_PASSWORD_POLICY } from '../config/security';
 import { sendEmail, EmailType } from './emailService';
 
 export class AutomationService {
@@ -22,7 +22,7 @@ export class AutomationService {
 
     try {
       // 1. Generate secure password
-      const password = generatePassword();
+      const password = generatePassword(DEFAULT_PASSWORD_POLICY);
       console.log(`[AUTOMATION] Generated secure password`);
 
       // 2. Create user account
