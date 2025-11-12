@@ -8,12 +8,52 @@ import { User, SubUser, SubUserInvitation, ActivityLogEntry, SubUserLimits, Port
 
 export const multiTenantApi = {
   // Authentication
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    const response = await apiClient.post<{ user: User; token: string }>('/api/settings/auth/login', {
+  async login(email: string, password: string): Promise<{ user: User; accessToken: string; refreshToken: string; expiresIn: number }> {
+    const response = await apiClient.post<{ 
+      user: User; 
+      accessToken: string; 
+      refreshToken: string;
+      expiresIn: number; // Token lifetime in seconds
+    }>('/api/settings/auth/login', {
       email,
       password,
     });
     return response.data;
+  },
+
+  async logout(): Promise<void> {
+    await apiClient.post('/api/settings/auth/logout', {});
+  },
+
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+    const response = await apiClient.post<{ 
+      accessToken: string; 
+      refreshToken: string;
+      expiresIn: number;
+    }>('/api/auth/refresh', {
+      refreshToken,
+    });
+    return response.data;
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await apiClient.post('/api/settings/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+    await apiClient.post('/api/settings/auth/forgot-password', {
+      email,
+    });
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await apiClient.post('/api/settings/auth/reset-password', {
+      token,
+      newPassword,
+    });
   },
 
   async getCurrentUser(): Promise<User> {
