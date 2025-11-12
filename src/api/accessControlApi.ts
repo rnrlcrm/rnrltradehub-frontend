@@ -11,6 +11,7 @@ import {
   ApprovalWorkflow,
   DataIsolationRule,
 } from '../types/accessControl';
+import { buildQueryParams } from '../utils/apiHelpers';
 
 export const accessControlApi = {
   // ========== User Management ==========
@@ -24,9 +25,9 @@ export const accessControlApi = {
     businessPartnerId?: string;
     search?: string;
   }): Promise<EnhancedUser[]> {
-    const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
+    const queryParams = buildQueryParams(filters);
     const response = await apiClient.get<EnhancedUser[]>(
-      `/api/users${queryParams ? `?${queryParams}` : ''}`
+      `/api/users${queryParams}`
     );
     return response.data;
   },
@@ -216,9 +217,9 @@ export const accessControlApi = {
     requestType?: string;
     status?: string;
   }): Promise<ApprovalWorkflow[]> {
-    const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
+    const queryParams = buildQueryParams(filters);
     const response = await apiClient.get<ApprovalWorkflow[]>(
-      `/api/approvals/history${queryParams ? `?${queryParams}` : ''}`
+      `/api/approvals/history${queryParams}`
     );
     return response.data;
   },

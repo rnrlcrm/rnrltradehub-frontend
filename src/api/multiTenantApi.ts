@@ -5,6 +5,7 @@
 
 import { apiClient } from './client';
 import { User, SubUser, SubUserInvitation, ActivityLogEntry, SubUserLimits, Portal } from '../types/multiTenant';
+import { buildQueryParams } from '../utils/apiHelpers';
 
 export const multiTenantApi = {
   // Authentication
@@ -61,8 +62,8 @@ export const multiTenantApi = {
 
   // User Management (Back Office only)
   async getAllUsers(filters?: { userType?: string; isActive?: boolean }): Promise<User[]> {
-    const queryParams = new URLSearchParams(filters as any).toString();
-    const response = await apiClient.get<User[]>(`/api/settings/users${queryParams ? `?${queryParams}` : ''}`);
+    const queryParams = buildQueryParams(filters as Record<string, string | undefined>);
+    const response = await apiClient.get<User[]>(`/api/settings/users${queryParams}`);
     return response.data;
   },
 

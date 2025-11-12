@@ -9,6 +9,7 @@ import {
   BusinessPartnerOnboardingRequest,
   BusinessPartnerUserRequest,
 } from '../types/businessPartner';
+import { buildQueryParams } from '../utils/apiHelpers';
 
 export const businessPartnerApi = {
   /**
@@ -19,9 +20,9 @@ export const businessPartnerApi = {
     status?: string;
     search?: string;
   }): Promise<EnhancedBusinessPartner[]> {
-    const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
+    const queryParams = buildQueryParams(filters);
     const response = await apiClient.get<EnhancedBusinessPartner[]>(
-      `/api/business-partners${queryParams ? `?${queryParams}` : ''}`
+      `/api/business-partners${queryParams}`
     );
     return response.data;
   },
@@ -183,12 +184,12 @@ export const businessPartnerApi = {
     state?: string;
     partnerId?: string;
   }): Promise<BusinessBranch[]> {
-    const queryParams = new URLSearchParams({ 
+    const queryParams = buildQueryParams({ 
       q: query,
-      ...filters as Record<string, string>
-    }).toString();
+      ...filters
+    });
     const response = await apiClient.get<BusinessBranch[]>(
-      `/api/branches/search?${queryParams}`
+      `/api/branches/search${queryParams}`
     );
     return response.data;
   },

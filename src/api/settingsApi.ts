@@ -29,6 +29,9 @@ import {
   mockLocations,
 } from '../data/mockData';
 
+// API helper utilities
+import { mockDelay } from '../utils/apiHelpers';
+
 // ============================================================================
 // ORGANIZATIONS
 // ============================================================================
@@ -36,8 +39,7 @@ import {
 export const organizationsApi = {
   getAll: async (): Promise<ApiResponse<Organization[]>> => {
     if (USE_MOCK_API) {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return {
         data: mockOrganizationsDetailed,
         success: true,
@@ -48,7 +50,7 @@ export const organizationsApi = {
 
   getById: async (id: number): Promise<ApiResponse<Organization>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await mockDelay(200);
       const org = mockOrganizationsDetailed.find(o => o.id === id);
       if (!org) {
         throw { message: 'Organization not found', code: '404' };
@@ -60,7 +62,7 @@ export const organizationsApi = {
 
   create: async (data: Omit<Organization, 'id'>): Promise<ApiResponse<Organization>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const newOrg: Organization = {
         ...data,
         id: Date.now(), // In real API, this comes from backend
@@ -72,7 +74,7 @@ export const organizationsApi = {
 
   update: async (id: number, data: Partial<Organization>): Promise<ApiResponse<Organization>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const updated: Organization = {
         ...(mockOrganizationsDetailed.find(o => o.id === id) || {} as Organization),
         ...data,
@@ -85,7 +87,7 @@ export const organizationsApi = {
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: undefined as void, success: true, message: 'Organization deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/organizations/${id}`);
@@ -108,7 +110,7 @@ export type MasterDataType =
 export const masterDataApi = {
   getAll: async (type: MasterDataType): Promise<ApiResponse<MasterDataItem[]>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       const typeMap: Record<MasterDataType, MasterDataItem[]> = {
         'trade-types': mockMasterData.tradeTypes,
         'bargain-types': mockMasterData.bargainTypes,
@@ -124,7 +126,7 @@ export const masterDataApi = {
 
   create: async (type: MasterDataType, data: { name: string }): Promise<ApiResponse<MasterDataItem>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const newItem: MasterDataItem = {
         id: Date.now(),
         name: data.name,
@@ -136,7 +138,7 @@ export const masterDataApi = {
 
   update: async (type: MasterDataType, id: number, data: { name: string }): Promise<ApiResponse<MasterDataItem>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const updated: MasterDataItem = { id, name: data.name };
       return { data: updated, success: true, message: 'Item updated successfully' };
     }
@@ -145,7 +147,7 @@ export const masterDataApi = {
 
   delete: async (type: MasterDataType, id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: undefined as void, success: true, message: 'Item deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/master-data/${type}/${id}`);
@@ -159,7 +161,7 @@ export const masterDataApi = {
 export const gstRatesApi = {
   getAll: async (): Promise<ApiResponse<GstRate[]>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: mockMasterData.gstRates, success: true };
     }
     return apiClient.get<GstRate[]>('/settings/gst-rates');
@@ -167,7 +169,7 @@ export const gstRatesApi = {
 
   create: async (data: Omit<GstRate, 'id'>): Promise<ApiResponse<GstRate>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const newRate: GstRate = { ...data, id: Date.now() };
       return { data: newRate, success: true, message: 'GST rate created successfully' };
     }
@@ -176,7 +178,7 @@ export const gstRatesApi = {
 
   update: async (id: number, data: Partial<GstRate>): Promise<ApiResponse<GstRate>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const updated: GstRate = {
         ...(mockMasterData.gstRates.find(r => r.id === id) || {} as GstRate),
         ...data,
@@ -189,7 +191,7 @@ export const gstRatesApi = {
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: undefined as void, success: true, message: 'GST rate deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/gst-rates/${id}`);
@@ -203,7 +205,7 @@ export const gstRatesApi = {
 export const locationsApi = {
   getAll: async (): Promise<ApiResponse<Location[]>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: mockLocations, success: true };
     }
     return apiClient.get<Location[]>('/settings/locations');
@@ -211,7 +213,7 @@ export const locationsApi = {
 
   create: async (data: Omit<Location, 'id'>): Promise<ApiResponse<Location>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const newLocation: Location = { ...data, id: Date.now() };
       return { data: newLocation, success: true, message: 'Location created successfully' };
     }
@@ -220,7 +222,7 @@ export const locationsApi = {
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: undefined as void, success: true, message: 'Location deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/locations/${id}`);
@@ -234,7 +236,7 @@ export const locationsApi = {
 export const commissionsApi = {
   getAll: async (): Promise<ApiResponse<CommissionStructure[]>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: mockMasterData.commissions, success: true };
     }
     return apiClient.get<CommissionStructure[]>('/settings/commissions');
@@ -242,7 +244,7 @@ export const commissionsApi = {
 
   create: async (data: Omit<CommissionStructure, 'id'>): Promise<ApiResponse<CommissionStructure>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const newCommission: CommissionStructure = { ...data, id: Date.now() };
       return { data: newCommission, success: true, message: 'Commission created successfully' };
     }
@@ -251,7 +253,7 @@ export const commissionsApi = {
 
   update: async (id: number, data: Partial<CommissionStructure>): Promise<ApiResponse<CommissionStructure>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const updated: CommissionStructure = {
         ...(mockMasterData.commissions.find(c => c.id === id) || {} as CommissionStructure),
         ...data,
@@ -264,7 +266,7 @@ export const commissionsApi = {
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: undefined as void, success: true, message: 'Commission deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/commissions/${id}`);
@@ -278,7 +280,7 @@ export const commissionsApi = {
 export const cciTermsApi = {
   getAll: async (): Promise<ApiResponse<CciTerm[]>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: mockMasterData.cciTerms, success: true };
     }
     return apiClient.get<CciTerm[]>('/settings/cci-terms');
@@ -286,7 +288,7 @@ export const cciTermsApi = {
 
   create: async (data: Omit<CciTerm, 'id'>): Promise<ApiResponse<CciTerm>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const newTerm: CciTerm = { ...data, id: Date.now() };
       return { data: newTerm, success: true, message: 'CCI term created successfully' };
     }
@@ -295,7 +297,7 @@ export const cciTermsApi = {
 
   update: async (id: number, data: Partial<CciTerm>): Promise<ApiResponse<CciTerm>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const updated: CciTerm = {
         ...(mockMasterData.cciTerms.find(t => t.id === id) || {} as CciTerm),
         ...data,
@@ -308,7 +310,7 @@ export const cciTermsApi = {
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: undefined as void, success: true, message: 'CCI term deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/cci-terms/${id}`);
@@ -324,7 +326,7 @@ export type StructuredTermType = 'delivery-terms' | 'payment-terms';
 export const structuredTermsApi = {
   getAll: async (type: StructuredTermType): Promise<ApiResponse<StructuredTerm[]>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       const data = type === 'delivery-terms' ? mockMasterData.deliveryTerms : mockMasterData.paymentTerms;
       return { data, success: true };
     }
@@ -333,7 +335,7 @@ export const structuredTermsApi = {
 
   create: async (type: StructuredTermType, data: Omit<StructuredTerm, 'id'>): Promise<ApiResponse<StructuredTerm>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const newTerm: StructuredTerm = { ...data, id: Date.now() };
       return { data: newTerm, success: true, message: 'Term created successfully' };
     }
@@ -342,7 +344,7 @@ export const structuredTermsApi = {
 
   update: async (type: StructuredTermType, id: number, data: Partial<StructuredTerm>): Promise<ApiResponse<StructuredTerm>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await mockDelay(400);
       const terms = type === 'delivery-terms' ? mockMasterData.deliveryTerms : mockMasterData.paymentTerms;
       const updated: StructuredTerm = {
         ...(terms.find(t => t.id === id) || {} as StructuredTerm),
@@ -356,7 +358,7 @@ export const structuredTermsApi = {
 
   delete: async (type: StructuredTermType, id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await mockDelay();
       return { data: undefined as void, success: true, message: 'Term deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/${type}/${id}`);

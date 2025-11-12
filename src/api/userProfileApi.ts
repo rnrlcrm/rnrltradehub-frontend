@@ -11,6 +11,7 @@ import {
   KYCReminderConfig,
   UserDashboard,
 } from '../types/userProfile';
+import { buildQueryParams } from '../utils/apiHelpers';
 
 export const userProfileApi = {
   /**
@@ -109,9 +110,9 @@ export const userProfileApi = {
     businessPartnerId?: string;
     userId?: string;
   }): Promise<DetailedProfileUpdate[]> {
-    const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
+    const queryParams = buildQueryParams(filters);
     const response = await apiClient.get<DetailedProfileUpdate[]>(
-      `/api/admin/profile-updates/pending${queryParams ? `?${queryParams}` : ''}`
+      `/api/admin/profile-updates/pending${queryParams}`
     );
     return response.data;
   },
@@ -159,9 +160,9 @@ export const userProfileApi = {
     kycNextDue: string;
     daysRemaining: number;
   }>> {
-    const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
+    const queryParams = buildQueryParams(filters as Record<string, string | undefined>);
     const response = await apiClient.get<any[]>(
-      `/api/admin/kyc/due-list${queryParams ? `?${queryParams}` : ''}`
+      `/api/admin/kyc/due-list${queryParams}`
     );
     return response.data;
   },

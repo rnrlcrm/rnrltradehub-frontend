@@ -11,6 +11,7 @@ import {
   AmendmentHistory,
   TransactionLock,
 } from '../types/amendment';
+import { buildQueryParams } from '../utils/apiHelpers';
 
 export const amendmentApi = {
   /**
@@ -82,9 +83,9 @@ export const amendmentApi = {
     amendmentType?: string;
     urgency?: string;
   }): Promise<BusinessPartnerAmendment[]> {
-    const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
+    const queryParams = buildQueryParams(filters);
     const response = await apiClient.get<BusinessPartnerAmendment[]>(
-      `/api/amendments/pending${queryParams ? `?${queryParams}` : ''}`
+      `/api/amendments/pending${queryParams}`
     );
     return response.data;
   },
