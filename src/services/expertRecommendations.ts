@@ -381,17 +381,17 @@ export class EncryptionService {
     );
 
     // Encrypt
-    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const initializationVector = crypto.getRandomValues(new Uint8Array(12));
     const encryptedData = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
+      { name: 'AES-GCM', iv: initializationVector },
       key,
       dataBuffer
     );
 
     // Combine IV and encrypted data
-    const combined = new Uint8Array(iv.length + encryptedData.byteLength);
-    combined.set(iv, 0);
-    combined.set(new Uint8Array(encryptedData), iv.length);
+    const combined = new Uint8Array(initializationVector.length + encryptedData.byteLength);
+    combined.set(initializationVector, 0);
+    combined.set(new Uint8Array(encryptedData), initializationVector.length);
 
     // Convert to base64
     return btoa(String.fromCharCode(...combined));
@@ -402,9 +402,9 @@ export class EncryptionService {
    */
   static async decrypt(encryptedData: string): Promise<string> {
     // In production, retrieve key from secure storage
-    const data = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+    const data = Uint8Array.from(atob(encryptedData), char => char.charCodeAt(0));
     
-    const iv = data.slice(0, 12);
+    const initializationVector = data.slice(0, 12);
     const ciphertext = data.slice(12);
 
     // Generate same key (in production, retrieve from secure storage)
@@ -416,7 +416,7 @@ export class EncryptionService {
 
     // Decrypt
     const decryptedData = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
+      { name: 'AES-GCM', iv: initializationVector },
       key,
       ciphertext
     );
