@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { DashboardIcon, ContractIcon, UsersIcon, SettingsIcon, InvoiceIcon, PaymentIcon, DisputeIcon, CommissionIcon, ReportIcon, AuditIcon, ChatIcon } from '../ui/icons';
+import { DashboardIcon, ContractIcon, UsersIcon, SettingsIcon, InvoiceIcon, PaymentIcon, DisputeIcon, CommissionIcon, ReportIcon, AuditIcon, ChatIcon, ShieldIcon, UserManagementIcon } from '../ui/icons';
 import { User } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -53,6 +53,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
     { name: 'Vendors & Clients', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Reports', icon: ReportIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Audit Trail', icon: AuditIcon, roles: ['Admin'] },
+    { name: 'User Management', icon: UserManagementIcon, roles: ['Admin'] },
+    { name: 'Roles & Rights', icon: ShieldIcon, roles: ['Admin'] },
     { name: 'Settings', icon: SettingsIcon, roles: ['Admin'] },
     { name: 'Grievance Officer', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
   ];
