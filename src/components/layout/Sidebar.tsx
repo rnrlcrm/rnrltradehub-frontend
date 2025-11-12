@@ -53,12 +53,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
     { name: 'Vendors & Clients', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Reports', icon: ReportIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Audit Trail', icon: AuditIcon, roles: ['Admin'] },
+    { name: 'Grievance Officer', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
+    // Security & Access Control section
     { name: 'My Profile', icon: ProfileIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
     { name: 'Profile Approvals', icon: ApprovalIcon, roles: ['Admin'] },
     { name: 'User Management', icon: UserManagementIcon, roles: ['Admin'] },
     { name: 'Roles & Rights', icon: ShieldIcon, roles: ['Admin'] },
     { name: 'Settings', icon: SettingsIcon, roles: ['Admin'] },
-    { name: 'Grievance Officer', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
   ];
 
   const accessibleItems = navItems.filter(item => item.roles.includes(currentUser.role));
