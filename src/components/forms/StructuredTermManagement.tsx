@@ -6,6 +6,7 @@ import Modal from '../ui/Modal';
 import StructuredTermForm from '../forms/StructuredTermForm';
 import { StructuredTerm, User, AuditLog } from '../../types';
 import { Button } from '../ui/Form';
+import { isDuplicateName } from '../../utils/validation';
 
 interface StructuredTermManagementProps {
   title: string;
@@ -30,6 +31,12 @@ const StructuredTermManagement: React.FC<StructuredTermManagementProps> = ({ tit
   };
 
   const handleSave = (data: Omit<StructuredTerm, 'id'>) => {
+    // Check for duplicate name
+    if (isDuplicateName(items, data.name, editingItem?.id)) {
+      alert(`A ${title.slice(0, -1)} with the name "${data.name}" already exists. Please use a different name.`);
+      return;
+    }
+
     const singularTitle = title.slice(0, -1);
     if (editingItem) {
       const updatedItems = items.map(item => item.id === editingItem.id ? { ...editingItem, ...data } : item);

@@ -6,6 +6,7 @@ import Modal from '../ui/Modal';
 import GstRateForm from '../forms/GstRateForm';
 import { GstRate, User, AuditLog } from '../../types';
 import { Button } from '../ui/Form';
+import { isDuplicateHsnCode } from '../../utils/validation';
 
 interface GstRateManagementProps {
   initialData: GstRate[];
@@ -29,6 +30,12 @@ const GstRateManagement: React.FC<GstRateManagementProps> = ({ initialData, curr
   };
 
   const handleSave = (data: Omit<GstRate, 'id'>) => {
+    // Check for duplicate HSN code
+    if (isDuplicateHsnCode(items, data.hsnCode, editingItem?.id)) {
+      alert(`A GST rate with the HSN code "${data.hsnCode}" already exists. Please use a different HSN code.`);
+      return;
+    }
+
     const details = `GST Rate: ${data.rate}% for ${data.description}`;
     if (editingItem) {
       const updatedItems = items.map(item => item.id === editingItem.id ? { ...editingItem, ...data } : item);
