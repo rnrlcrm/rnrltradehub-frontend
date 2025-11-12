@@ -80,7 +80,7 @@ export class SessionManager {
       if (stored) {
         try {
           this.sessionInfo = JSON.parse(stored);
-        } catch (e) {
+        } catch {
           return false;
         }
       } else {
@@ -124,7 +124,7 @@ export class SessionManager {
   /**
    * Expire session
    */
-  private expireSession(reason: 'inactivity' | 'max_duration' | 'manual'): void {
+  private expireSession(_reason: 'inactivity' | 'max_duration' | 'manual'): void {
     if (this.sessionInfo) {
       this.sessionInfo.isActive = false;
       localStorage.removeItem('sessionInfo');

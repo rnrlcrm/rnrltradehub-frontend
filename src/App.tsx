@@ -133,7 +133,7 @@ const App: React.FC = () => {
     if (savedUser) {
       try {
         setCurrentUser(JSON.parse(savedUser));
-      } catch (e) {
+      } catch {
         localStorage.removeItem('currentUser');
       }
     }
