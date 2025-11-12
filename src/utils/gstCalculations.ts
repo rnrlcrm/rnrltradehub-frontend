@@ -9,6 +9,8 @@
  * Can be customized based on HSN code/product category
  */
 
+import { formatCurrency, formatPercentage } from './formatters';
+
 export interface GSTCalculation {
   taxableAmount: number;
   cgst: number;
@@ -76,9 +78,9 @@ export function calculateGST(
  */
 export function formatGSTBreakdown(gst: GSTCalculation): string {
   if (gst.isInterState) {
-    return `IGST @ ${gst.gstRate}%: ₹${gst.igst.toLocaleString('en-IN')}`;
+    return `IGST @ ${formatPercentage(gst.gstRate, 0)}: ${formatCurrency(gst.igst)}`;
   } else {
-    return `CGST @ ${gst.gstRate / 2}%: ₹${gst.cgst.toLocaleString('en-IN')} + SGST @ ${gst.gstRate / 2}%: ₹${gst.sgst.toLocaleString('en-IN')}`;
+    return `CGST @ ${formatPercentage(gst.gstRate / 2, 0)}: ${formatCurrency(gst.cgst)} + SGST @ ${formatPercentage(gst.gstRate / 2, 0)}: ${formatCurrency(gst.sgst)}`;
   }
 }
 

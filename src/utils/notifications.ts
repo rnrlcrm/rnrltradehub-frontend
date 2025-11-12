@@ -1,3 +1,5 @@
+import { formatCurrency } from './formatters';
+
 interface Notification {
   id: string;
   type: 'alert' | 'info' | 'reminder' | 'milestone';
@@ -23,7 +25,7 @@ export const createInvoiceOverdueNotification = (
     id: `invoice-overdue-${invoiceNo}-${Date.now()}`,
     type: 'alert',
     title: `Invoice ${invoiceNo} Overdue`,
-    message: `Invoice for ${partyName} is overdue by ${daysOverdue} days (₹${amount.toLocaleString('en-IN')})`,
+    message: `Invoice for ${partyName} is overdue by ${daysOverdue} days (${formatCurrency(amount)})`,
     timestamp: new Date(),
     isRead: false,
     actionUrl: '#/invoices',
@@ -45,7 +47,7 @@ export const createCommissionDueNotification = (
     id: `commission-due-${commissionId}-${Date.now()}`,
     type: 'reminder',
     title: `Commission Payment Due`,
-    message: `Payment to ${agentName} is due (₹${amount.toLocaleString('en-IN')})${daysOverdue > 0 ? ` - ${daysOverdue} days overdue` : ''}`,
+    message: `Payment to ${agentName} is due (${formatCurrency(amount)})${daysOverdue > 0 ? ` - ${daysOverdue} days overdue` : ''}`,
     timestamp: new Date(),
     isRead: false,
     actionUrl: '#/commissions',
@@ -86,7 +88,7 @@ export const createAutoCommissionNotification = (
     id: `auto-commission-${scNo}-${Date.now()}`,
     type: 'info',
     title: 'Commission Auto-Generated',
-    message: `Commission record created for contract ${scNo} (₹${amount.toLocaleString('en-IN')}). Please review and approve.`,
+    message: `Commission record created for contract ${scNo} (${formatCurrency(amount)}). Please review and approve.`,
     timestamp: new Date(),
     isRead: false,
     actionUrl: '#/dashboard',

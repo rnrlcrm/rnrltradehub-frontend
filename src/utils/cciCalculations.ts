@@ -9,6 +9,7 @@
  */
 
 import { CciTerm } from '../types';
+import { formatCurrency } from './formatters';
 
 /**
  * Fetch the active CCI setting for a given date
@@ -455,7 +456,7 @@ export function checkDoEligibility(
     const shortfall = emdRequired - emdPaid;
     return {
       eligible: false,
-      reason: `Full EMD not received. Required: ₹${emdRequired.toLocaleString('en-IN')}, Paid: ₹${emdPaid.toLocaleString('en-IN')}, Shortfall: ₹${shortfall.toLocaleString('en-IN')}`
+      reason: `Full EMD not received. Required: ${formatCurrency(emdRequired)}, Paid: ${formatCurrency(emdPaid)}, Shortfall: ${formatCurrency(shortfall)}`
     };
   }
   
