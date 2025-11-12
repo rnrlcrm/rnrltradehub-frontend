@@ -23,6 +23,7 @@ import Chatbot from './pages/Chatbot';
 import Login from './pages/Login';
 import MyProfile from './pages/MyProfile';
 import ProfileUpdateApprovals from './pages/ProfileUpdateApprovals';
+import AccessControlDashboard from './pages/AccessControlDashboard';
 import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
 import { User, AuditLog, MasterDataItem, SalesContract } from './types';
 import { DialogProvider } from './components/dialogs/CustomDialogs';
@@ -160,6 +161,7 @@ const App: React.FC = () => {
       case 'audit-trail': return <AuditTrail currentUser={currentUser} auditLogs={auditLogs} />;
       case 'my-profile': return <MyProfile />;
       case 'profile-approvals': return <ProfileUpdateApprovals />;
+      case 'access-control': return <AccessControlDashboard currentUser={currentUser} />;
       case 'user-management': return <UserManagement currentUser={currentUser} />;
       case 'roles-rights': return <RolesAndRights currentUser={currentUser} />;
       case 'settings': return <Settings currentUser={currentUser} addAuditLog={addAuditLog} />;

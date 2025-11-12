@@ -276,3 +276,25 @@ export function initializeSessionManager(
 export function getSessionManager(): SessionManager | null {
   return sessionManager;
 }
+
+/**
+ * Convenience methods for compatibility
+ */
+export const sessionManagerInstance = {
+  startSession: (userId: string, token: string) => {
+    if (!sessionManager) {
+      sessionManager = new SessionManager();
+    }
+    sessionManager.initSession(userId);
+  },
+  endSession: () => {
+    if (sessionManager) {
+      sessionManager.logout();
+    }
+  },
+  updateActivity: () => {
+    if (sessionManager) {
+      sessionManager.updateActivity();
+    }
+  },
+};
