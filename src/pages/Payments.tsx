@@ -90,10 +90,10 @@ const Payments: React.FC<PaymentsProps> = ({ currentUser }) => {
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `payments_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = `payments_${new Date().toISOString().split('T')[0]}.csv`;
+    downloadLink.click();
     window.URL.revokeObjectURL(url);
   };
 

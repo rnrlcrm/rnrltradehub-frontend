@@ -62,9 +62,9 @@ const CciTermManagement: React.FC<CciTermManagementProps> = ({ initialData, curr
     { 
       header: 'Effective Period', 
       accessor: (item: CciTerm) => {
-        const from = new Date(item.effectiveFrom).toLocaleDateString();
-        const to = item.effectiveTo ? new Date(item.effectiveTo).toLocaleDateString() : 'Current';
-        return `${from} - ${to}`;
+        const fromDate = new Date(item.effectiveFrom).toLocaleDateString();
+        const toDate = item.effectiveTo ? new Date(item.effectiveTo).toLocaleDateString() : 'Current';
+        return `${fromDate} - ${toDate}`;
       }
     },
     { 
