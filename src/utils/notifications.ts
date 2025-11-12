@@ -130,13 +130,13 @@ export const addNotification = (notification: Notification): void => {
 };
 
 export const markAsRead = (id: string): void => {
-  notificationStore = notificationStore.map(n =>
-    n.id === id ? { ...n, isRead: true } : n
+  notificationStore = notificationStore.map(notification =>
+    notification.id === id ? { ...notification, isRead: true } : notification
   );
 };
 
 export const markAllAsRead = (): void => {
-  notificationStore = notificationStore.map(n => ({ ...n, isRead: true }));
+  notificationStore = notificationStore.map(notification => ({ ...notification, isRead: true }));
 };
 
 export const clearNotifications = (): void => {

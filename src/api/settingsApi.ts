@@ -49,7 +49,7 @@ export const organizationsApi = {
   getById: async (id: number): Promise<ApiResponse<Organization>> => {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 200));
-      const org = mockOrganizationsDetailed.find(o => o.id === id);
+      const org = mockOrganizationsDetailed.find(organization => organization.id === id);
       if (!org) {
         throw { message: 'Organization not found', code: '404' };
       }
@@ -74,7 +74,7 @@ export const organizationsApi = {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 400));
       const updated: Organization = {
-        ...(mockOrganizationsDetailed.find(o => o.id === id) || {} as Organization),
+        ...(mockOrganizationsDetailed.find(organization => organization.id === id) || {} as Organization),
         ...data,
         id,
       };
@@ -178,7 +178,7 @@ export const gstRatesApi = {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 400));
       const updated: GstRate = {
-        ...(mockMasterData.gstRates.find(r => r.id === id) || {} as GstRate),
+        ...(mockMasterData.gstRates.find(rate => rate.id === id) || {} as GstRate),
         ...data,
         id,
       };
@@ -253,7 +253,7 @@ export const commissionsApi = {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 400));
       const updated: CommissionStructure = {
-        ...(mockMasterData.commissions.find(c => c.id === id) || {} as CommissionStructure),
+        ...(mockMasterData.commissions.find(commission => commission.id === id) || {} as CommissionStructure),
         ...data,
         id,
       };
@@ -297,7 +297,7 @@ export const cciTermsApi = {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 400));
       const updated: CciTerm = {
-        ...(mockMasterData.cciTerms.find(t => t.id === id) || {} as CciTerm),
+        ...(mockMasterData.cciTerms.find(term => term.id === id) || {} as CciTerm),
         ...data,
         id,
       };
@@ -345,7 +345,7 @@ export const structuredTermsApi = {
       await new Promise(resolve => setTimeout(resolve, 400));
       const terms = type === 'delivery-terms' ? mockMasterData.deliveryTerms : mockMasterData.paymentTerms;
       const updated: StructuredTerm = {
-        ...(terms.find(t => t.id === id) || {} as StructuredTerm),
+        ...(terms.find(term => term.id === id) || {} as StructuredTerm),
         ...data,
         id,
       };
