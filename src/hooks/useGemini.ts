@@ -9,8 +9,8 @@ import {
   mockDisputes,
 } from '../data/mockData';
 
-// The API key MUST be obtained exclusively from the environment variable `process.env.API_KEY`.
-const API_KEY = process.env.API_KEY;
+// The API key MUST be obtained exclusively from the environment variable `import.meta.env.VITE_API_KEY`.
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 let ai: GoogleGenAI | null = null;
 if (API_KEY) {
