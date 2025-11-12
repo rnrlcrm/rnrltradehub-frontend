@@ -9,6 +9,7 @@ import { Button } from '../ui/Form';
 import { masterDataApi, MasterDataType } from '../../api/settingsApi';
 import { useDialog } from '../dialogs/CustomDialogs';
 import { Spinner } from '../Loading';
+import { isDuplicateName } from '../../utils/validation';
 
 interface MasterDataManagementProps {
   title: string;
@@ -71,6 +72,12 @@ const MasterDataManagement: React.FC<MasterDataManagementProps> = ({ title, init
 
   const handleSave = async (name: string) => {
     const singularTitle = title.slice(0, -1);
+    
+    // Check for duplicate name
+    if (isDuplicateName(items, name, editingItem?.id)) {
+      await showAlert('Duplicate Entry', `A ${singularTitle} with the name "${name}" already exists. Please use a different name.`);
+      return;
+    }
     
     try {
       setIsSaving(true);

@@ -6,6 +6,7 @@ import Modal from '../ui/Modal';
 import CciTermForm from '../forms/CciTermForm';
 import { CciTerm, User, AuditLog } from '../../types';
 import { Button } from '../ui/Form';
+import { isDuplicateName } from '../../utils/validation';
 
 interface CciTermManagementProps {
   initialData: CciTerm[];
@@ -29,6 +30,12 @@ const CciTermManagement: React.FC<CciTermManagementProps> = ({ initialData, curr
   };
 
   const handleSave = (data: Omit<CciTerm, 'id'>) => {
+    // Check for duplicate name
+    if (isDuplicateName(items, data.name, editingItem?.id)) {
+      alert(`A CCI term with the name "${data.name}" already exists. Please use a different name.`);
+      return;
+    }
+
     const details = `CCI Term: ${data.name}`;
     if (editingItem) {
       const updatedItems = items.map(item => item.id === editingItem.id ? { ...editingItem, ...data } : item);
