@@ -5,6 +5,7 @@ import { User } from '../types';
 import { hasPermission } from '../lib/permissions';
 import { Button, Select, Input } from '../components/ui/Form';
 import { mockSalesContracts, mockInvoices, mockPayments, mockCommissions, mockBusinessPartners, mockDisputes } from '../data/mockData';
+import { formatCurrency, formatDateTime } from '../utils/formatters';
 
 interface ReportsProps {
   currentUser: User;
@@ -86,8 +87,8 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
               { header: 'Client', accessor: 'clientName' },
               { header: 'Commodity', accessor: 'commodity' },
               { header: 'Quantity', accessor: (item: any) => `${item.quantity} ${item.unit}` },
-              { header: 'Rate', accessor: (item: any) => `₹${item.rate.toLocaleString('en-IN')}` },
-              { header: 'Total Value', accessor: (item: any) => `₹${(item.quantity * item.rate).toLocaleString('en-IN')}` },
+              { header: 'Rate', accessor: (item: any) => formatCurrency(item.rate) },
+              { header: 'Total Value', accessor: (item: any) => formatCurrency(item.quantity * item.rate) },
               { header: 'Status', accessor: 'status' },
             ],
             data: contracts,
@@ -111,7 +112,7 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
               { header: 'Invoice No.', accessor: 'invoiceNo' },
               { header: 'Date', accessor: 'date' },
               { header: 'SC No.', accessor: 'salesContractId' },
-              { header: 'Amount', accessor: (item: any) => `₹${item.amount.toLocaleString('en-IN')}` },
+              { header: 'Amount', accessor: (item: any) => formatCurrency(item.amount) },
               { header: 'Status', accessor: 'status' },
               { header: 'Due Date', accessor: 'dueDate' },
             ],
@@ -136,7 +137,7 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
               { header: 'Payment ID', accessor: 'paymentId' },
               { header: 'Date', accessor: 'date' },
               { header: 'Invoice ID', accessor: 'invoiceId' },
-              { header: 'Amount', accessor: (item: any) => `₹${item.amount.toLocaleString('en-IN')}` },
+              { header: 'Amount', accessor: (item: any) => formatCurrency(item.amount) },
               { header: 'Method', accessor: 'method' },
               { header: 'Reference', accessor: 'referenceNo' },
             ],
@@ -164,7 +165,7 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
               { header: 'Date', accessor: 'date' },
               { header: 'SC No.', accessor: 'salesContractId' },
               { header: 'Agent', accessor: 'agentName' },
-              { header: 'Amount', accessor: (item: any) => `₹${item.amount.toLocaleString('en-IN')}` },
+              { header: 'Amount', accessor: (item: any) => formatCurrency(item.amount) },
               { header: 'Status', accessor: 'status' },
             ],
             data: commissions,
@@ -189,7 +190,7 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
               { header: 'Date', accessor: 'date' },
               { header: 'SC No.', accessor: 'salesContractId' },
               { header: 'Reason', accessor: 'reason' },
-              { header: 'Amount', accessor: (item: any) => `₹${item.amount.toLocaleString('en-IN')}` },
+              { header: 'Amount', accessor: (item: any) => formatCurrency(item.amount) },
               { header: 'Status', accessor: 'status' },
             ],
             data: disputes,
@@ -232,7 +233,7 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
               { header: 'Invoice No.', accessor: 'invoiceNo' },
               { header: 'Date', accessor: 'date' },
               { header: 'Due Date', accessor: 'dueDate' },
-              { header: 'Amount', accessor: (item: any) => `₹${item.amount.toLocaleString('en-IN')}` },
+              { header: 'Amount', accessor: (item: any) => formatCurrency(item.amount) },
               { header: 'Days Overdue', accessor: (item: any) => {
                 const days = Math.floor((new Date().getTime() - new Date(item.dueDate).getTime()) / (1000 * 60 * 60 * 24));
                 return days > 0 ? days : 0;
@@ -262,9 +263,9 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
             title: 'Commission Summary by Agent',
             columns: [
               { header: 'Agent Name', accessor: 'agent' },
-              { header: 'Total Commissions', accessor: (item: any) => `₹${item.total.toLocaleString('en-IN')}` },
-              { header: 'Due', accessor: (item: any) => `₹${item.due.toLocaleString('en-IN')}` },
-              { header: 'Paid', accessor: (item: any) => `₹${item.paid.toLocaleString('en-IN')}` },
+              { header: 'Total Commissions', accessor: (item: any) => formatCurrency(item.total) },
+              { header: 'Due', accessor: (item: any) => formatCurrency(item.due) },
+              { header: 'Paid', accessor: (item: any) => formatCurrency(item.paid) },
               { header: 'Count', accessor: 'count' },
             ],
             data: Object.values(commissionsByAgent),
@@ -305,11 +306,11 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
             title: 'Aging Analysis (30/60/90 days)',
             columns: [
               { header: 'Party', accessor: 'party' },
-              { header: '0-30 Days', accessor: (item: any) => `₹${item.current.toLocaleString('en-IN')}` },
-              { header: '31-60 Days', accessor: (item: any) => `₹${item.days30to60.toLocaleString('en-IN')}` },
-              { header: '61-90 Days', accessor: (item: any) => `₹${item.days60to90.toLocaleString('en-IN')}` },
-              { header: '90+ Days', accessor: (item: any) => `₹${item.days90plus.toLocaleString('en-IN')}` },
-              { header: 'Total', accessor: (item: any) => `₹${item.total.toLocaleString('en-IN')}` },
+              { header: '0-30 Days', accessor: (item: any) => formatCurrency(item.current) },
+              { header: '31-60 Days', accessor: (item: any) => formatCurrency(item.days30to60) },
+              { header: '61-90 Days', accessor: (item: any) => formatCurrency(item.days60to90) },
+              { header: '90+ Days', accessor: (item: any) => formatCurrency(item.days90plus) },
+              { header: 'Total', accessor: (item: any) => formatCurrency(item.total) },
             ],
             data: Object.values(agingData),
             summary: {
@@ -496,7 +497,7 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
                     <p className="text-xs text-slate-600 uppercase">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
                     <p className="text-lg font-semibold text-slate-800">
                       {typeof value === 'number' && key.toLowerCase().includes('amount') || key.toLowerCase().includes('value') || key.toLowerCase().includes('commission') || key.toLowerCase().includes('outstanding')
-                        ? `₹${value.toLocaleString('en-IN')}`
+                        ? formatCurrency(value)
                         : typeof value === 'object'
                         ? JSON.stringify(value)
                         : value}
@@ -513,7 +514,7 @@ const Reports: React.FC<ReportsProps> = ({ currentUser }) => {
           {/* Report Footer */}
           <div className="p-4 bg-slate-50 border-t text-sm text-slate-600">
             <div className="flex justify-between">
-              <div>Generated on: {new Date().toLocaleString('en-IN')}</div>
+              <div>Generated on: {formatDateTime(new Date())}</div>
               <div>Generated by: {currentUser.name}</div>
               <div>Total Records: {generatedReport.data.length}</div>
             </div>

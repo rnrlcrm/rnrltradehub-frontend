@@ -6,6 +6,7 @@ import { User, LedgerEntry, AccountStatement } from '../types';
 import { hasPermission } from '../lib/permissions';
 import { Button, Select, Input } from '../components/ui/Form';
 import { mockCommissions, mockSalesContracts, mockBusinessPartners } from '../data/mockData';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 interface CommissionAccountingProps {
   currentUser: User;
@@ -146,7 +147,7 @@ const CommissionAccounting: React.FC<CommissionAccountingProps> = ({ currentUser
         <div className="p-4">
           <p className="text-sm text-slate-600">Total Commission Expense</p>
           <p className="text-2xl font-semibold text-slate-800">
-            ₹{summary.totalCommissionExpense.toLocaleString('en-IN')}
+            {formatCurrency(summary.totalCommissionExpense)}
           </p>
           <p className="text-xs text-slate-500 mt-1">{mockCommissions.length} commissions</p>
         </div>
@@ -155,7 +156,7 @@ const CommissionAccounting: React.FC<CommissionAccountingProps> = ({ currentUser
         <div className="p-4">
           <p className="text-sm text-slate-600">Due to Agents</p>
           <p className="text-2xl font-semibold text-red-600">
-            ₹{summary.totalDue.toLocaleString('en-IN')}
+            {formatCurrency(summary.totalDue)}
           </p>
           <p className="text-xs text-slate-500 mt-1">Outstanding liability</p>
         </div>
@@ -164,7 +165,7 @@ const CommissionAccounting: React.FC<CommissionAccountingProps> = ({ currentUser
         <div className="p-4">
           <p className="text-sm text-slate-600">Paid to Agents</p>
           <p className="text-2xl font-semibold text-green-600">
-            ₹{summary.totalPaid.toLocaleString('en-IN')}
+            {formatCurrency(summary.totalPaid)}
           </p>
           <p className="text-xs text-slate-500 mt-1">Settled payments</p>
         </div>
@@ -188,17 +189,17 @@ const CommissionAccounting: React.FC<CommissionAccountingProps> = ({ currentUser
       { header: 'Description', accessor: 'description' },
       {
         header: 'Debit (₹)',
-        accessor: (item: LedgerEntry) => item.debit > 0 ? item.debit.toLocaleString('en-IN') : '-',
+        accessor: (item: LedgerEntry) => item.debit > 0 ? formatNumber(item.debit) : '-',
       },
       {
         header: 'Credit (₹)',
-        accessor: (item: LedgerEntry) => item.credit > 0 ? item.credit.toLocaleString('en-IN') : '-',
+        accessor: (item: LedgerEntry) => item.credit > 0 ? formatNumber(item.credit) : '-',
       },
       {
         header: 'Balance (₹)',
         accessor: (item: LedgerEntry) => (
           <span className={item.balance < 0 ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'}>
-            {item.balance.toLocaleString('en-IN')}
+            {formatNumber(item.balance)}
           </span>
         ),
       },
@@ -223,17 +224,17 @@ const CommissionAccounting: React.FC<CommissionAccountingProps> = ({ currentUser
       { header: 'Agent Name', accessor: 'partyName' },
       {
         header: 'Total Commission (₹)',
-        accessor: (item: AccountStatement) => item.totalCredit.toLocaleString('en-IN'),
+        accessor: (item: AccountStatement) => formatNumber(item.totalCredit),
       },
       {
         header: 'Total Paid (₹)',
-        accessor: (item: AccountStatement) => item.totalDebit.toLocaleString('en-IN'),
+        accessor: (item: AccountStatement) => formatNumber(item.totalDebit),
       },
       {
         header: 'Outstanding (₹)',
         accessor: (item: AccountStatement) => (
           <span className={item.closingBalance > 0 ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'}>
-            {item.closingBalance.toLocaleString('en-IN')}
+            {formatNumber(item.closingBalance)}
           </span>
         ),
       },
@@ -264,19 +265,19 @@ const CommissionAccounting: React.FC<CommissionAccountingProps> = ({ currentUser
           <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
             <p className="text-sm text-slate-600 font-medium">Total Commission Booked</p>
             <p className="text-2xl font-bold text-blue-800 mt-1">
-              ₹{summary.totalCommissionExpense.toLocaleString('en-IN')}
+              {formatCurrency(summary.totalCommissionExpense)}
             </p>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <p className="text-sm text-slate-600 font-medium">Total Commission Paid</p>
             <p className="text-2xl font-bold text-green-800 mt-1">
-              ₹{summary.totalPaid.toLocaleString('en-IN')}
+              {formatCurrency(summary.totalPaid)}
             </p>
           </div>
           <div className="bg-red-50 border border-red-200 rounded-md p-4">
             <p className="text-sm text-slate-600 font-medium">Pending Payment</p>
             <p className="text-2xl font-bold text-red-800 mt-1">
-              ₹{summary.totalDue.toLocaleString('en-IN')}
+              {formatCurrency(summary.totalDue)}
             </p>
           </div>
         </div>
