@@ -223,6 +223,23 @@ const EnhancedBusinessPartnerForm: React.FC<EnhancedBusinessPartnerFormProps> = 
     <>
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
+          {/* Organization Auto-Assignment Banner */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="font-semibold text-blue-800 mb-1">Organization Assignment</h4>
+                <p className="text-sm text-blue-700">
+                  ✓ This partner will be <strong>automatically available to ALL organizations</strong> in the system<br />
+                  ✓ No need to manually select organizations<br />
+                  ✓ Future organizations will also have automatic access
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Status Banner for Approval Mode */}
           {mode === 'approve' && partner && (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
