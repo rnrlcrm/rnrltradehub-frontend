@@ -123,7 +123,7 @@ const CLIENT_HISTORY: ClientHistory[] = [
  * Get last contract data for a client
  */
 export function getLastContractForClient(clientId: string): any | null {
-  const history = CLIENT_HISTORY.find(h => h.clientId === clientId);
+  const history = CLIENT_HISTORY.find(clientHistory => clientHistory.clientId === clientId);
   return history ? history.lastContract : null;
 }
 
@@ -131,7 +131,7 @@ export function getLastContractForClient(clientId: string): any | null {
  * Get preferred terms for a client
  */
 export function getPreferredTerms(clientId: string): { delivery: string; payment: string } | null {
-  const history = CLIENT_HISTORY.find(h => h.clientId === clientId);
+  const history = CLIENT_HISTORY.find(clientHistory => clientHistory.clientId === clientId);
   return history ? history.preferredTerms : null;
 }
 
@@ -139,7 +139,7 @@ export function getPreferredTerms(clientId: string): { delivery: string; payment
  * Get client statistics
  */
 export function getClientStats(clientId: string): { contractCount: number; avgValue: number } | null {
-  const history = CLIENT_HISTORY.find(h => h.clientId === clientId);
+  const history = CLIENT_HISTORY.find(clientHistory => clientHistory.clientId === clientId);
   if (!history) return null;
   
   return {
@@ -174,7 +174,7 @@ export function applySmartDefaults(clientId: string, currentFormData: any = {}):
  * Get suggestion message for user
  */
 export function getSuggestionMessage(clientId: string): string | null {
-  const history = CLIENT_HISTORY.find(h => h.clientId === clientId);
+  const history = CLIENT_HISTORY.find(clientHistory => clientHistory.clientId === clientId);
   if (!history) return null;
 
   const daysSinceLastContract = Math.floor(
@@ -188,7 +188,7 @@ export function getSuggestionMessage(clientId: string): string | null {
  * Check if defaults should be suggested
  */
 export function shouldSuggestDefaults(clientId: string): boolean {
-  const history = CLIENT_HISTORY.find(h => h.clientId === clientId);
+  const history = CLIENT_HISTORY.find(clientHistory => clientHistory.clientId === clientId);
   if (!history) return false;
 
   // Suggest if client has at least 3 contracts

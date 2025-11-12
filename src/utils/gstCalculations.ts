@@ -141,7 +141,7 @@ export function isValidIndianState(state: string): boolean {
   ];
   
   const normalizedState = state.trim().toUpperCase().replace(/\s+/g, '');
-  return indianStates.some(s => s.replace(/\s+/g, '') === normalizedState);
+  return indianStates.some(stateName => stateName.replace(/\s+/g, '') === normalizedState);
 }
 
 /**

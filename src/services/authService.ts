@@ -4,7 +4,7 @@
  */
 
 import { apiClient, setTokens, clearTokens, getAccessToken } from '../api/realApiClient';
-import { sessionManager } from '../utils/sessionManager';
+import { sessionManagerInstance } from '../utils/sessionManager';
 import type { LoginRequest, LoginResponse, AuthToken } from '../types/auth';
 import type { EnhancedUser } from '../types/accessControl';
 
@@ -32,7 +32,7 @@ export class AuthService {
       localStorage.setItem('current_user', JSON.stringify(user));
 
       // Start session
-      sessionManager.startSession(user.id, tokens.accessToken);
+      sessionManagerInstance.startSession(user.id, tokens.accessToken);
 
       // Log audit trail
       await this.logAudit('LOGIN_SUCCESS', user.id);
@@ -66,7 +66,7 @@ export class AuthService {
       clearTokens();
       this.currentUser = null;
       localStorage.removeItem('current_user');
-      sessionManager.endSession();
+      sessionManagerInstance.endSession();
     }
   }
 
@@ -141,7 +141,7 @@ export class AuthService {
   static async updateActivity(): Promise<void> {
     try {
       await apiClient.post('/api/auth/session/activity');
-      sessionManager.updateActivity();
+      sessionManagerInstance.updateActivity();
     } catch (error) {
       console.error('Failed to update activity:', error);
     }

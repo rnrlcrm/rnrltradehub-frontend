@@ -57,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
     // Security & Access Control section
     { name: 'My Profile', icon: ProfileIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
     { name: 'Profile Approvals', icon: ApprovalIcon, roles: ['Admin'] },
+    { name: 'Access Control', icon: ShieldIcon, roles: ['Admin'] },
     { name: 'User Management', icon: UserManagementIcon, roles: ['Admin'] },
     { name: 'Roles & Rights', icon: ShieldIcon, roles: ['Admin'] },
     { name: 'Settings', icon: SettingsIcon, roles: ['Admin'] },
