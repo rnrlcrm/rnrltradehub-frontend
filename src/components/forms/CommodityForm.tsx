@@ -19,6 +19,7 @@ interface CommodityFormProps {
   onSave: (data: Omit<Commodity, 'id'>) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
+  onFormChange?: () => void;
 }
 
 const CommodityForm: React.FC<CommodityFormProps> = ({
@@ -27,12 +28,14 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   onSave,
   onCancel,
   isSaving,
+  onFormChange,
 }) => {
   // State for basic commodity info
   const [formData, setFormData] = useState<CommodityFormData>({
     name: commodity?.name || '',
     symbol: commodity?.symbol || '',
     unit: commodity?.unit || 'Bales',
+    rateUnit: commodity?.rateUnit || commodity?.unit || 'Bales',
     hsnCode: commodity?.hsnCode || '',
     gstRate: commodity?.gstRate ?? 0,
     gstExemptionAvailable: commodity?.gstExemptionAvailable ?? false,
@@ -52,6 +55,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [ruleViolations, setRuleViolations] = useState<{
     errors: Array<{rule: string; message: string; field?: string}>;
     warnings: Array<{rule: string; message: string; field?: string}>;
@@ -75,6 +79,26 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     gstRate: 18, // 18% as per SAC 9983
     sacCode: '9983'
   });
+
+  // Prevent backspace key from navigating back in browser
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if backspace is pressed outside of an input/textarea/select element
+      const target = e.target as HTMLElement;
+      const isInputElement = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.tagName === 'SELECT' ||
+        target.isContentEditable;
+      
+      if (e.key === 'Backspace' && !isInputElement) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Auto-generate symbol when name changes
   useEffect(() => {
@@ -124,6 +148,33 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     }
   }, [formData, commodities]);
 
+  // Cross-field validation warnings
+  useEffect(() => {
+    const newWarnings: string[] = [];
+
+    // Warn if rateUnit === unit (unusual but allowed)
+    if (formData.rateUnit && formData.unit && formData.rateUnit === formData.unit) {
+      newWarnings.push('⚠️ Rate unit is same as primary unit. This is unusual but allowed.');
+    }
+
+    // Warn if non-cotton has CCI support
+    if (formData.supportsCciTerms && formData.name && !formData.name.toLowerCase().includes('cotton')) {
+      newWarnings.push('⚠️ CCI Terms are typically only for cotton commodities.');
+    }
+
+    // Warn if commission percentage > 10%
+    if (formData.commissions.some(c => c.type === 'PERCENTAGE' && c.value > 10)) {
+      newWarnings.push('⚠️ Commission percentage > 10% is unusually high.');
+    }
+
+    // Warn if GST rate seems unusual for category
+    if (formData.gstCategory === 'Agricultural' && formData.gstRate > 5 && !formData.isProcessed) {
+      newWarnings.push('⚠️ GST rate > 5% is unusual for unprocessed agricultural products.');
+    }
+
+    setWarnings(newWarnings);
+  }, [formData]);
+
   const handleChange = (field: keyof CommodityFormData, value: any) => {
     let sanitizedValue = value;
     
@@ -142,6 +193,11 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
         delete newErrors[field];
         return newErrors;
       });
+    }
+
+    // Notify parent of form changes
+    if (onFormChange) {
+      onFormChange();
     }
   };
 
@@ -356,12 +412,18 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           type="text"
           value={newItemValue}
           onChange={(e) => onNewItemChange(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), onAdd())}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              onAdd();
+            }
+          }}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
           placeholder={`Add ${label.toLowerCase()}`}
         />
-        <Button type="button" onClick={onAdd} variant="secondary" className="text-sm">
-          Add
+        <Button type="button" onClick={(e) => { e.preventDefault(); onAdd(); }} variant="secondary" className="text-sm px-3">
+          +
         </Button>
       </div>
 
@@ -373,7 +435,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               <span className="text-sm text-gray-700">{item.name}</span>
               <button
                 type="button"
-                onClick={() => onRemove(item.id)}
+                onClick={(e) => { e.preventDefault(); onRemove(item.id); }}
                 className="text-red-600 hover:text-red-800 text-sm font-medium"
               >
                 Remove
@@ -456,7 +518,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Primary Unit <span className="text-red-500">*</span>
+            Primary Unit (Trade Unit) <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.unit}
@@ -470,51 +532,141 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             <option value="Quintal">Quintal</option>
             <option value="Tonnes">Tonnes</option>
           </select>
+          <p className="text-xs text-gray-500 mt-1">The unit used for trading (e.g., Cotton is traded in Bales)</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Rate Basis Unit <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.rateUnit || formData.unit}
+            onChange={e => handleChange('rateUnit', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Kgs">Kgs</option>
+            <option value="Qty">Qty</option>
+            <option value="Candy">Candy</option>
+            <option value="Bales">Bales</option>
+            <option value="Quintal">Quintal</option>
+            <option value="Tonnes">Tonnes</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">The unit used for pricing (e.g., Cotton rate is quoted per Candy)</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description <span className="text-red-500">*</span>
+          </label>
           <textarea
             value={formData.description}
             onChange={e => handleChange('description', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+              errors.description ? 'border-red-500' : 'border-gray-300'
+            }`}
             rows={2}
             placeholder="Brief description of the commodity"
             maxLength={500}
           />
+          {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
         </div>
 
-        <div className="flex items-center space-x-6">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={e => handleChange('isActive', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <span className="text-sm font-medium text-gray-700">Active</span>
-          </label>
+        {/* Status and Classification Checkboxes */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-6 space-y-4">
+          <h4 className="text-base font-bold text-gray-800 mb-4 flex items-center">
+            <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">!</span>
+            Important: Commodity Status & Classification
+          </h4>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={formData.isProcessed}
-              onChange={e => handleChange('isProcessed', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <span className="text-sm font-medium text-gray-700">Is Processed?</span>
-            <span className="text-xs text-gray-500">(affects GST rate)</span>
-          </label>
+          {/* Active Checkbox */}
+          <div className="bg-white rounded-md p-4 border-l-4 border-green-500">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={e => handleChange('isActive', e.target.checked)}
+                className="w-5 h-5 text-green-600 rounded mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-sm font-bold text-gray-900">Active</span>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full font-semibold">
+                    {formData.isActive ? '✓ Available' : '✕ Hidden'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  <strong>Controls contract creation availability.</strong><br/>
+                  ✓ <strong>Checked (Active):</strong> This commodity WILL appear in dropdown when creating new sales contracts.<br/>
+                  ✕ <strong>Unchecked (Inactive):</strong> This commodity will NOT appear in new contract creation (existing contracts unaffected).
+                </p>
+              </div>
+            </label>
+          </div>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={formData.supportsCciTerms}
-              onChange={e => handleChange('supportsCciTerms', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <span className="text-sm font-medium text-gray-700">Supports CCI Terms</span>
-          </label>
+          {/* Is Processed Checkbox */}
+          <div className="bg-white rounded-md p-4 border-l-4 border-orange-500">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isProcessed}
+                onChange={e => handleChange('isProcessed', e.target.checked)}
+                className="w-5 h-5 text-orange-600 rounded mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-sm font-bold text-gray-900">Is Processed?</span>
+                  <span className="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full font-semibold">
+                    Affects GST Rate
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  <strong>Determines GST rate based on processing level.</strong><br/>
+                  ✓ <strong>Checked (Processed):</strong> Product is processed/manufactured → Higher GST (12-18%)<br/>
+                  &nbsp;&nbsp;&nbsp;<em>Example: Cotton Yarn, Polished Rice, Refined Oil</em><br/>
+                  ✕ <strong>Unchecked (Raw):</strong> Product is unprocessed/natural → Lower GST (0-5%)<br/>
+                  &nbsp;&nbsp;&nbsp;<em>Example: Raw Cotton, Raw Paddy, Crude Oil</em>
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {/* Supports CCI Terms Checkbox */}
+          <div className="bg-white rounded-md p-4 border-l-4 border-purple-500">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.supportsCciTerms}
+                onChange={e => handleChange('supportsCciTerms', e.target.checked)}
+                className="w-5 h-5 text-purple-600 rounded mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-sm font-bold text-gray-900">Supports CCI Terms</span>
+                  <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full font-semibold">
+                    Cotton ONLY
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  <strong>⚠️ ONLY for Cotton commodities trading in Bales.</strong><br/>
+                  ✓ <strong>Checked:</strong> Applies CCI (Cotton Corporation of India) government terms including:<br/>
+                  &nbsp;&nbsp;&nbsp;• EMD (Earnest Money Deposit) requirements<br/>
+                  &nbsp;&nbsp;&nbsp;• Carrying charges for storage<br/>
+                  &nbsp;&nbsp;&nbsp;• Late lifting penalties<br/>
+                  &nbsp;&nbsp;&nbsp;• Standardized quality specifications<br/>
+                  ✕ <strong>Unchecked:</strong> Regular trading terms (for wheat, rice, or other commodities)
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+        
+        <div className="bg-yellow-50 border border-yellow-300 rounded-md p-4 text-xs text-gray-700">
+          <p className="font-semibold mb-2 text-yellow-900">💡 Quick Guide:</p>
+          <ul className="space-y-1 ml-4 list-disc">
+            <li><strong>Active:</strong> Controls whether this commodity is available for creating new contracts. Inactive commodities are hidden from selection.</li>
+            <li><strong>Is Processed:</strong> Indicates if the commodity is processed (e.g., refined oil, polished rice). Processed goods typically attract higher GST rates than raw agricultural products.</li>
+            <li><strong>Supports CCI Terms:</strong> CCI (Cotton Corporation of India) terms apply specific rules for cotton trading including EMD, carrying charges, and lifting terms. Only enable this for cotton commodities.</li>
+          </ul>
         </div>
       </div>
 
@@ -557,6 +709,8 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             onNewItemChange={setNewVariety}
             onAdd={addVariety}
             onRemove={removeVariety}
+            required
+            errorMessage={errors.varieties}
           />
 
           {/* Weightment Terms */}
@@ -595,6 +749,13 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="text"
               value={newDeliveryTerm.name}
               onChange={(e) => setNewDeliveryTerm(prev => ({ ...prev, name: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addDeliveryTerm();
+                }
+              }}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Term name (e.g., Ex-Gin)"
             />
@@ -602,12 +763,19 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="number"
               value={newDeliveryTerm.days}
               onChange={(e) => setNewDeliveryTerm(prev => ({ ...prev, days: parseInt(e.target.value) || 0 }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addDeliveryTerm();
+                }
+              }}
               className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Days"
               min="0"
             />
-            <Button type="button" onClick={addDeliveryTerm} variant="secondary" className="text-sm">
-              Add
+            <Button type="button" onClick={(e) => { e.preventDefault(); addDeliveryTerm(); }} variant="secondary" className="text-sm px-3">
+              +
             </Button>
           </div>
 
@@ -618,7 +786,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                   <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
                   <button
                     type="button"
-                    onClick={() => removeDeliveryTerm(term.id)}
+                    onClick={(e) => { e.preventDefault(); removeDeliveryTerm(term.id); }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
                   >
                     Remove
@@ -641,6 +809,13 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="text"
               value={newPaymentTerm.name}
               onChange={(e) => setNewPaymentTerm(prev => ({ ...prev, name: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addPaymentTerm();
+                }
+              }}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Term name (e.g., Advance)"
             />
@@ -648,12 +823,19 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="number"
               value={newPaymentTerm.days}
               onChange={(e) => setNewPaymentTerm(prev => ({ ...prev, days: parseInt(e.target.value) || 0 }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addPaymentTerm();
+                }
+              }}
               className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Days"
               min="0"
             />
-            <Button type="button" onClick={addPaymentTerm} variant="secondary" className="text-sm">
-              Add
+            <Button type="button" onClick={(e) => { e.preventDefault(); addPaymentTerm(); }} variant="secondary" className="text-sm px-3">
+              +
             </Button>
           </div>
 
@@ -664,7 +846,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                   <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
                   <button
                     type="button"
-                    onClick={() => removePaymentTerm(term.id)}
+                    onClick={(e) => { e.preventDefault(); removePaymentTerm(term.id); }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
                   >
                     Remove
@@ -681,12 +863,20 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           <label className="block text-sm font-medium text-gray-700">
             Commission Structures <span className="text-red-500">*</span>
           </label>
+          <p className="text-xs text-gray-500">Commission will be based on the Primary Unit ({formData.unit})</p>
           
           <div className="flex gap-2">
             <input
               type="text"
               value={newCommission.name}
               onChange={(e) => setNewCommission(prev => ({ ...prev, name: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addCommission();
+                }
+              }}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Commission name"
             />
@@ -696,19 +886,26 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="PERCENTAGE">Percentage</option>
-              <option value="PER_BALE">Per Bale</option>
+              <option value="PER_BALE">Per {formData.unit}</option>
             </select>
             <input
               type="number"
               value={newCommission.value}
               onChange={(e) => setNewCommission(prev => ({ ...prev, value: parseFloat(e.target.value) || 0 }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addCommission();
+                }
+              }}
               className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Value"
               min="0"
               step="0.1"
             />
-            <Button type="button" onClick={addCommission} variant="secondary" className="text-sm">
-              Add
+            <Button type="button" onClick={(e) => { e.preventDefault(); addCommission(); }} variant="secondary" className="text-sm px-3">
+              +
             </Button>
           </div>
 
@@ -718,7 +915,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                 <div key={commission.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
                   <div className="flex-1">
                     <span className="text-sm text-gray-700 font-medium">
-                      {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/bale`})
+                      {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/${formData.unit}`})
                     </span>
                     {commission.gstApplicable && (
                       <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
@@ -728,7 +925,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeCommission(commission.id)}
+                    onClick={(e) => { e.preventDefault(); removeCommission(commission.id); }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
                   >
                     Remove

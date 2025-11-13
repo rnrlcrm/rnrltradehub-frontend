@@ -402,6 +402,7 @@ const commodities: Commodity[] = [
         name: 'Cotton',
         symbol: 'CTN',
         unit: 'Bales',
+        rateUnit: 'Candy', // Cotton is traded in Bales but rate is per Candy
         // GST auto-determined from GST Act
         hsnCode: '5201', // Cotton, not carded or combed
         gstRate: 5, // 5% as per GST Act Schedule I
@@ -454,6 +455,7 @@ const commodities: Commodity[] = [
         name: 'Wheat',
         symbol: 'WHT',
         unit: 'Quintal',
+        rateUnit: 'Quintal', // Wheat is traded and priced in Quintal
         // GST auto-determined - Wheat is exempt
         hsnCode: '1001', // Wheat and meslin
         gstRate: 0, // Exempt under Schedule (unbranded/unprocessed)
@@ -488,7 +490,7 @@ const commodities: Commodity[] = [
             { id: 4, name: '60 Days Credit', days: 60 },
         ],
         commissions: [
-            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
+            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0, gstApplicable: true, gstRate: 18, sacCode: '9983' },
             { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100, gstApplicable: true, gstRate: 18, sacCode: '9983' },
             { id: 3, name: 'None', type: 'PERCENTAGE', value: 0, gstApplicable: false, gstRate: 0, sacCode: '9983' },
         ],
@@ -500,6 +502,7 @@ const commodities: Commodity[] = [
         name: 'Rice',
         symbol: 'RIC',
         unit: 'Quintal',
+        rateUnit: 'Quintal', // Rice is traded and priced in Quintal
         // GST auto-determined - Rice is exempt (unbranded)
         hsnCode: '1006', // Rice
         gstRate: 0, // Exempt if unbranded/not pre-packaged
@@ -534,7 +537,7 @@ const commodities: Commodity[] = [
             { id: 4, name: '60 Days Credit', days: 60 },
         ],
         commissions: [
-            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
+            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0, gstApplicable: true, gstRate: 18, sacCode: '9983' },
             { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100, gstApplicable: true, gstRate: 18, sacCode: '9983' },
             { id: 3, name: 'None', type: 'PERCENTAGE', value: 0, gstApplicable: false, gstRate: 0, sacCode: '9983' },
         ],
