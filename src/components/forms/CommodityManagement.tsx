@@ -9,6 +9,7 @@ import { commoditiesApi } from '../../api/settingsApi';
 import { useDialog } from '../dialogs/CustomDialogs';
 import { Spinner } from '../Loading';
 import { mockMasterData } from '../../data/mockData';
+import { CommodityValidationService } from '../../services/commodityValidationService';
 
 interface CommodityManagementProps {
   currentUser: User;
@@ -90,6 +91,20 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
   };
 
   const handleDelete = async (commodity: Commodity) => {
+    // Check deletion safety first
+    const safetyCheck = CommodityValidationService.checkDeletionSafety(
+      commodity,
+      commodities
+    );
+
+    if (!safetyCheck.canDelete) {
+      await showAlert(
+        'Cannot Delete Commodity',
+        safetyCheck.blockReason || 'This commodity cannot be deleted at this time.'
+      );
+      return;
+    }
+
     const confirmed = await showConfirm(
       'Confirm Delete',
       `Are you sure you want to delete commodity '${commodity.name}' (${commodity.symbol})? This action cannot be undone and may affect existing contracts.`,
@@ -106,7 +121,7 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
         role: currentUser.role,
         action: 'Delete',
         module: 'Settings - Commodity Master',
-        details: `Deleted commodity: '${commodity.name}' (${commodity.symbol})`,
+        details: `Deleted commodity: '${commodity.name}' (${commodity.symbol}) - HSN ${commodity.hsnCode}`,
         reason: 'Commodity master management',
       });
       await showAlert('Success', 'Commodity deleted successfully');
@@ -118,7 +133,41 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
   const columns = [
     { header: 'Name', accessor: 'name' },
     { header: 'Symbol', accessor: 'symbol' },
+    { 
+      header: 'HSN Code', 
+      accessor: (commodity: Commodity) => (
+        <span className="font-mono text-sm">{commodity.hsnCode}</span>
+      )
+    },
+    {
+      header: 'GST',
+      accessor: (commodity: Commodity) => (
+        <div className="flex items-center space-x-2">
+          <span className={`font-semibold ${commodity.gstRate === 0 ? 'text-green-600' : 'text-blue-600'}`}>
+            {commodity.gstRate}%
+          </span>
+          {commodity.gstExemptionAvailable && (
+            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+              Exempt
+            </span>
+          )}
+        </div>
+      ),
+    },
     { header: 'Unit', accessor: 'unit' },
+    {
+      header: 'Category',
+      accessor: (commodity: Commodity) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          commodity.gstCategory === 'Agricultural' ? 'bg-green-100 text-green-800' :
+          commodity.gstCategory === 'Processed' ? 'bg-blue-100 text-blue-800' :
+          commodity.gstCategory === 'Industrial' ? 'bg-purple-100 text-purple-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {commodity.gstCategory}
+        </span>
+      ),
+    },
     {
       header: 'Status',
       accessor: (commodity: Commodity) => (
@@ -176,7 +225,7 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
     <>
       <Card
         title="Commodity Master"
-        subtitle="Manage commodities and their trading parameters for multi-commodity support"
+        subtitle="Manage commodities with automatic GST determination based on HSN codes and GST Act"
         actions={
           <Button onClick={() => handleOpenModal()} className="text-sm" disabled={isSaving}>
             Add New Commodity
