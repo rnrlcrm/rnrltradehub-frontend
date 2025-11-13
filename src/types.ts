@@ -256,6 +256,12 @@ export interface SalesContract {
   vendorId: string;
   vendorName: string;
   agentId?: string;
+  
+  // CRITICAL: Commodity Reference for Audit Trail and Data Integrity
+  commodityId: number; // Link to Commodity Master - MANDATORY for audit trail
+  commodityName: string; // Cached for display (original name at time of contract)
+  commoditySymbol: string; // Cached for display (original symbol at time of contract)
+  
   variety: string;
   quantityBales: number;
   rate: number;

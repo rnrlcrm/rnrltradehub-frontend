@@ -227,13 +227,13 @@ export type CciTermFormData = z.infer<typeof cciTermSchema>;
 // COMMODITY SCHEMA
 // ============================================================================
 
-// Define schemas for inline items
+// Define schemas for inline items (used within commodity)
 const masterDataItemSchema = z.object({
   id: z.number(),
   name: z.string(),
 });
 
-const structuredTermSchema = z.object({
+const inlineStructuredTermSchema = z.object({
   id: z.number(),
   name: z.string(),
   days: z.number(),
@@ -294,10 +294,10 @@ export const commoditySchema = z.object({
   passingTerms: z.array(masterDataItemSchema)
     .min(1, 'At least one passing term must be added'),
   
-  deliveryTerms: z.array(structuredTermSchema)
+  deliveryTerms: z.array(inlineStructuredTermSchema)
     .min(1, 'At least one delivery term must be added'),
   
-  paymentTerms: z.array(structuredTermSchema)
+  paymentTerms: z.array(inlineStructuredTermSchema)
     .min(1, 'At least one payment term must be added'),
   
   commissions: z.array(commissionStructureSchema)
