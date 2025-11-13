@@ -244,6 +244,10 @@ const commissionStructureSchema = z.object({
   name: z.string(),
   type: z.enum(['PERCENTAGE', 'PER_BALE']),
   value: z.number(),
+  // GST on Commission - SAC 9983 (Brokerage & Commission Services)
+  gstApplicable: z.boolean(), // Always true for commissions
+  gstRate: z.number(), // 18% as per GST Act
+  sacCode: z.string(), // '9983' for brokerage/commission
 });
 
 export const commoditySchema = z.object({

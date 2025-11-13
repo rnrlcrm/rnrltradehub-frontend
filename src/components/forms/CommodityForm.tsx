@@ -67,7 +67,14 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   const [newPassingTerm, setNewPassingTerm] = useState('');
   const [newDeliveryTerm, setNewDeliveryTerm] = useState({ name: '', days: 0 });
   const [newPaymentTerm, setNewPaymentTerm] = useState({ name: '', days: 0 });
-  const [newCommission, setNewCommission] = useState({ name: '', type: 'PERCENTAGE' as 'PERCENTAGE' | 'PER_BALE', value: 0 });
+  const [newCommission, setNewCommission] = useState({ 
+    name: '', 
+    type: 'PERCENTAGE' as 'PERCENTAGE' | 'PER_BALE', 
+    value: 0,
+    gstApplicable: true, // Commission always has GST
+    gstRate: 18, // 18% as per SAC 9983
+    sacCode: '9983'
+  });
 
   // Auto-generate symbol when name changes
   useEffect(() => {
@@ -247,15 +254,18 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   };
 
   const addCommission = () => {
-    if (newCommission.name.trim() && newCommission.value > 0) {
+    if (newCommission.name.trim() && newCommission.value >= 0) {
       const newItem: CommissionStructure = {
         id: Date.now(),
         name: newCommission.name.trim(),
         type: newCommission.type,
         value: newCommission.value,
+        gstApplicable: newCommission.value > 0, // Only apply GST if commission > 0
+        gstRate: newCommission.value > 0 ? 18 : 0, // 18% GST as per SAC 9983
+        sacCode: '9983', // Service Accounting Code for Brokerage/Commission
       };
       setFormData(prev => ({ ...prev, commissions: [...prev.commissions, newItem] }));
-      setNewCommission({ name: '', type: 'PERCENTAGE', value: 0 });
+      setNewCommission({ name: '', type: 'PERCENTAGE', value: 0, gstApplicable: true, gstRate: 18, sacCode: '9983' });
     }
   };
 
@@ -706,9 +716,16 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
               {formData.commissions.map(commission => (
                 <div key={commission.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
-                  <span className="text-sm text-gray-700">
-                    {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/bale`})
-                  </span>
+                  <div className="flex-1">
+                    <span className="text-sm text-gray-700 font-medium">
+                      {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/bale`})
+                    </span>
+                    {commission.gstApplicable && (
+                      <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                        + {commission.gstRate}% GST (SAC {commission.sacCode})
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeCommission(commission.id)}

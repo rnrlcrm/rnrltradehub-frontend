@@ -133,10 +133,36 @@ const bargainTypes: MasterDataItem[] = [ { id: 1, name: 'Pucca Sauda' }, { id: 2
 const deliveryTerms: StructuredTerm[] = [ { id: 1, name: 'Ex-Gin', days: 0 }, { id: 2, name: 'FOR', days: 5 } ];
 const paymentTerms: StructuredTerm[] = [ { id: 1, name: 'Advance', days: 0 }, { id: 2, name: 'Against Delivery', days: 0 }, { id: 3, name: '30 Days Credit', days: 30 }, { id: 4, name: '60 Days Credit', days: 60 }];
 
+// Commission Structures with GST (SAC 9983 - Brokerage & Commission Services)
+// As per GST Act: All commission/brokerage services attract 18% GST
 const commissions: CommissionStructure[] = [
-    { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
-    { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100 },
-    { id: 3, name: 'None', type: 'PERCENTAGE', value: 0 },
+    { 
+        id: 1, 
+        name: 'Standard Brokerage', 
+        type: 'PERCENTAGE', 
+        value: 1.0,
+        gstApplicable: true,
+        gstRate: 18, // 18% GST as per SAC 9983
+        sacCode: '9983'
+    },
+    { 
+        id: 2, 
+        name: 'Per Bale Fee', 
+        type: 'PER_BALE', 
+        value: 100,
+        gstApplicable: true,
+        gstRate: 18, // 18% GST as per SAC 9983
+        sacCode: '9983'
+    },
+    { 
+        id: 3, 
+        name: 'None', 
+        type: 'PERCENTAGE', 
+        value: 0,
+        gstApplicable: false, // No commission = No GST
+        gstRate: 0,
+        sacCode: '9983'
+    },
 ];
 
 const cciTerms: CciTerm[] = [
@@ -416,9 +442,9 @@ const commodities: Commodity[] = [
             { id: 4, name: '60 Days Credit', days: 60 },
         ],
         commissions: [
-            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
-            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100 },
-            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0 },
+            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0, gstApplicable: true, gstRate: 18, sacCode: '9983' },
+            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100, gstApplicable: true, gstRate: 18, sacCode: '9983' },
+            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0, gstApplicable: false, gstRate: 0, sacCode: '9983' },
         ],
         supportsCciTerms: true, // Cotton supports CCI terms
         description: 'Raw cotton and cotton products',
@@ -463,8 +489,8 @@ const commodities: Commodity[] = [
         ],
         commissions: [
             { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
-            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100 },
-            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0 },
+            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100, gstApplicable: true, gstRate: 18, sacCode: '9983' },
+            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0, gstApplicable: false, gstRate: 0, sacCode: '9983' },
         ],
         supportsCciTerms: false, // Wheat doesn't support CCI terms
         description: 'Wheat grains and related products',
@@ -509,8 +535,8 @@ const commodities: Commodity[] = [
         ],
         commissions: [
             { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
-            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100 },
-            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0 },
+            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100, gstApplicable: true, gstRate: 18, sacCode: '9983' },
+            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0, gstApplicable: false, gstRate: 0, sacCode: '9983' },
         ],
         supportsCciTerms: false, // Rice doesn't support CCI terms
         description: 'Rice grains and related products',

@@ -106,6 +106,12 @@ export interface CommissionStructure {
   name: string;
   type: 'PERCENTAGE' | 'PER_BALE';
   value: number;
+  // GST on Commission Services (Brokerage & Commission - SAC 9983)
+  // As per GST Act: Brokerage and Commission services attract 18% GST
+  // GST is ALWAYS applicable on commission - no exemptions
+  gstApplicable: boolean; // Always true for commissions (SAC 9983 = 18% GST)
+  gstRate: number; // 18% as per GST Act for service code 9983
+  sacCode: string; // Service Accounting Code - '9983' for brokerage/commission
 }
 
 export interface GstRate {
