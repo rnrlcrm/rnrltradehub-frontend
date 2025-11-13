@@ -227,6 +227,29 @@ export type CciTermFormData = z.infer<typeof cciTermSchema>;
 // COMMODITY SCHEMA
 // ============================================================================
 
+// Define schemas for inline items (used within commodity)
+const masterDataItemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+
+const inlineStructuredTermSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  days: z.number(),
+});
+
+const commissionStructureSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  type: z.enum(['PERCENTAGE', 'PER_BALE']),
+  value: z.number(),
+  // GST on Commission - SAC 9983 (Brokerage & Commission Services)
+  gstApplicable: z.boolean(), // Always true for commissions
+  gstRate: z.number(), // 18% as per GST Act
+  sacCode: z.string(), // '9983' for brokerage/commission
+});
+
 export const commoditySchema = z.object({
   name: z.string()
     .min(1, 'Commodity name is required')
@@ -259,29 +282,30 @@ export const commoditySchema = z.object({
   
   isActive: z.boolean(),
   
-  tradeTypeIds: z.array(z.number())
-    .min(1, 'At least one trade type must be selected'),
+  // Trading parameters stored directly (not as IDs)
+  tradeTypes: z.array(masterDataItemSchema)
+    .min(1, 'At least one trade type must be added'),
   
-  bargainTypeIds: z.array(z.number())
-    .min(1, 'At least one bargain type must be selected'),
+  bargainTypes: z.array(masterDataItemSchema)
+    .min(1, 'At least one bargain type must be added'),
   
-  varietyIds: z.array(z.number())
+  varieties: z.array(masterDataItemSchema)
     .default([]),
   
-  weightmentTermIds: z.array(z.number())
-    .min(1, 'At least one weightment term must be selected'),
+  weightmentTerms: z.array(masterDataItemSchema)
+    .min(1, 'At least one weightment term must be added'),
   
-  passingTermIds: z.array(z.number())
-    .min(1, 'At least one passing term must be selected'),
+  passingTerms: z.array(masterDataItemSchema)
+    .min(1, 'At least one passing term must be added'),
   
-  deliveryTermIds: z.array(z.number())
-    .min(1, 'At least one delivery term must be selected'),
+  deliveryTerms: z.array(inlineStructuredTermSchema)
+    .min(1, 'At least one delivery term must be added'),
   
-  paymentTermIds: z.array(z.number())
-    .min(1, 'At least one payment term must be selected'),
+  paymentTerms: z.array(inlineStructuredTermSchema)
+    .min(1, 'At least one payment term must be added'),
   
-  commissionIds: z.array(z.number())
-    .min(1, 'At least one commission structure must be selected'),
+  commissions: z.array(commissionStructureSchema)
+    .min(1, 'At least one commission structure must be added'),
   
   supportsCciTerms: z.boolean(),
   

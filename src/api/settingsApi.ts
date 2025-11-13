@@ -1,43 +1,42 @@
 /**
  * Settings API Service
  * 
- * API client for all Settings module operations including:
+ * Streamlined API client for Settings module with NO DUPLICATES
+ * Only includes:
  * - Organizations
- * - Master Data (Trade Types, Varieties, etc.)
- * - GST Rates
- * - Locations
- * - Commissions
- * - CCI Terms
- * - Structured Terms (Delivery, Payment)
+ * - Locations (with bulk upload support)
+ * - CCI Terms (Cotton-specific)
+ * - Commodities (with inline trading parameters)
+ * 
+ * REMOVED (now inline in commodities or backend-managed):
+ * - Master Data API (Trade Types, Bargain Types, Varieties - now inline)
+ * - GST Rates API (managed on backend)
+ * - Commissions API (now inline in commodities)
+ * - Structured Terms API (Delivery/Payment - now inline)
  */
 
 import { apiClient, USE_MOCK_API, ApiResponse } from './client';
 import {
   Organization,
-  MasterDataItem,
-  GstRate,
   Location,
-  CommissionStructure,
   CciTerm,
-  StructuredTerm,
   Commodity,
 } from '../types';
 
 // Mock data imports (used when USE_MOCK_API is true)
 import {
   mockOrganizationsDetailed,
-  mockMasterData,
   mockLocations,
+  mockMasterData,
 } from '../data/mockData';
 
 // ============================================================================
-// ORGANIZATIONS
+// ORGANIZATIONS API
 // ============================================================================
 
 export const organizationsApi = {
   getAll: async (): Promise<ApiResponse<Organization[]>> => {
     if (USE_MOCK_API) {
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 300));
       return {
         data: mockOrganizationsDetailed,
@@ -64,7 +63,7 @@ export const organizationsApi = {
       await new Promise(resolve => setTimeout(resolve, 400));
       const newOrg: Organization = {
         ...data,
-        id: Date.now(), // In real API, this comes from backend
+        id: Date.now(),
       };
       return { data: newOrg, success: true, message: 'Organization created successfully' };
     }
@@ -94,134 +93,52 @@ export const organizationsApi = {
 };
 
 // ============================================================================
-// MASTER DATA (Generic)
-// Note: Financial Years removed - managed only in FY Management tab
-// ============================================================================
-
-export type MasterDataType =
-  | 'trade-types'
-  | 'bargain-types'
-  | 'varieties'
-  | 'dispute-reasons'
-  | 'weightment-terms'
-  | 'passing-terms';
-
-export const masterDataApi = {
-  getAll: async (type: MasterDataType): Promise<ApiResponse<MasterDataItem[]>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const typeMap: Record<MasterDataType, MasterDataItem[]> = {
-        'trade-types': mockMasterData.tradeTypes,
-        'bargain-types': mockMasterData.bargainTypes,
-        'varieties': mockMasterData.varieties,
-        'dispute-reasons': mockMasterData.disputeReasons,
-        'weightment-terms': mockMasterData.weightmentTerms,
-        'passing-terms': mockMasterData.passingTerms,
-      };
-      return { data: typeMap[type] || [], success: true };
-    }
-    return apiClient.get<MasterDataItem[]>(`/settings/master-data/${type}`);
-  },
-
-  create: async (type: MasterDataType, data: { name: string }): Promise<ApiResponse<MasterDataItem>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const newItem: MasterDataItem = {
-        id: Date.now(),
-        name: data.name,
-      };
-      return { data: newItem, success: true, message: 'Item created successfully' };
-    }
-    return apiClient.post<MasterDataItem>(`/settings/master-data/${type}`, data);
-  },
-
-  update: async (type: MasterDataType, id: number, data: { name: string }): Promise<ApiResponse<MasterDataItem>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const updated: MasterDataItem = { id, name: data.name };
-      return { data: updated, success: true, message: 'Item updated successfully' };
-    }
-    return apiClient.put<MasterDataItem>(`/settings/master-data/${type}/${id}`, data);
-  },
-
-  delete: async (type: MasterDataType, id: number): Promise<ApiResponse<void>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: undefined as void, success: true, message: 'Item deleted successfully' };
-    }
-    return apiClient.delete<void>(`/settings/master-data/${type}/${id}`);
-  },
-};
-
-// ============================================================================
-// GST RATES
-// ============================================================================
-
-export const gstRatesApi = {
-  getAll: async (): Promise<ApiResponse<GstRate[]>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: mockMasterData.gstRates, success: true };
-    }
-    return apiClient.get<GstRate[]>('/settings/gst-rates');
-  },
-
-  create: async (data: Omit<GstRate, 'id'>): Promise<ApiResponse<GstRate>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const newRate: GstRate = { ...data, id: Date.now() };
-      return { data: newRate, success: true, message: 'GST rate created successfully' };
-    }
-    return apiClient.post<GstRate>('/settings/gst-rates', data);
-  },
-
-  update: async (id: number, data: Partial<GstRate>): Promise<ApiResponse<GstRate>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const updated: GstRate = {
-        ...(mockMasterData.gstRates.find(r => r.id === id) || {} as GstRate),
-        ...data,
-        id,
-      };
-      return { data: updated, success: true, message: 'GST rate updated successfully' };
-    }
-    return apiClient.put<GstRate>(`/settings/gst-rates/${id}`, data);
-  },
-
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: undefined as void, success: true, message: 'GST rate deleted successfully' };
-    }
-    return apiClient.delete<void>(`/settings/gst-rates/${id}`);
-  },
-};
-
-// ============================================================================
-// LOCATIONS
+// LOCATIONS API (with Bulk Upload Support)
 // ============================================================================
 
 export const locationsApi = {
   getAll: async (): Promise<ApiResponse<Location[]>> => {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: mockLocations, success: true };
+      return {
+        data: mockLocations,
+        success: true,
+      };
     }
     return apiClient.get<Location[]>('/settings/locations');
   },
 
   create: async (data: Omit<Location, 'id'>): Promise<ApiResponse<Location>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const newLocation: Location = { ...data, id: Date.now() };
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const newLocation: Location = {
+        ...data,
+        id: Date.now(),
+      };
       return { data: newLocation, success: true, message: 'Location created successfully' };
     }
     return apiClient.post<Location>('/settings/locations', data);
   },
 
+  bulkCreate: async (locations: Omit<Location, 'id'>[]): Promise<ApiResponse<Location[]>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const newLocations = locations.map((loc, index) => ({
+        ...loc,
+        id: Date.now() + index,
+      }));
+      return {
+        data: newLocations,
+        success: true,
+        message: `${newLocations.length} locations created successfully`,
+      };
+    }
+    return apiClient.post<Location[]>('/settings/locations/bulk', { locations });
+  },
+
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 200));
       return { data: undefined as void, success: true, message: 'Location deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/locations/${id}`);
@@ -229,67 +146,41 @@ export const locationsApi = {
 };
 
 // ============================================================================
-// COMMISSIONS
-// ============================================================================
-
-export const commissionsApi = {
-  getAll: async (): Promise<ApiResponse<CommissionStructure[]>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: mockMasterData.commissions, success: true };
-    }
-    return apiClient.get<CommissionStructure[]>('/settings/commissions');
-  },
-
-  create: async (data: Omit<CommissionStructure, 'id'>): Promise<ApiResponse<CommissionStructure>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const newCommission: CommissionStructure = { ...data, id: Date.now() };
-      return { data: newCommission, success: true, message: 'Commission created successfully' };
-    }
-    return apiClient.post<CommissionStructure>('/settings/commissions', data);
-  },
-
-  update: async (id: number, data: Partial<CommissionStructure>): Promise<ApiResponse<CommissionStructure>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const updated: CommissionStructure = {
-        ...(mockMasterData.commissions.find(c => c.id === id) || {} as CommissionStructure),
-        ...data,
-        id,
-      };
-      return { data: updated, success: true, message: 'Commission updated successfully' };
-    }
-    return apiClient.put<CommissionStructure>(`/settings/commissions/${id}`, data);
-  },
-
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: undefined as void, success: true, message: 'Commission deleted successfully' };
-    }
-    return apiClient.delete<void>(`/settings/commissions/${id}`);
-  },
-};
-
-// ============================================================================
-// CCI TERMS
+// CCI TERMS API (Cotton-Specific Contract Terms)
 // ============================================================================
 
 export const cciTermsApi = {
   getAll: async (): Promise<ApiResponse<CciTerm[]>> => {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: mockMasterData.cciTerms, success: true };
+      return {
+        data: mockMasterData.cciTerms,
+        success: true,
+      };
     }
     return apiClient.get<CciTerm[]>('/settings/cci-terms');
+  },
+
+  getById: async (id: number): Promise<ApiResponse<CciTerm>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const term = mockMasterData.cciTerms.find(t => t.id === id);
+      if (!term) {
+        throw { message: 'CCI Term not found', code: '404' };
+      }
+      return { data: term, success: true };
+    }
+    return apiClient.get<CciTerm>(`/settings/cci-terms/${id}`);
   },
 
   create: async (data: Omit<CciTerm, 'id'>): Promise<ApiResponse<CciTerm>> => {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 400));
-      const newTerm: CciTerm = { ...data, id: Date.now() };
-      return { data: newTerm, success: true, message: 'CCI term created successfully' };
+      const newTerm: CciTerm = {
+        ...data,
+        id: Date.now(),
+      };
+      return { data: newTerm, success: true, message: 'CCI Term created successfully' };
     }
     return apiClient.post<CciTerm>('/settings/cci-terms', data);
   },
@@ -302,7 +193,7 @@ export const cciTermsApi = {
         ...data,
         id,
       };
-      return { data: updated, success: true, message: 'CCI term updated successfully' };
+      return { data: updated, success: true, message: 'CCI Term updated successfully' };
     }
     return apiClient.put<CciTerm>(`/settings/cci-terms/${id}`, data);
   },
@@ -310,71 +201,26 @@ export const cciTermsApi = {
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: undefined as void, success: true, message: 'CCI term deleted successfully' };
+      return { data: undefined as void, success: true, message: 'CCI Term deleted successfully' };
     }
     return apiClient.delete<void>(`/settings/cci-terms/${id}`);
   },
 };
 
 // ============================================================================
-// STRUCTURED TERMS (Delivery & Payment)
-// ============================================================================
-
-export type StructuredTermType = 'delivery-terms' | 'payment-terms';
-
-export const structuredTermsApi = {
-  getAll: async (type: StructuredTermType): Promise<ApiResponse<StructuredTerm[]>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const data = type === 'delivery-terms' ? mockMasterData.deliveryTerms : mockMasterData.paymentTerms;
-      return { data, success: true };
-    }
-    return apiClient.get<StructuredTerm[]>(`/settings/${type}`);
-  },
-
-  create: async (type: StructuredTermType, data: Omit<StructuredTerm, 'id'>): Promise<ApiResponse<StructuredTerm>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const newTerm: StructuredTerm = { ...data, id: Date.now() };
-      return { data: newTerm, success: true, message: 'Term created successfully' };
-    }
-    return apiClient.post<StructuredTerm>(`/settings/${type}`, data);
-  },
-
-  update: async (type: StructuredTermType, id: number, data: Partial<StructuredTerm>): Promise<ApiResponse<StructuredTerm>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const terms = type === 'delivery-terms' ? mockMasterData.deliveryTerms : mockMasterData.paymentTerms;
-      const updated: StructuredTerm = {
-        ...(terms.find(t => t.id === id) || {} as StructuredTerm),
-        ...data,
-        id,
-      };
-      return { data: updated, success: true, message: 'Term updated successfully' };
-    }
-    return apiClient.put<StructuredTerm>(`/settings/${type}/${id}`, data);
-  },
-
-  delete: async (type: StructuredTermType, id: number): Promise<ApiResponse<void>> => {
-    if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: undefined as void, success: true, message: 'Term deleted successfully' };
-    }
-    return apiClient.delete<void>(`/settings/${type}/${id}`);
-  },
-};
-
-// ============================================================================
-// COMMODITIES
+// COMMODITIES API (Core Module with Inline Trading Parameters)
 // ============================================================================
 
 export const commoditiesApi = {
   getAll: async (): Promise<ApiResponse<Commodity[]>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { data: mockMasterData.commodities, success: true };
+      await new Promise(resolve => setTimeout(resolve, 400));
+      return {
+        data: mockMasterData.commodities,
+        success: true,
+      };
     }
-    return apiClient.get<Commodity[]>('/settings/commodities');
+    return apiClient.get<Commodity[]>('/commodities');
   },
 
   getById: async (id: number): Promise<ApiResponse<Commodity>> => {
@@ -386,24 +232,24 @@ export const commoditiesApi = {
       }
       return { data: commodity, success: true };
     }
-    return apiClient.get<Commodity>(`/settings/commodities/${id}`);
+    return apiClient.get<Commodity>(`/commodities/${id}`);
   },
 
   create: async (data: Omit<Commodity, 'id'>): Promise<ApiResponse<Commodity>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, 500));
       const newCommodity: Commodity = {
         ...data,
         id: Date.now(),
       };
       return { data: newCommodity, success: true, message: 'Commodity created successfully' };
     }
-    return apiClient.post<Commodity>('/settings/commodities', data);
+    return apiClient.post<Commodity>('/commodities', data);
   },
 
   update: async (id: number, data: Partial<Commodity>): Promise<ApiResponse<Commodity>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, 500));
       const updated: Commodity = {
         ...(mockMasterData.commodities.find(c => c.id === id) || {} as Commodity),
         ...data,
@@ -411,26 +257,67 @@ export const commoditiesApi = {
       };
       return { data: updated, success: true, message: 'Commodity updated successfully' };
     }
-    return apiClient.put<Commodity>(`/settings/commodities/${id}`, data);
+    return apiClient.put<Commodity>(`/commodities/${id}`, data);
   },
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 400));
       return { data: undefined as void, success: true, message: 'Commodity deleted successfully' };
     }
-    return apiClient.delete<void>(`/settings/commodities/${id}`);
+    return apiClient.delete<void>(`/commodities/${id}`);
+  },
+
+  deactivate: async (id: number): Promise<ApiResponse<Commodity>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const commodity = mockMasterData.commodities.find(c => c.id === id);
+      if (!commodity) {
+        throw { message: 'Commodity not found', code: '404' };
+      }
+      const deactivated: Commodity = {
+        ...commodity,
+        isActive: false,
+      };
+      return { data: deactivated, success: true, message: 'Commodity deactivated successfully' };
+    }
+    return apiClient.patch<Commodity>(`/commodities/${id}/deactivate`, {});
+  },
+
+  autoGst: async (commodityName: string, isProcessed: boolean): Promise<ApiResponse<{
+    hsnCode: string;
+    gstRate: number;
+    gstExemptionAvailable: boolean;
+    gstCategory: string;
+    confidence: string;
+    description: string;
+  }>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      // Simple mock logic - in reality this comes from backend GST engine
+      const mockResponse = {
+        hsnCode: '5201',
+        gstRate: 5,
+        gstExemptionAvailable: false,
+        gstCategory: 'Agricultural',
+        confidence: 'high',
+        description: 'Auto-determined based on commodity name',
+      };
+      return { data: mockResponse, success: true };
+    }
+    return apiClient.post<any>('/commodities/auto-gst', { commodityName, isProcessed });
   },
 };
 
-// Export all APIs
+// ============================================================================
+// MAIN SETTINGS API EXPORT
+// ============================================================================
+
 export const settingsApi = {
   organizations: organizationsApi,
-  masterData: masterDataApi,
-  gstRates: gstRatesApi,
   locations: locationsApi,
-  commissions: commissionsApi,
   cciTerms: cciTermsApi,
-  structuredTerms: structuredTermsApi,
   commodities: commoditiesApi,
 };
+
+export default settingsApi;

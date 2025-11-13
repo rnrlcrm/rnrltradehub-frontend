@@ -2,6 +2,7 @@
 export type CommodityUnit = 'Kgs' | 'Qty' | 'Candy' | 'Bales' | 'Quintal' | 'Tonnes';
 
 // Commodity interface for multi-commodity support
+// Trading parameters are now stored directly within each commodity (not linked to Settings)
 export interface Commodity {
   id: number;
   name: string; // e.g., "Cotton", "Wheat", "Rice"
@@ -14,15 +15,15 @@ export interface Commodity {
   gstCategory: 'Agricultural' | 'Processed' | 'Industrial' | 'Service'; // Auto-determined
   isProcessed: boolean; // User specifies if processed (affects GST)
   isActive: boolean;
-  // Trading parameters available for this commodity
-  tradeTypeIds: number[]; // Available trade types for this commodity
-  bargainTypeIds: number[]; // Available bargain types
-  varietyIds: number[]; // Available varieties
-  weightmentTermIds: number[]; // Available weightment terms
-  passingTermIds: number[]; // Available passing terms
-  deliveryTermIds: number[]; // Available delivery terms
-  paymentTermIds: number[]; // Available payment terms
-  commissionIds: number[]; // Available commission structures
+  // Trading parameters stored directly in commodity (not as references to Settings)
+  tradeTypes: MasterDataItem[]; // Trade types specific to this commodity
+  bargainTypes: MasterDataItem[]; // Bargain types specific to this commodity
+  varieties: MasterDataItem[]; // Varieties specific to this commodity
+  weightmentTerms: MasterDataItem[]; // Weightment terms specific to this commodity
+  passingTerms: MasterDataItem[]; // Passing terms specific to this commodity
+  deliveryTerms: StructuredTerm[]; // Delivery terms specific to this commodity
+  paymentTerms: StructuredTerm[]; // Payment terms specific to this commodity
+  commissions: CommissionStructure[]; // Commission structures specific to this commodity
   // CCI specific (only for cotton)
   supportsCciTerms: boolean; // true for cotton, false for others
   description?: string; // Optional description
@@ -105,6 +106,12 @@ export interface CommissionStructure {
   name: string;
   type: 'PERCENTAGE' | 'PER_BALE';
   value: number;
+  // GST on Commission Services (Brokerage & Commission - SAC 9983)
+  // As per GST Act: Brokerage and Commission services attract 18% GST
+  // GST is ALWAYS applicable on commission - no exemptions
+  gstApplicable: boolean; // Always true for commissions (SAC 9983 = 18% GST)
+  gstRate: number; // 18% as per GST Act for service code 9983
+  sacCode: string; // Service Accounting Code - '9983' for brokerage/commission
 }
 
 export interface GstRate {
@@ -255,6 +262,12 @@ export interface SalesContract {
   vendorId: string;
   vendorName: string;
   agentId?: string;
+  
+  // CRITICAL: Commodity Reference for Audit Trail and Data Integrity
+  commodityId: number; // Link to Commodity Master - MANDATORY for audit trail
+  commodityName: string; // Cached for display (original name at time of contract)
+  commoditySymbol: string; // Cached for display (original symbol at time of contract)
+  
   variety: string;
   quantityBales: number;
   rate: number;

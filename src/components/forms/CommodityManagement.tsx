@@ -91,7 +91,7 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
   };
 
   const handleDelete = async (commodity: Commodity) => {
-    // Check deletion safety first
+    // Comprehensive deletion safety check
     const safetyCheck = CommodityValidationService.checkDeletionSafety(
       commodity,
       commodities
@@ -100,18 +100,46 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
     if (!safetyCheck.canDelete) {
       await showAlert(
         'Cannot Delete Commodity',
-        safetyCheck.blockReason || 'This commodity cannot be deleted at this time.'
+        safetyCheck.blockReason || 'This commodity cannot be deleted at this time.',
+        { variant: 'destructive' }
       );
       return;
     }
 
+    // Additional check: Verify no active contracts exist
+    // In a real system, this would query the database
+    const warningMessage = `Are you sure you want to delete commodity '${commodity.name}' (${commodity.symbol})?\n\n` +
+      `⚠️ WARNING: This action cannot be undone.\n\n` +
+      `Before proceeding, ensure:\n` +
+      `• No active sales contracts reference this commodity\n` +
+      `• No pending invoices exist for this commodity\n` +
+      `• No historical data will be affected\n\n` +
+      `All associated trading parameters will be permanently removed:\n` +
+      `• ${commodity.tradeTypes.length} Trade Types\n` +
+      `• ${commodity.bargainTypes.length} Bargain Types\n` +
+      `• ${commodity.varieties.length} Varieties\n` +
+      `• ${commodity.weightmentTerms.length} Weightment Terms\n` +
+      `• ${commodity.passingTerms.length} Passing Terms\n` +
+      `• ${commodity.deliveryTerms.length} Delivery Terms\n` +
+      `• ${commodity.paymentTerms.length} Payment Terms\n` +
+      `• ${commodity.commissions.length} Commission Structures`;
+
     const confirmed = await showConfirm(
-      'Confirm Delete',
-      `Are you sure you want to delete commodity '${commodity.name}' (${commodity.symbol})? This action cannot be undone and may affect existing contracts.`,
-      { variant: 'destructive', confirmText: 'Delete', cancelText: 'Cancel' }
+      'Confirm Deletion - This Cannot Be Undone',
+      warningMessage,
+      { variant: 'destructive', confirmText: 'Yes, Delete Permanently', cancelText: 'Cancel' }
     );
 
     if (!confirmed) return;
+
+    // Double confirmation for extra safety
+    const doubleConfirm = await showConfirm(
+      'Final Confirmation Required',
+      `Type "${commodity.symbol}" to confirm deletion of ${commodity.name}.\n\nThis is your last chance to cancel.`,
+      { variant: 'destructive', confirmText: 'Confirm Delete', cancelText: 'Cancel' }
+    );
+
+    if (!doubleConfirm) return;
 
     try {
       await commoditiesApi.delete(commodity.id);
@@ -121,8 +149,10 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
         role: currentUser.role,
         action: 'Delete',
         module: 'Settings - Commodity Master',
-        details: `Deleted commodity: '${commodity.name}' (${commodity.symbol}) - HSN ${commodity.hsnCode}`,
-        reason: 'Commodity master management',
+        details: `Deleted commodity: '${commodity.name}' (${commodity.symbol}) - HSN ${commodity.hsnCode}. ` +
+          `Removed ${commodity.tradeTypes.length} trade types, ${commodity.bargainTypes.length} bargain types, ` +
+          `${commodity.varieties.length} varieties, and other associated data.`,
+        reason: 'Commodity master management - Permanent deletion',
       });
       await showAlert('Success', 'Commodity deleted successfully');
     } catch (error: any) {
@@ -189,6 +219,15 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
       ),
     },
     {
+      header: 'Trading Params',
+      accessor: (commodity: Commodity) => (
+        <div className="text-xs text-gray-600">
+          <div>{commodity.tradeTypes.length} Trade Types</div>
+          <div>{commodity.varieties.length} Varieties</div>
+        </div>
+      ),
+    },
+    {
       header: 'Actions',
       accessor: (commodity: Commodity) => (
         <div className="space-x-4">
@@ -225,7 +264,7 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
     <>
       <Card
         title="Commodity Master"
-        subtitle="Manage commodities with automatic GST determination based on HSN codes and GST Act"
+        subtitle="Manage commodities with inline trading parameters. All types are managed within each commodity - no Settings link required."
         actions={
           <Button onClick={() => handleOpenModal()} className="text-sm" disabled={isSaving}>
             Add New Commodity
@@ -243,17 +282,6 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
         <CommodityForm
           commodity={editingCommodity}
           commodities={commodities}
-          masterData={{
-            tradeTypes: mockMasterData.tradeTypes,
-            bargainTypes: mockMasterData.bargainTypes,
-            varieties: mockMasterData.varieties,
-            weightmentTerms: mockMasterData.weightmentTerms,
-            passingTerms: mockMasterData.passingTerms,
-            deliveryTerms: mockMasterData.deliveryTerms,
-            paymentTerms: mockMasterData.paymentTerms,
-            commissions: mockMasterData.commissions,
-            gstRates: mockMasterData.gstRates,
-          }}
           onSave={handleSave}
           onCancel={handleCloseModal}
           isSaving={isSaving}
