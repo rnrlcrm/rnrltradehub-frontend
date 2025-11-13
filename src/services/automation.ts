@@ -568,9 +568,9 @@ export class KYCAutomation {
     remindersSent: number;
     overdueCount: number;
   }> {
-    let totalChecked = 0;
-    let remindersSent = 0;
-    let overdueCount = 0;
+    const totalChecked = 0;
+    const remindersSent = 0;
+    const overdueCount = 0;
     
     try {
       // This would be called by a scheduled job daily

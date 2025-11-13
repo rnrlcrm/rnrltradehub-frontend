@@ -55,7 +55,6 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [warnings, setWarnings] = useState<string[]>([]);
   const [ruleViolations, setRuleViolations] = useState<{
     errors: Array<{rule: string; message: string; field?: string}>;
     warnings: Array<{rule: string; message: string; field?: string}>;
@@ -100,80 +99,74 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Auto-generate symbol when name changes
+  // Auto-generate symbol when name changes (debounced to prevent interruption)
   useEffect(() => {
     if (autoSymbol && formData.name && !commodity) {
-      const generatedSymbol = generateSymbol(formData.name);
-      if (generatedSymbol) {
-        setFormData(prev => ({ ...prev, symbol: generatedSymbol }));
-      }
+      const timer = setTimeout(() => {
+        const generatedSymbol = generateSymbol(formData.name);
+        if (generatedSymbol && generatedSymbol !== formData.symbol) {
+          setFormData(prev => ({ ...prev, symbol: generatedSymbol }));
+        }
+      }, 300); // 300ms debounce
+      return () => clearTimeout(timer);
     }
   }, [formData.name, autoSymbol, commodity]);
 
-  // Auto-determine GST based on name and processing status
+  // Auto-determine GST based on name and processing status (debounced)
   useEffect(() => {
     if (formData.name && !commodity) {
-      const gstInfo = autoDetectGSTInfo(formData.name, formData.isProcessed);
-      setFormData(prev => ({
-        ...prev,
-        hsnCode: gstInfo.hsnCode,
-        gstRate: gstInfo.gstRate,
-        gstExemptionAvailable: gstInfo.exemptionAvailable,
-        gstCategory: gstInfo.category as any,
-      }));
+      const timer = setTimeout(() => {
+        const gstInfo = autoDetectGSTInfo(formData.name, formData.isProcessed);
+        setFormData(prev => {
+          // Only update if values have actually changed
+          if (prev.hsnCode !== gstInfo.hsnCode || 
+              prev.gstRate !== gstInfo.gstRate || 
+              prev.gstExemptionAvailable !== gstInfo.exemptionAvailable ||
+              prev.gstCategory !== gstInfo.category) {
+            return {
+              ...prev,
+              hsnCode: gstInfo.hsnCode,
+              gstRate: gstInfo.gstRate,
+              gstExemptionAvailable: gstInfo.exemptionAvailable,
+              gstCategory: gstInfo.category as any,
+            };
+          }
+          return prev;
+        });
+      }, 500); // 500ms debounce for GST detection
+      return () => clearTimeout(timer);
     }
   }, [formData.name, formData.isProcessed, commodity]);
 
-  // Auto-set CCI Terms support for cotton
+  // Auto-set CCI Terms support for cotton (debounced)
   useEffect(() => {
     if (formData.name && !commodity) {
-      const shouldSupport = shouldSupportCciTerms(formData.name);
-      if (shouldSupport !== formData.supportsCciTerms) {
-        setFormData(prev => ({ ...prev, supportsCciTerms: shouldSupport }));
-      }
+      const timer = setTimeout(() => {
+        const shouldSupport = shouldSupportCciTerms(formData.name);
+        if (shouldSupport !== formData.supportsCciTerms) {
+          setFormData(prev => ({ ...prev, supportsCciTerms: shouldSupport }));
+        }
+      }, 500); // 500ms debounce
+      return () => clearTimeout(timer);
     }
-  }, [formData.name, commodity]);
+  }, [formData.name, commodity, formData.supportsCciTerms]);
 
-  // Validate business rules in real-time
+  // Validate business rules in real-time (debounced to prevent excessive re-renders)
   useEffect(() => {
     if (formData.name) {
-      const result = validateCommodityRules(formData as any, {
-        existingCommodities: commodities,
-      });
-      setRuleViolations({
-        errors: result.errors,
-        warnings: result.warnings,
-        info: result.info,
-      });
+      const timer = setTimeout(() => {
+        const result = validateCommodityRules(formData as any, {
+          existingCommodities: commodities,
+        });
+        setRuleViolations({
+          errors: result.errors,
+          warnings: result.warnings,
+          info: result.info,
+        });
+      }, 600); // 600ms debounce for validation
+      return () => clearTimeout(timer);
     }
-  }, [formData, commodities]);
-
-  // Cross-field validation warnings
-  useEffect(() => {
-    const newWarnings: string[] = [];
-
-    // Warn if rateUnit === unit (unusual but allowed)
-    if (formData.rateUnit && formData.unit && formData.rateUnit === formData.unit) {
-      newWarnings.push('⚠️ Rate unit is same as primary unit. This is unusual but allowed.');
-    }
-
-    // Warn if non-cotton has CCI support
-    if (formData.supportsCciTerms && formData.name && !formData.name.toLowerCase().includes('cotton')) {
-      newWarnings.push('⚠️ CCI Terms are typically only for cotton commodities.');
-    }
-
-    // Warn if commission percentage > 10%
-    if (formData.commissions.some(c => c.type === 'PERCENTAGE' && c.value > 10)) {
-      newWarnings.push('⚠️ Commission percentage > 10% is unusually high.');
-    }
-
-    // Warn if GST rate seems unusual for category
-    if (formData.gstCategory === 'Agricultural' && formData.gstRate > 5 && !formData.isProcessed) {
-      newWarnings.push('⚠️ GST rate > 5% is unusual for unprocessed agricultural products.');
-    }
-
-    setWarnings(newWarnings);
-  }, [formData]);
+  }, [formData.name, formData.symbol, formData.hsnCode, formData.unit, commodities]);
 
   const handleChange = (field: keyof CommodityFormData, value: any) => {
     let sanitizedValue = value;
