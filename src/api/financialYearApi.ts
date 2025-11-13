@@ -263,14 +263,16 @@ export const financialYearApi = {
   },
 
   /**
-   * Execute FY split
+   * Execute FY split with mandatory report generation
    * This is a critical operation that:
    * 1. Closes current FY
    * 2. Creates new FY
    * 3. Migrates all pending items
    * 4. Updates all references
+   * 5. GENERATES ALL MANDATORY REPORTS (PDF, Excel, CSV)
    * 
    * IMPORTANT: This operation is IRREVERSIBLE
+   * MANDATORY: All reports must be generated successfully
    */
   executeSplit: async (
     fyId: number,
@@ -278,15 +280,54 @@ export const financialYearApi = {
       newFyCode: string;
       adminPassword: string;
       acknowledgeIrreversible: boolean;
+      generateReports: boolean; // MUST be true
     }
-  ): Promise<ApiResponse<FYSplitSummary>> => {
+  ): Promise<ApiResponse<FYSplitSummary & {
+    reportsGenerated: {
+      executiveSummary: string;
+      moduleReports: {
+        organizations: string;
+        salesContracts: string;
+        purchaseContracts: string;
+        invoices: string;
+        payments: string;
+        commissions: string;
+        deliveryOrders: string;
+        disputes: string;
+        accountsReceivable: string;
+        accountsPayable: string;
+        inventory: string;
+        generalLedger: string;
+      };
+      accountingReports: {
+        trialBalance: string;
+        profitAndLoss: string;
+        balanceSheet: string;
+        cashFlowStatement: string;
+        taxComputations: string;
+      };
+      auditTrail: string;
+      dataIntegrity: string;
+      migrationLog: string;
+      backupVerification: string;
+    };
+    reportGenerationTime: string;
+    totalReportsGenerated: number;
+  }>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate long operation
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate long operation with report generation
       
       if (!data.acknowledgeIrreversible) {
         throw { 
           message: 'You must acknowledge that this action is irreversible', 
           code: '400' 
+        };
+      }
+
+      if (!data.generateReports) {
+        throw {
+          message: 'Report generation is MANDATORY for FY split. Cannot proceed without generating reports.',
+          code: '400'
         };
       }
       
@@ -295,7 +336,7 @@ export const financialYearApi = {
         throw { message: 'Financial Year not found', code: '404' };
       }
       
-      const mockSummary: FYSplitSummary = {
+      const mockSummary: FYSplitSummary & { reportsGenerated: any; reportGenerationTime: string; totalReportsGenerated: number } = {
         fromFY: currentFY.fyCode,
         toFY: data.newFyCode,
         executedBy: 'Admin',
@@ -304,16 +345,46 @@ export const financialYearApi = {
         commissionsMigrated: 8,
         contractsMigrated: 25,
         disputesMigrated: 3,
-        notes: 'FY split completed successfully. All pending items migrated to new FY.',
+        notes: 'FY split completed successfully. All pending items migrated to new FY. All mandatory reports generated.',
+        reportsGenerated: {
+          executiveSummary: '/reports/fy-split/executive_summary_2024_2025.pdf',
+          moduleReports: {
+            organizations: '/reports/fy-split/organizations_2024_2025.xlsx',
+            salesContracts: '/reports/fy-split/sales_contracts_2024_2025.xlsx',
+            purchaseContracts: '/reports/fy-split/purchase_contracts_2024_2025.xlsx',
+            invoices: '/reports/fy-split/invoices_2024_2025.xlsx',
+            payments: '/reports/fy-split/payments_2024_2025.xlsx',
+            commissions: '/reports/fy-split/commissions_2024_2025.xlsx',
+            deliveryOrders: '/reports/fy-split/delivery_orders_2024_2025.xlsx',
+            disputes: '/reports/fy-split/disputes_2024_2025.xlsx',
+            accountsReceivable: '/reports/fy-split/accounts_receivable_2024_2025.xlsx',
+            accountsPayable: '/reports/fy-split/accounts_payable_2024_2025.xlsx',
+            inventory: '/reports/fy-split/inventory_2024_2025.xlsx',
+            generalLedger: '/reports/fy-split/general_ledger_2024_2025.xlsx',
+          },
+          accountingReports: {
+            trialBalance: '/reports/fy-split/trial_balance_2024_2025.pdf',
+            profitAndLoss: '/reports/fy-split/profit_loss_2024_2025.pdf',
+            balanceSheet: '/reports/fy-split/balance_sheet_2024_2025.pdf',
+            cashFlowStatement: '/reports/fy-split/cash_flow_2024_2025.pdf',
+            taxComputations: '/reports/fy-split/tax_computations_2024_2025.pdf',
+          },
+          auditTrail: '/reports/fy-split/audit_trail_2024_2025.csv',
+          dataIntegrity: '/reports/fy-split/data_integrity_2024_2025.pdf',
+          migrationLog: '/reports/fy-split/migration_log_2024_2025.xlsx',
+          backupVerification: '/reports/fy-split/backup_verification_2024.pdf',
+        },
+        reportGenerationTime: '12 seconds',
+        totalReportsGenerated: 19,
       };
       
       return { 
         data: mockSummary, 
         success: true, 
-        message: 'Financial Year split completed successfully' 
+        message: 'Financial Year split completed successfully. All mandatory reports generated and saved.' 
       };
     }
-    return apiClient.post<FYSplitSummary>(`/settings/financial-years/${fyId}/split`, data);
+    return apiClient.post<any>(`/settings/financial-years/${fyId}/split`, data);
   },
 
   /**
