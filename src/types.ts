@@ -475,7 +475,7 @@ export interface AgingReport {
   total: number;
 }
 
-export type Module = 'Sales Contracts' | 'Invoices' | 'Payments' | 'Disputes' | 'Commissions' | 'Vendors & Clients' | 'User Management' | 'Settings' | 'Reports' | 'Audit Trail' | 'Roles & Rights' | 'Grievance Officer' | 'Business Partner';
+export type Module = 'Sales Contracts' | 'Invoices' | 'Payments' | 'Disputes' | 'Commissions' | 'Business Partners' | 'User Management' | 'Settings' | 'Reports' | 'Audit Trail' | 'Roles & Rights' | 'Grievance Officer';
 export type Permission = 'create' | 'read' | 'update' | 'delete' | 'approve' | 'share';
 export type PermissionsMap = {
   [key in UserRole]?: {

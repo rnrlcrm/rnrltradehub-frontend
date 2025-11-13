@@ -15,7 +15,7 @@ export const PORTAL_MODULES: Record<PortalType, PortalModule[]> = {
     { id: 'commissions', name: 'Commissions', path: '/commissions' },
     { id: 'commission-accounting', name: 'Commission Accounting', path: '/commission-accounting' },
     { id: 'disputes', name: 'Disputes', path: '/disputes' },
-    { id: 'vendors-clients', name: 'Vendors & Clients', path: '/vendors-clients' },
+    { id: 'business-partners', name: 'Business Partners', path: '/business-partners' },
     { id: 'reports', name: 'Reports', path: '/reports' },
     { id: 'audit-trail', name: 'Audit Trail', path: '/audit-trail' },
     { id: 'settings', name: 'Settings', path: '/settings' },

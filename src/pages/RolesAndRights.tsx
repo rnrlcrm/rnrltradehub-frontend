@@ -15,14 +15,13 @@ const allModules: Module[] = [
   'Payments', 
   'Disputes', 
   'Commissions', 
-  'Vendors & Clients', 
+  'Business Partners', 
   'User Management', 
   'Settings', 
   'Reports', 
   'Audit Trail', 
   'Roles & Rights',
   'Grievance Officer',
-  'Business Partner'
 ];
 
 const allPermissions: Permission[] = ['create', 'read', 'update', 'delete'];

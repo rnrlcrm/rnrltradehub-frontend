@@ -21,7 +21,7 @@ const modules = [
   'Payments',
   'Commissions',
   'Disputes',
-  'Vendors & Clients',
+  'Business Partners',
   'Reports',
   'Audit Trail',
   'User Management',
