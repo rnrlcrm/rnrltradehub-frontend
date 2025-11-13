@@ -368,8 +368,8 @@ export function getGSTReturnPeriod(transactionDate: Date): {
   const year = transactionDate.getFullYear();
   const quarter = Math.ceil(month / 3);
   
-  // GSTR-1 due date: 11th of next month (for reference)
-  const _gstr1DueDate = new Date(year, month, 11);
+  // GSTR-1 due date: 11th of next month
+  const gstr1DueDate = new Date(year, month, 11);
   
   // GSTR-3B due date: 20th of next month
   const gstr3bDueDate = new Date(year, month, 20);

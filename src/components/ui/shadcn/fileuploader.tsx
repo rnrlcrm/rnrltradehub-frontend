@@ -87,10 +87,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
-    const bytesPerUnit = 1024;
-    const sizeUnits = ['Bytes', 'KB', 'MB', 'GB'];
-    const unitIndex = Math.floor(Math.log(bytes) / Math.log(bytesPerUnit));
-    return Math.round(bytes / Math.pow(bytesPerUnit, unitIndex) * 100) / 100 + ' ' + sizeUnits[unitIndex];
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const isImage = (file: File) => file.type.startsWith('image/');

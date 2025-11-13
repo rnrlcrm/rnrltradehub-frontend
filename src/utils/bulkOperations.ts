@@ -84,7 +84,7 @@ export function importFromCSV<T>(
         }
         
         // Parse header
-        const header = lines[0].split(',').map(headerValue => headerValue.trim());
+        const header = lines[0].split(',').map(h => h.trim());
         
         // Parse rows
         const data: T[] = [];

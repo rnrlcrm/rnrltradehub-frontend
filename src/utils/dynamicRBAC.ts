@@ -295,7 +295,7 @@ export class DealAccessService {
     
     // Check if user is a participant
     const userParticipation = participants.find(
-      participant => participant.userId === userId || participant.businessPartnerId === businessPartnerId
+      p => p.userId === userId || p.businessPartnerId === businessPartnerId
     );
     
     if (!userParticipation) {
@@ -333,7 +333,7 @@ export class DealAccessService {
     // Determine allowed actions
     const allowedActions = this.getAllowedActions(accessLevel);
     const allActions: DynamicPermissionAction[] = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE', 'EXPORT'];
-    const restrictedActions = allActions.filter(action => !allowedActions.includes(action));
+    const restrictedActions = allActions.filter(a => !allowedActions.includes(a));
     
     return {
       dealId,
@@ -524,7 +524,7 @@ export class DealAccessService {
     return deals
       .filter(deal => 
         deal.participants.some(
-          participant => participant.userId === userId || participant.businessPartnerId === businessPartnerId
+          p => p.userId === userId || p.businessPartnerId === businessPartnerId
         )
       )
       .map(deal => deal.id);
@@ -630,7 +630,7 @@ export class TraderAccessRules {
     
     // Trader can see deal if they are involved as buyer OR seller OR broker
     const isParticipant = deal.participants.some(
-      participant => participant.userId === traderId || participant.businessPartnerId === traderBusinessPartnerId
+      p => p.userId === traderId || p.businessPartnerId === traderBusinessPartnerId
     );
     
     return isParticipant;
@@ -704,11 +704,11 @@ export class TraderAccessRules {
     
     // Trader can initiate deal only with partners in their network
     const hasBuyerRelation = traderNetwork.some(
-      networkEntry => networkEntry.businessPartnerId === buyerId
+      n => n.businessPartnerId === buyerId
     );
     
     const hasSellerRelation = traderNetwork.some(
-      networkEntry => networkEntry.businessPartnerId === sellerId
+      n => n.businessPartnerId === sellerId
     );
     
     if (!hasBuyerRelation && !hasSellerRelation) {

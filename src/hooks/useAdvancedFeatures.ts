@@ -106,12 +106,12 @@ export function useAnalytics(contracts: Contract[]) {
 
     const blob = new Blob([report], { type: format === 'csv' ? 'text/csv' : 'application/json' });
     const url = URL.createObjectURL(blob);
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = `analytics-report-${new Date().toISOString().split('T')[0]}.${format}`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, [exportReport]);
 

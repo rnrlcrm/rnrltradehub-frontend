@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import AuthService from '../services/authService';
 import { AutomationService } from '../services/automationService';
-import * as realApiClient from '../api/realApiClient';
+import { apiClient } from '../api/realApiClient';
 
 // Mock API client
 vi.mock('../api/realApiClient', () => ({
@@ -19,15 +19,6 @@ vi.mock('../api/realApiClient', () => ({
   setTokens: vi.fn(),
   clearTokens: vi.fn(),
   getAccessToken: vi.fn(),
-}));
-
-// Mock session manager
-vi.mock('../utils/sessionManager', () => ({
-  sessionManagerInstance: {
-    startSession: vi.fn(),
-    endSession: vi.fn(),
-    updateActivity: vi.fn(),
-  },
 }));
 
 describe('AuthService', () => {
@@ -54,7 +45,7 @@ describe('AuthService', () => {
         },
       };
 
-      vi.mocked(realApiClient.apiClient.post).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
 
       const result = await AuthService.login({
         email: 'test@example.com',
@@ -63,14 +54,14 @@ describe('AuthService', () => {
 
       expect(result.user.email).toBe('test@example.com');
       expect(result.requiresPasswordReset).toBe(false);
-      expect(realApiClient.apiClient.post).toHaveBeenCalledWith('/api/auth/login', {
+      expect(apiClient.post).toHaveBeenCalledWith('/api/auth/login', {
         email: 'test@example.com',
         password: 'password123',
       });
     });
 
     it('should handle login failure', async () => {
-      vi.mocked(realApiClient.apiClient.post).mockRejectedValue({
+      vi.mocked(apiClient.post).mockRejectedValue({
         message: 'Invalid credentials',
       });
 
@@ -85,17 +76,17 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('should logout and clear local storage', async () => {
-      vi.mocked(realApiClient.apiClient.post).mockResolvedValue({ data: {} });
+      vi.mocked(apiClient.post).mockResolvedValue({ data: {} });
 
       await AuthService.logout();
 
-      expect(realApiClient.apiClient.post).toHaveBeenCalledWith('/api/auth/logout');
+      expect(apiClient.post).toHaveBeenCalledWith('/api/auth/logout');
     });
   });
 
   describe('isAuthenticated', () => {
     it('should return true when user and token exist', () => {
-      vi.mocked(realApiClient.getAccessToken).mockReturnValue('token-123');
+      vi.mocked(apiClient.getAccessToken).mockReturnValue('token-123');
       localStorage.setItem('current_user', JSON.stringify({ id: 'user-123' }));
 
       const result = AuthService.isAuthenticated();
@@ -104,7 +95,7 @@ describe('AuthService', () => {
     });
 
     it('should return false when no token exists', () => {
-      vi.mocked(realApiClient.getAccessToken).mockReturnValue(null);
+      vi.mocked(apiClient.getAccessToken).mockReturnValue(null);
 
       const result = AuthService.isAuthenticated();
 
@@ -138,7 +129,7 @@ describe('AutomationService', () => {
         },
       };
 
-      vi.mocked(realApiClient.apiClient.post).mockResolvedValue(mockUserResponse);
+      vi.mocked(apiClient.post).mockResolvedValue(mockUserResponse);
 
       const result = await AutomationService.autoCreateUserFromPartner(
         'partner-123',
@@ -147,8 +138,8 @@ describe('AutomationService', () => {
 
       expect(result.user.id).toBe('user-456');
       expect(result.password).toBeDefined();
-      expect(result.password.length).toBeGreaterThanOrEqual(8);
-      expect(realApiClient.apiClient.post).toHaveBeenCalled();
+      expect(result.password.length).toBeGreaterThan(12);
+      expect(apiClient.post).toHaveBeenCalled();
     });
   });
 

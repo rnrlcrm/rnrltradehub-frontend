@@ -6,7 +6,6 @@ import Modal from '../ui/Modal';
 import CommissionMasterForm from '../forms/CommissionMasterForm';
 import { CommissionStructure, User, AuditLog } from '../../types';
 import { Button } from '../ui/Form';
-import { isDuplicateName } from '../../utils/validation';
 
 interface CommissionMasterManagementProps {
   initialData: CommissionStructure[];
@@ -30,12 +29,6 @@ const CommissionMasterManagement: React.FC<CommissionMasterManagementProps> = ({
   };
 
   const handleSave = (data: Omit<CommissionStructure, 'id'>) => {
-    // Check for duplicate name
-    if (isDuplicateName(items, data.name, editingItem?.id)) {
-      alert(`A commission structure with the name "${data.name}" already exists. Please use a different name.`);
-      return;
-    }
-
     const details = `Commission: '${data.name}'`;
     if (editingItem) {
       const updatedItems = items.map(item => item.id === editingItem.id ? { ...editingItem, ...data } : item);

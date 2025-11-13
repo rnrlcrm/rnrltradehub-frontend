@@ -116,7 +116,7 @@ export function getTemplateLibrary(): TemplateLibrary {
  * Get template by ID
  */
 export function getTemplate(templateId: string): ContractTemplate | undefined {
-  return STANDARD_TEMPLATES.find(template => template.id === templateId);
+  return STANDARD_TEMPLATES.find(t => t.id === templateId);
 }
 
 /**
@@ -136,7 +136,7 @@ export function applyTemplate(templateId: string, currentFormData: any = {}): an
  * Get templates by category
  */
 export function getTemplatesByCategory(category: string): ContractTemplate[] {
-  return STANDARD_TEMPLATES.filter(template => template.category === category && template.isActive);
+  return STANDARD_TEMPLATES.filter(t => t.category === category && t.isActive);
 }
 
 /**
@@ -144,9 +144,9 @@ export function getTemplatesByCategory(category: string): ContractTemplate[] {
  */
 export function searchTemplates(query: string): ContractTemplate[] {
   const lowercaseQuery = query.toLowerCase();
-  return STANDARD_TEMPLATES.filter(template => 
-    template.name.toLowerCase().includes(lowercaseQuery) ||
-    template.description.toLowerCase().includes(lowercaseQuery)
+  return STANDARD_TEMPLATES.filter(t => 
+    t.name.toLowerCase().includes(lowercaseQuery) ||
+    t.description.toLowerCase().includes(lowercaseQuery)
   );
 }
 
@@ -186,7 +186,7 @@ export function createCustomTemplate(
  * Track template usage
  */
 export function incrementTemplateUsage(templateId: string): void {
-  const template = STANDARD_TEMPLATES.find(template => template.id === templateId);
+  const template = STANDARD_TEMPLATES.find(t => t.id === templateId);
   if (template) {
     template.usageCount++;
     template.lastUsed = new Date();
