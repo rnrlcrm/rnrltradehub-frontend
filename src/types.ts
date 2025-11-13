@@ -2,6 +2,7 @@
 export type CommodityUnit = 'Kgs' | 'Qty' | 'Candy' | 'Bales' | 'Quintal' | 'Tonnes';
 
 // Commodity interface for multi-commodity support
+// Trading parameters are now stored directly within each commodity (not linked to Settings)
 export interface Commodity {
   id: number;
   name: string; // e.g., "Cotton", "Wheat", "Rice"
@@ -14,15 +15,15 @@ export interface Commodity {
   gstCategory: 'Agricultural' | 'Processed' | 'Industrial' | 'Service'; // Auto-determined
   isProcessed: boolean; // User specifies if processed (affects GST)
   isActive: boolean;
-  // Trading parameters available for this commodity
-  tradeTypeIds: number[]; // Available trade types for this commodity
-  bargainTypeIds: number[]; // Available bargain types
-  varietyIds: number[]; // Available varieties
-  weightmentTermIds: number[]; // Available weightment terms
-  passingTermIds: number[]; // Available passing terms
-  deliveryTermIds: number[]; // Available delivery terms
-  paymentTermIds: number[]; // Available payment terms
-  commissionIds: number[]; // Available commission structures
+  // Trading parameters stored directly in commodity (not as references to Settings)
+  tradeTypes: MasterDataItem[]; // Trade types specific to this commodity
+  bargainTypes: MasterDataItem[]; // Bargain types specific to this commodity
+  varieties: MasterDataItem[]; // Varieties specific to this commodity
+  weightmentTerms: MasterDataItem[]; // Weightment terms specific to this commodity
+  passingTerms: MasterDataItem[]; // Passing terms specific to this commodity
+  deliveryTerms: StructuredTerm[]; // Delivery terms specific to this commodity
+  paymentTerms: StructuredTerm[]; // Payment terms specific to this commodity
+  commissions: CommissionStructure[]; // Commission structures specific to this commodity
   // CCI specific (only for cotton)
   supportsCciTerms: boolean; // true for cotton, false for others
   description?: string; // Optional description

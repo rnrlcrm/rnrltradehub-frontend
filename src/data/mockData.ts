@@ -295,15 +295,43 @@ const commodities: Commodity[] = [
         gstCategory: 'Agricultural',
         isProcessed: false,
         isActive: true,
-        // Cotton has all trade types
-        tradeTypeIds: [1, 2], // Normal Trade, CCI Trade
-        bargainTypeIds: [1, 2], // Pucca Sauda, Subject to Approval
-        varietyIds: [1, 2, 3], // MCU-5, DCH-32, Shankar-6
-        weightmentTermIds: [1, 2], // At Seller's Gin, At Buyer's Mill
-        passingTermIds: [1, 2], // Lab Report, Visual Inspection
-        deliveryTermIds: [1, 2], // Ex-Gin, FOR
-        paymentTermIds: [1, 2, 3, 4], // All payment terms
-        commissionIds: [1, 2, 3], // All commission types
+        // Cotton has all trade types - stored directly
+        tradeTypes: [
+            { id: 1, name: 'Normal Trade' },
+            { id: 2, name: 'CCI Trade' },
+        ],
+        bargainTypes: [
+            { id: 1, name: 'Pucca Sauda' },
+            { id: 2, name: 'Subject to Approval' },
+        ],
+        varieties: [
+            { id: 1, name: 'MCU-5' },
+            { id: 2, name: 'DCH-32' },
+            { id: 3, name: 'Shankar-6' },
+        ],
+        weightmentTerms: [
+            { id: 1, name: 'At Seller\'s Gin' },
+            { id: 2, name: 'At Buyer\'s Mill' },
+        ],
+        passingTerms: [
+            { id: 1, name: 'Lab Report' },
+            { id: 2, name: 'Visual Inspection' },
+        ],
+        deliveryTerms: [
+            { id: 1, name: 'Ex-Gin', days: 0 },
+            { id: 2, name: 'FOR', days: 5 },
+        ],
+        paymentTerms: [
+            { id: 1, name: 'Advance', days: 0 },
+            { id: 2, name: 'Against Delivery', days: 0 },
+            { id: 3, name: '30 Days Credit', days: 30 },
+            { id: 4, name: '60 Days Credit', days: 60 },
+        ],
+        commissions: [
+            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
+            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100 },
+            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0 },
+        ],
         supportsCciTerms: true, // Cotton supports CCI terms
         description: 'Raw cotton and cotton products',
     },
@@ -319,14 +347,37 @@ const commodities: Commodity[] = [
         gstCategory: 'Agricultural',
         isProcessed: false,
         isActive: true,
-        tradeTypeIds: [1], // Only Normal Trade
-        bargainTypeIds: [1, 2],
-        varietyIds: [], // Will be added separately for wheat
-        weightmentTermIds: [1, 2],
-        passingTermIds: [1, 2],
-        deliveryTermIds: [1, 2],
-        paymentTermIds: [1, 2, 3, 4],
-        commissionIds: [1, 2, 3],
+        tradeTypes: [
+            { id: 1, name: 'Normal Trade' },
+        ],
+        bargainTypes: [
+            { id: 1, name: 'Pucca Sauda' },
+            { id: 2, name: 'Subject to Approval' },
+        ],
+        varieties: [], // Will be added separately for wheat
+        weightmentTerms: [
+            { id: 1, name: 'At Seller\'s Gin' },
+            { id: 2, name: 'At Buyer\'s Mill' },
+        ],
+        passingTerms: [
+            { id: 1, name: 'Lab Report' },
+            { id: 2, name: 'Visual Inspection' },
+        ],
+        deliveryTerms: [
+            { id: 1, name: 'Ex-Gin', days: 0 },
+            { id: 2, name: 'FOR', days: 5 },
+        ],
+        paymentTerms: [
+            { id: 1, name: 'Advance', days: 0 },
+            { id: 2, name: 'Against Delivery', days: 0 },
+            { id: 3, name: '30 Days Credit', days: 30 },
+            { id: 4, name: '60 Days Credit', days: 60 },
+        ],
+        commissions: [
+            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
+            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100 },
+            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0 },
+        ],
         supportsCciTerms: false, // Wheat doesn't support CCI terms
         description: 'Wheat grains and related products',
     },
@@ -342,14 +393,37 @@ const commodities: Commodity[] = [
         gstCategory: 'Agricultural',
         isProcessed: false,
         isActive: true,
-        tradeTypeIds: [1], // Only Normal Trade
-        bargainTypeIds: [1, 2],
-        varietyIds: [], // Will be added separately for rice
-        weightmentTermIds: [1, 2],
-        passingTermIds: [1, 2],
-        deliveryTermIds: [1, 2],
-        paymentTermIds: [1, 2, 3, 4],
-        commissionIds: [1, 2, 3],
+        tradeTypes: [
+            { id: 1, name: 'Normal Trade' },
+        ],
+        bargainTypes: [
+            { id: 1, name: 'Pucca Sauda' },
+            { id: 2, name: 'Subject to Approval' },
+        ],
+        varieties: [], // Will be added separately for rice
+        weightmentTerms: [
+            { id: 1, name: 'At Seller\'s Gin' },
+            { id: 2, name: 'At Buyer\'s Mill' },
+        ],
+        passingTerms: [
+            { id: 1, name: 'Lab Report' },
+            { id: 2, name: 'Visual Inspection' },
+        ],
+        deliveryTerms: [
+            { id: 1, name: 'Ex-Gin', days: 0 },
+            { id: 2, name: 'FOR', days: 5 },
+        ],
+        paymentTerms: [
+            { id: 1, name: 'Advance', days: 0 },
+            { id: 2, name: 'Against Delivery', days: 0 },
+            { id: 3, name: '30 Days Credit', days: 30 },
+            { id: 4, name: '60 Days Credit', days: 60 },
+        ],
+        commissions: [
+            { id: 1, name: 'Standard Brokerage', type: 'PERCENTAGE', value: 1.0 },
+            { id: 2, name: 'Per Bale Fee', type: 'PER_BALE', value: 100 },
+            { id: 3, name: 'None', type: 'PERCENTAGE', value: 0 },
+        ],
         supportsCciTerms: false, // Rice doesn't support CCI terms
         description: 'Rice grains and related products',
     },
