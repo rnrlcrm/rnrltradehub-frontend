@@ -224,6 +224,66 @@ export const cciTermSchema = z.object({
 export type CciTermFormData = z.infer<typeof cciTermSchema>;
 
 // ============================================================================
+// COMMODITY SCHEMA
+// ============================================================================
+
+export const commoditySchema = z.object({
+  name: z.string()
+    .min(1, 'Commodity name is required')
+    .max(100, 'Name must be less than 100 characters')
+    .transform(val => val.trim()),
+  
+  symbol: z.string()
+    .min(2, 'Symbol must be at least 2 characters')
+    .max(10, 'Symbol must be less than 10 characters')
+    .regex(/^[A-Z0-9]+$/, 'Symbol must contain only uppercase letters and numbers')
+    .transform(val => val.toUpperCase().trim()),
+  
+  unit: z.enum(['Kgs', 'Qty', 'Candy', 'Bales', 'Quintal', 'Tonnes'], {
+    errorMap: () => ({ message: 'Please select a valid unit' }),
+  }),
+  
+  defaultGstRateId: z.number()
+    .nullable()
+    .optional(),
+  
+  isActive: z.boolean(),
+  
+  tradeTypeIds: z.array(z.number())
+    .min(1, 'At least one trade type must be selected'),
+  
+  bargainTypeIds: z.array(z.number())
+    .min(1, 'At least one bargain type must be selected'),
+  
+  varietyIds: z.array(z.number())
+    .default([]),
+  
+  weightmentTermIds: z.array(z.number())
+    .min(1, 'At least one weightment term must be selected'),
+  
+  passingTermIds: z.array(z.number())
+    .min(1, 'At least one passing term must be selected'),
+  
+  deliveryTermIds: z.array(z.number())
+    .min(1, 'At least one delivery term must be selected'),
+  
+  paymentTermIds: z.array(z.number())
+    .min(1, 'At least one payment term must be selected'),
+  
+  commissionIds: z.array(z.number())
+    .min(1, 'At least one commission structure must be selected'),
+  
+  supportsCciTerms: z.boolean(),
+  
+  description: z.string()
+    .max(500, 'Description must be less than 500 characters')
+    .optional()
+    .or(z.literal('')),
+});
+
+export type CommodityFormData = z.infer<typeof commoditySchema>;
+
+// ============================================================================
 // VALIDATION HELPERS
 // ============================================================================
 
