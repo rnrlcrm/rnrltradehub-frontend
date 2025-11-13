@@ -10,6 +10,8 @@ import { useDialog } from '../dialogs/CustomDialogs';
 import { Spinner } from '../Loading';
 import { mockMasterData } from '../../data/mockData';
 import { CommodityValidationService } from '../../services/commodityValidationService';
+import Toast, { ToastProvider } from '../ui/Toast';
+import { useToast } from '../../hooks/useToast';
 
 interface CommodityManagementProps {
   currentUser: User;
@@ -18,11 +20,50 @@ interface CommodityManagementProps {
 
 const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, addAuditLog }) => {
   const [commodities, setCommodities] = useState<Commodity[]>([]);
+  const [filteredCommodities, setFilteredCommodities] = useState<Commodity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCommodity, setEditingCommodity] = useState<Commodity | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterCCI, setFilterCCI] = useState<'all' | 'yes' | 'no'>('all');
   const { showAlert, showConfirm } = useDialog();
+  const toast = useToast();
+
+  // Filter commodities whenever search/filter changes
+  useEffect(() => {
+    let filtered = [...commodities];
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(c =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.hsnCode.includes(searchTerm) ||
+        c.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(c => c.isActive === (filterStatus === 'active'));
+    }
+
+    // Category filter
+    if (filterCategory !== 'all') {
+      filtered = filtered.filter(c => c.gstCategory === filterCategory);
+    }
+
+    // CCI filter
+    if (filterCCI !== 'all') {
+      filtered = filtered.filter(c => c.supportsCciTerms === (filterCCI === 'yes'));
+    }
+
+    setFilteredCommodities(filtered);
+  }, [commodities, searchTerm, filterStatus, filterCategory, filterCCI]);
 
   // Load data from API on mount
   useEffect(() => {
@@ -34,8 +75,9 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
       setIsLoading(true);
       const response = await commoditiesApi.getAll();
       setCommodities(response.data);
+      toast.success('Data loaded successfully', 'Commodities refreshed from server');
     } catch (error: any) {
-      await showAlert('Error', error.message || 'Failed to load commodities. Please try again.');
+      toast.error('Failed to load commodities', error.message || 'Using cached data');
       // Fallback to mock data if API fails
       setCommodities(mockMasterData.commodities);
     } finally {
@@ -46,11 +88,64 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
   const handleOpenModal = (commodity: Commodity | null = null) => {
     setEditingCommodity(commodity);
     setIsModalOpen(true);
+    setHasUnsavedChanges(false);
   };
 
-  const handleCloseModal = () => {
+  const handleCopyCommodity = (commodity: Commodity) => {
+    const copiedCommodity: Commodity = {
+      ...commodity,
+      id: 0, // Will be assigned by backend
+      name: `${commodity.name} (Copy)`,
+      symbol: `${commodity.symbol}CP`,
+    };
+    setEditingCommodity(copiedCommodity);
+    setIsModalOpen(true);
+    setHasUnsavedChanges(true);
+    toast.info('Commodity Copied', `Creating a copy of ${commodity.name}. Please update name and symbol.`);
+  };
+
+  const handleBulkStatusChange = async (status: boolean) => {
+    const selectedCount = filteredCommodities.length;
+    const confirmed = await showConfirm(
+      `Bulk ${status ? 'Activate' : 'Deactivate'} Commodities`,
+      `Are you sure you want to ${status ? 'activate' : 'deactivate'} ${selectedCount} commodities?`,
+      { confirmText: 'Yes, Continue', cancelText: 'Cancel' }
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // In a real implementation, this would be a bulk API call
+      const updates = filteredCommodities.map(async (c) => {
+        const response = await commoditiesApi.update(c.id, { ...c, isActive: status });
+        return response.data;
+      });
+
+      const updated = await Promise.all(updates);
+      setCommodities(commodities.map(c => {
+        const updatedCommodity = updated.find(u => u.id === c.id);
+        return updatedCommodity || c;
+      }));
+
+      toast.success('Bulk Update Complete', `${selectedCount} commodities ${status ? 'activated' : 'deactivated'}`);
+    } catch (error: any) {
+      toast.error('Bulk Update Failed', error.message || 'Failed to update commodities');
+    }
+  };
+
+  const handleCloseModal = async () => {
+    // Check for unsaved changes
+    if (hasUnsavedChanges) {
+      const confirmed = await showConfirm(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to close this form? All changes will be lost.',
+        { variant: 'destructive', confirmText: 'Discard Changes', cancelText: 'Keep Editing' }
+      );
+      if (!confirmed) return;
+    }
     setEditingCommodity(null);
     setIsModalOpen(false);
+    setHasUnsavedChanges(false);
   };
 
   const handleSave = async (data: Omit<Commodity, 'id'>) => {
@@ -68,6 +163,7 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
           details: `Updated commodity: '${editingCommodity.name}' to '${data.name}' (${data.symbol})`,
           reason: 'Commodity master management',
         });
+        toast.success('Commodity Updated', `Successfully updated ${data.name} (${data.symbol})`);
       } else {
         const response = await commoditiesApi.create(data);
         setCommodities([response.data, ...commodities]);
@@ -79,12 +175,12 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
           details: `Created new commodity: '${data.name}' (${data.symbol})`,
           reason: 'Commodity master management',
         });
+        toast.success('Commodity Created', `Successfully created ${data.name} (${data.symbol})`);
       }
 
       handleCloseModal();
-      await showAlert('Success', editingCommodity ? 'Commodity updated successfully' : 'Commodity created successfully');
     } catch (error: any) {
-      await showAlert('Error', error.message || 'Failed to save commodity. Please try again.');
+      toast.error('Save Failed', error.message || 'Failed to save commodity. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -154,9 +250,44 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
           `${commodity.varieties.length} varieties, and other associated data.`,
         reason: 'Commodity master management - Permanent deletion',
       });
-      await showAlert('Success', 'Commodity deleted successfully');
+      toast.success('Commodity Deleted', `${commodity.name} (${commodity.symbol}) has been permanently deleted`);
     } catch (error: any) {
-      await showAlert('Error', error.message || 'Failed to delete commodity. Please try again.');
+      toast.error('Delete Failed', error.message || 'Failed to delete commodity. Please try again.');
+    }
+  };
+
+  const handleToggleActive = async (commodity: Commodity) => {
+    const newStatus = !commodity.isActive;
+    const action = newStatus ? 'activate' : 'deactivate';
+    
+    const confirmed = await showConfirm(
+      `${newStatus ? 'Activate' : 'Deactivate'} Commodity`,
+      `Are you sure you want to ${action} "${commodity.name}"?\n\n` +
+      (newStatus 
+        ? '✅ This commodity will be available for creating new sales contracts.'
+        : '⚠️ This commodity will NOT appear in contract creation. Existing contracts will remain unaffected.'),
+      { confirmText: `Yes, ${newStatus ? 'Activate' : 'Deactivate'}`, cancelText: 'Cancel' }
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await commoditiesApi.update(commodity.id, { ...commodity, isActive: newStatus });
+      setCommodities(commodities.map(c => (c.id === commodity.id ? response.data : c)));
+      addAuditLog({
+        user: currentUser.name,
+        role: currentUser.role,
+        action: 'Update',
+        module: 'Settings - Commodity Master',
+        details: `${newStatus ? 'Activated' : 'Deactivated'} commodity: '${commodity.name}' (${commodity.symbol})`,
+        reason: `Commodity status change - ${action}`,
+      });
+      toast.success(
+        `Commodity ${newStatus ? 'Activated' : 'Deactivated'}`, 
+        `${commodity.name} is now ${newStatus ? 'available' : 'unavailable'} for new contracts`
+      );
+    } catch (error: any) {
+      toast.error('Status Change Failed', error.message || 'Failed to change commodity status');
     }
   };
 
@@ -201,21 +332,38 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
     {
       header: 'Status',
       accessor: (commodity: Commodity) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          commodity.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-        }`}>
-          {commodity.isActive ? 'Active' : 'Inactive'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            commodity.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+            {commodity.isActive ? '✓ Active' : '✕ Inactive'}
+          </span>
+          <button
+            onClick={() => handleToggleActive(commodity)}
+            className={`text-xs font-medium underline ${
+              commodity.isActive ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
+            }`}
+            disabled={isSaving}
+            title={commodity.isActive ? 'Click to deactivate' : 'Click to activate'}
+          >
+            {commodity.isActive ? 'Deactivate' : 'Activate'}
+          </button>
+        </div>
       ),
     },
     {
       header: 'CCI Terms',
       accessor: (commodity: Commodity) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          commodity.supportsCciTerms ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-        }`}>
-          {commodity.supportsCciTerms ? 'Supported' : 'Not Supported'}
-        </span>
+        <div className="flex flex-col">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium text-center ${
+            commodity.supportsCciTerms ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+          }`}>
+            {commodity.supportsCciTerms ? '✓ Yes' : '- No'}
+          </span>
+          {commodity.supportsCciTerms && (
+            <span className="text-xs text-gray-500 mt-1 text-center">Cotton Only</span>
+          )}
+        </div>
       ),
     },
     {
@@ -230,18 +378,28 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
     {
       header: 'Actions',
       accessor: (commodity: Commodity) => (
-        <div className="space-x-4">
+        <div className="flex gap-2">
           <button
             onClick={() => handleOpenModal(commodity)}
             className="text-blue-600 hover:underline text-sm font-medium"
             disabled={isSaving}
+            title="Edit commodity"
           >
             Edit
+          </button>
+          <button
+            onClick={() => handleCopyCommodity(commodity)}
+            className="text-green-600 hover:underline text-sm font-medium"
+            disabled={isSaving}
+            title="Create a copy of this commodity"
+          >
+            Copy
           </button>
           <button
             onClick={() => handleDelete(commodity)}
             className="text-red-600 hover:underline text-sm font-medium"
             disabled={isSaving}
+            title="Delete commodity"
           >
             Delete
           </button>
@@ -261,22 +419,112 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
   }
 
   return (
-    <>
+    <ToastProvider>
       <Card
         title="Commodity Master"
-        subtitle="Manage commodities with inline trading parameters. All types are managed within each commodity - no Settings link required."
+        subtitle={`Manage commodities with inline trading parameters. Showing ${filteredCommodities.length} of ${commodities.length} commodities.`}
         actions={
-          <Button onClick={() => handleOpenModal()} className="text-sm" disabled={isSaving}>
-            Add New Commodity
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => handleOpenModal()} className="text-sm" disabled={isSaving}>
+              + Add New
+            </Button>
+          </div>
         }
       >
-        <Table<Commodity> data={commodities} columns={columns} />
+        {/* Search and Filter Section */}
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap gap-4">
+            {/* Search */}
+            <div className="flex-1 min-w-64">
+              <input
+                type="text"
+                placeholder="Search by name, symbol, HSN, or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+
+            {/* Category Filter */}
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="all">All Categories</option>
+              <option value="Agricultural">Agricultural</option>
+              <option value="Processed">Processed</option>
+              <option value="Industrial">Industrial</option>
+              <option value="Service">Service</option>
+            </select>
+
+            {/* CCI Filter */}
+            <select
+              value={filterCCI}
+              onChange={(e) => setFilterCCI(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="all">All CCI Support</option>
+              <option value="yes">CCI Supported</option>
+              <option value="no">No CCI Support</option>
+            </select>
+
+            {/* Clear Filters */}
+            {(searchTerm || filterStatus !== 'all' || filterCategory !== 'all' || filterCCI !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterStatus('all');
+                  setFilterCategory('all');
+                  setFilterCCI('all');
+                }}
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 underline"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+
+          {/* Bulk Actions */}
+          {filteredCommodities.length > 0 && (
+            <div className="flex gap-2 text-sm">
+              <span className="text-gray-600">Bulk Actions:</span>
+              <button
+                onClick={() => handleBulkStatusChange(true)}
+                className="text-green-600 hover:underline font-medium"
+              >
+                Activate All ({filteredCommodities.length})
+              </button>
+              <button
+                onClick={() => handleBulkStatusChange(false)}
+                className="text-orange-600 hover:underline font-medium"
+              >
+                Deactivate All ({filteredCommodities.length})
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Table */}
+        <Table<Commodity> data={filteredCommodities} columns={columns} />
       </Card>
+      
+      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingCommodity ? 'Edit Commodity' : 'Add New Commodity'}
+        title={editingCommodity?.id ? 'Edit Commodity' : 'Add New Commodity'}
         size="large"
       >
         <CommodityForm
@@ -285,9 +533,23 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
           onSave={handleSave}
           onCancel={handleCloseModal}
           isSaving={isSaving}
+          onFormChange={() => setHasUnsavedChanges(true)}
         />
       </Modal>
-    </>
+
+      {/* Toast Notifications */}
+      {toast.toasts.map((t) => (
+        <Toast
+          key={t.id}
+          open={true}
+          onOpenChange={() => toast.removeToast(t.id)}
+          title={t.title}
+          description={t.description}
+          variant={t.variant}
+          duration={t.duration}
+        />
+      ))}
+    </ToastProvider>
   );
 };
 

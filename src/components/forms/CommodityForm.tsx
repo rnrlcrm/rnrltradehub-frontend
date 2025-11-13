@@ -19,6 +19,7 @@ interface CommodityFormProps {
   onSave: (data: Omit<Commodity, 'id'>) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
+  onFormChange?: () => void;
 }
 
 const CommodityForm: React.FC<CommodityFormProps> = ({
@@ -27,6 +28,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   onSave,
   onCancel,
   isSaving,
+  onFormChange,
 }) => {
   // State for basic commodity info
   const [formData, setFormData] = useState<CommodityFormData>({
@@ -53,6 +55,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [ruleViolations, setRuleViolations] = useState<{
     errors: Array<{rule: string; message: string; field?: string}>;
     warnings: Array<{rule: string; message: string; field?: string}>;
@@ -145,6 +148,33 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     }
   }, [formData, commodities]);
 
+  // Cross-field validation warnings
+  useEffect(() => {
+    const newWarnings: string[] = [];
+
+    // Warn if rateUnit === unit (unusual but allowed)
+    if (formData.rateUnit && formData.unit && formData.rateUnit === formData.unit) {
+      newWarnings.push('⚠️ Rate unit is same as primary unit. This is unusual but allowed.');
+    }
+
+    // Warn if non-cotton has CCI support
+    if (formData.supportsCciTerms && formData.name && !formData.name.toLowerCase().includes('cotton')) {
+      newWarnings.push('⚠️ CCI Terms are typically only for cotton commodities.');
+    }
+
+    // Warn if commission percentage > 10%
+    if (formData.commissions.some(c => c.type === 'PERCENTAGE' && c.value > 10)) {
+      newWarnings.push('⚠️ Commission percentage > 10% is unusually high.');
+    }
+
+    // Warn if GST rate seems unusual for category
+    if (formData.gstCategory === 'Agricultural' && formData.gstRate > 5 && !formData.isProcessed) {
+      newWarnings.push('⚠️ GST rate > 5% is unusual for unprocessed agricultural products.');
+    }
+
+    setWarnings(newWarnings);
+  }, [formData]);
+
   const handleChange = (field: keyof CommodityFormData, value: any) => {
     let sanitizedValue = value;
     
@@ -163,6 +193,11 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
         delete newErrors[field];
         return newErrors;
       });
+    }
+
+    // Notify parent of form changes
+    if (onFormChange) {
+      onFormChange();
     }
   };
 
@@ -536,43 +571,97 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
         </div>
 
-        <div className="flex items-center space-x-6">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={e => handleChange('isActive', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <span className="text-sm font-medium text-gray-700">Active</span>
-            <span className="text-xs text-gray-500" title="When unchecked, commodity won't be available for new contracts">(Available for trading)</span>
-          </label>
+        {/* Status and Classification Checkboxes */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-6 space-y-4">
+          <h4 className="text-base font-bold text-gray-800 mb-4 flex items-center">
+            <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">!</span>
+            Important: Commodity Status & Classification
+          </h4>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={formData.isProcessed}
-              onChange={e => handleChange('isProcessed', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <span className="text-sm font-medium text-gray-700">Is Processed?</span>
-            <span className="text-xs text-gray-500" title="Processed goods may attract higher GST rates than raw agricultural products">(affects GST rate)</span>
-          </label>
+          {/* Active Checkbox */}
+          <div className="bg-white rounded-md p-4 border-l-4 border-green-500">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={e => handleChange('isActive', e.target.checked)}
+                className="w-5 h-5 text-green-600 rounded mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-sm font-bold text-gray-900">Active</span>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full font-semibold">
+                    {formData.isActive ? '✓ Available' : '✕ Hidden'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  <strong>Controls contract creation availability.</strong><br/>
+                  ✓ <strong>Checked (Active):</strong> This commodity WILL appear in dropdown when creating new sales contracts.<br/>
+                  ✕ <strong>Unchecked (Inactive):</strong> This commodity will NOT appear in new contract creation (existing contracts unaffected).
+                </p>
+              </div>
+            </label>
+          </div>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={formData.supportsCciTerms}
-              onChange={e => handleChange('supportsCciTerms', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <span className="text-sm font-medium text-gray-700">Supports CCI Terms</span>
-            <span className="text-xs text-gray-500" title="Cotton Corporation of India terms - only applicable to cotton commodity">(Cotton only)</span>
-          </label>
+          {/* Is Processed Checkbox */}
+          <div className="bg-white rounded-md p-4 border-l-4 border-orange-500">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isProcessed}
+                onChange={e => handleChange('isProcessed', e.target.checked)}
+                className="w-5 h-5 text-orange-600 rounded mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-sm font-bold text-gray-900">Is Processed?</span>
+                  <span className="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full font-semibold">
+                    Affects GST Rate
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  <strong>Determines GST rate based on processing level.</strong><br/>
+                  ✓ <strong>Checked (Processed):</strong> Product is processed/manufactured → Higher GST (12-18%)<br/>
+                  &nbsp;&nbsp;&nbsp;<em>Example: Cotton Yarn, Polished Rice, Refined Oil</em><br/>
+                  ✕ <strong>Unchecked (Raw):</strong> Product is unprocessed/natural → Lower GST (0-5%)<br/>
+                  &nbsp;&nbsp;&nbsp;<em>Example: Raw Cotton, Raw Paddy, Crude Oil</em>
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {/* Supports CCI Terms Checkbox */}
+          <div className="bg-white rounded-md p-4 border-l-4 border-purple-500">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.supportsCciTerms}
+                onChange={e => handleChange('supportsCciTerms', e.target.checked)}
+                className="w-5 h-5 text-purple-600 rounded mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-sm font-bold text-gray-900">Supports CCI Terms</span>
+                  <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full font-semibold">
+                    Cotton ONLY
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  <strong>⚠️ ONLY for Cotton commodities trading in Bales.</strong><br/>
+                  ✓ <strong>Checked:</strong> Applies CCI (Cotton Corporation of India) government terms including:<br/>
+                  &nbsp;&nbsp;&nbsp;• EMD (Earnest Money Deposit) requirements<br/>
+                  &nbsp;&nbsp;&nbsp;• Carrying charges for storage<br/>
+                  &nbsp;&nbsp;&nbsp;• Late lifting penalties<br/>
+                  &nbsp;&nbsp;&nbsp;• Standardized quality specifications<br/>
+                  ✕ <strong>Unchecked:</strong> Regular trading terms (for wheat, rice, or other commodities)
+                </p>
+              </div>
+            </label>
+          </div>
         </div>
         
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs text-gray-700">
-          <p className="font-semibold mb-1">Field Explanations:</p>
+        <div className="bg-yellow-50 border border-yellow-300 rounded-md p-4 text-xs text-gray-700">
+          <p className="font-semibold mb-2 text-yellow-900">💡 Quick Guide:</p>
           <ul className="space-y-1 ml-4 list-disc">
             <li><strong>Active:</strong> Controls whether this commodity is available for creating new contracts. Inactive commodities are hidden from selection.</li>
             <li><strong>Is Processed:</strong> Indicates if the commodity is processed (e.g., refined oil, polished rice). Processed goods typically attract higher GST rates than raw agricultural products.</li>
