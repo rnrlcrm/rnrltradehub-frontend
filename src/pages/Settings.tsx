@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import MasterDataManagement from '../components/forms/MasterDataManagement';
 import OrganizationManagement from '../components/forms/OrganizationManagement';
 import LocationManagement from '../components/forms/LocationManagement';
-import CommissionMasterManagement from '../components/forms/CommissionMasterManagement';
-import StructuredTermManagement from '../components/forms/StructuredTermManagement';
 import CciTermManagement from '../components/forms/CciTermManagement';
-import GstRateManagement from '../components/forms/GstRateManagement';
 import FYManagement from '../components/forms/FYManagement';
 import CommodityManagement from '../components/forms/CommodityManagement';
 import UserManagement from './UserManagement';
@@ -90,36 +87,63 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
               addAuditLog={addAuditLog} 
             />
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-            <MasterDataManagement title="Trade Types" initialData={mockMasterData.tradeTypes} currentUser={currentUser} addAuditLog={addAuditLog} />
-            <MasterDataManagement title="Bargain Types" initialData={mockMasterData.bargainTypes} currentUser={currentUser} addAuditLog={addAuditLog} />
-            <MasterDataManagement title="Varieties" initialData={mockMasterData.varieties} currentUser={currentUser} addAuditLog={addAuditLog} />
-            <MasterDataManagement title="Dispute Reasons" initialData={mockMasterData.disputeReasons} currentUser={currentUser} addAuditLog={addAuditLog} />
-            <MasterDataManagement title="Weightment Terms" initialData={mockMasterData.weightmentTerms} currentUser={currentUser} addAuditLog={addAuditLog} />
-            <MasterDataManagement title="Passing Terms" initialData={mockMasterData.passingTerms} currentUser={currentUser} addAuditLog={addAuditLog} />
-            {/* Financial Years removed - now managed only in FY Management tab to prevent duplication */}
-          </div>
 
-          <div className="mt-8">
-            <GstRateManagement initialData={mockMasterData.gstRates} currentUser={currentUser} addAuditLog={addAuditLog} />
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <StructuredTermManagement title="Delivery Terms" initialData={mockMasterData.deliveryTerms} currentUser={currentUser} addAuditLog={addAuditLog} />
-            <StructuredTermManagement title="Payment Terms" initialData={mockMasterData.paymentTerms} currentUser={currentUser} addAuditLog={addAuditLog} />
-          </div>
-
-          <div className="mt-8">
-            <CommissionMasterManagement initialData={mockMasterData.commissions} currentUser={currentUser} addAuditLog={addAuditLog} />
-          </div>
-
+          {/* CCI Terms - Cotton-specific */}
           <div className="mt-8">
             <CciTermManagement initialData={mockMasterData.cciTerms} currentUser={currentUser} addAuditLog={addAuditLog} />
           </div>
 
+          {/* Location Master with Bulk Upload */}
           <div className="mt-8">
             <LocationManagement initialData={mockLocations} currentUser={currentUser} addAuditLog={addAuditLog} />
+          </div>
+
+          {/* Dispute Reasons - Still needed for contracts */}
+          <div className="mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <MasterDataManagement title="Dispute Reasons" initialData={mockMasterData.disputeReasons} currentUser={currentUser} addAuditLog={addAuditLog} />
+            </div>
+          </div>
+
+          {/* Information Card about removed sections */}
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">ℹ️ Streamlined Settings Architecture</h3>
+            <p className="text-blue-800 mb-4">
+              The following sections have been removed from Settings to eliminate duplication and improve data management:
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">Trading Parameters (Now in Commodity Form)</h4>
+                <ul className="list-disc list-inside text-blue-700 space-y-1 text-sm">
+                  <li><strong>Trade Types</strong> - Managed inline per commodity</li>
+                  <li><strong>Bargain Types</strong> - Managed inline per commodity</li>
+                  <li><strong>Varieties</strong> - Managed inline per commodity (commodity-specific)</li>
+                  <li><strong>Weightment Terms</strong> - Managed inline per commodity</li>
+                  <li><strong>Passing Terms</strong> - Managed inline per commodity</li>
+                  <li><strong>Delivery Terms</strong> - Managed inline per commodity</li>
+                  <li><strong>Payment Terms</strong> - Managed inline per commodity</li>
+                  <li><strong>Commission Master</strong> - Managed inline per commodity</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">GST Master (Removed)</h4>
+                <p className="text-blue-700 text-sm">
+                  ✅ <strong>GST rates are now managed entirely on the backend</strong> as per GST Act laws. 
+                  The system automatically determines HSN codes and GST rates based on commodity classification.
+                  No manual GST management needed in frontend.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+              <p className="text-green-800 text-sm font-medium">
+                ✓ This ensures each commodity has its own parameters with no cross-contamination<br/>
+                ✓ GST compliance is guaranteed through backend validation<br/>
+                ✓ Reduces complexity and prevents duplicate data entry
+              </p>
+            </div>
           </div>
         </>
       )}

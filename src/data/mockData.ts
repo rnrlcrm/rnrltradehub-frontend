@@ -276,9 +276,97 @@ const cciTerms: CciTerm[] = [
     }
 ];
 
+// Comprehensive GST Master as per GST Act - Reference Database
+// This is a comprehensive database of all HSN/SAC codes and their GST rates
+// Users don't select from this - it's used for reference and validation
 const gstRates: GstRate[] = [
-    { id: 1, rate: 5, description: 'GST on Cotton', hsnCode: '5201' },
-    { id: 2, rate: 18, description: 'GST on Services', hsnCode: '9983' },
+    // AGRICULTURAL COMMODITIES - Mostly Exempt or 5%
+    { id: 1, rate: 0, description: 'Wheat and meslin (unbranded)', hsnCode: '1001' },
+    { id: 2, rate: 0, description: 'Rice (unbranded)', hsnCode: '1006' },
+    { id: 3, rate: 5, description: 'Rice (branded/packaged)', hsnCode: '1006' },
+    { id: 4, rate: 0, description: 'Maize (Corn)', hsnCode: '1005' },
+    { id: 5, rate: 0, description: 'Soya beans', hsnCode: '1201' },
+    { id: 6, rate: 0, description: 'Ground-nuts', hsnCode: '1202' },
+    { id: 7, rate: 0, description: 'Copra', hsnCode: '1203' },
+    { id: 8, rate: 0, description: 'Linseed', hsnCode: '1204' },
+    { id: 9, rate: 0, description: 'Rape or colza seeds', hsnCode: '1205' },
+    { id: 10, rate: 0, description: 'Sunflower seeds', hsnCode: '1206' },
+    { id: 11, rate: 0, description: 'Other oil seeds (Sesame, Mustard)', hsnCode: '1207' },
+    { id: 12, rate: 0, description: 'Dried leguminous vegetables (Pulses)', hsnCode: '0713' },
+    { id: 13, rate: 0, description: 'Coffee (unroasted)', hsnCode: '0901' },
+    { id: 14, rate: 5, description: 'Tea', hsnCode: '0902' },
+    { id: 15, rate: 5, description: 'Pepper', hsnCode: '0904' },
+    { id: 16, rate: 5, description: 'Vanilla', hsnCode: '0905' },
+    { id: 17, rate: 5, description: 'Cinnamon', hsnCode: '0906' },
+    { id: 18, rate: 5, description: 'Cloves', hsnCode: '0907' },
+    { id: 19, rate: 5, description: 'Nutmeg, mace and cardamoms', hsnCode: '0908' },
+    { id: 20, rate: 5, description: 'Seeds of anise, badian, fennel, etc.', hsnCode: '0909' },
+    { id: 21, rate: 5, description: 'Ginger, saffron, turmeric, thyme', hsnCode: '0910' },
+    
+    // COTTON AND COTTON PRODUCTS
+    { id: 22, rate: 5, description: 'Cotton, not carded or combed (Raw Cotton)', hsnCode: '5201' },
+    { id: 23, rate: 5, description: 'Cotton waste', hsnCode: '5202' },
+    { id: 24, rate: 5, description: 'Cotton, carded or combed', hsnCode: '5203' },
+    { id: 25, rate: 5, description: 'Cotton sewing thread', hsnCode: '5204' },
+    { id: 26, rate: 5, description: 'Cotton yarn', hsnCode: '5205' },
+    { id: 27, rate: 5, description: 'Cotton yarn (multiple)', hsnCode: '5206' },
+    { id: 28, rate: 5, description: 'Cotton yarn (put up for retail sale)', hsnCode: '5207' },
+    { id: 29, rate: 5, description: 'Woven fabrics of cotton', hsnCode: '5208' },
+    { id: 30, rate: 5, description: 'Woven fabrics of cotton (denim, etc.)', hsnCode: '5209' },
+    { id: 31, rate: 5, description: 'Woven fabrics of cotton (printed)', hsnCode: '5210' },
+    { id: 32, rate: 5, description: 'Other woven fabrics of cotton', hsnCode: '5211' },
+    { id: 33, rate: 5, description: 'Other woven fabrics of cotton (mixed)', hsnCode: '5212' },
+    
+    // PROCESSED AGRICULTURAL PRODUCTS
+    { id: 34, rate: 0, description: 'Wheat or meslin flour (unbranded)', hsnCode: '1101' },
+    { id: 35, rate: 5, description: 'Wheat or meslin flour (branded)', hsnCode: '1101' },
+    { id: 36, rate: 5, description: 'Rice flour', hsnCode: '1102' },
+    { id: 37, rate: 5, description: 'Cereal flours other than wheat/meslin', hsnCode: '1102' },
+    { id: 38, rate: 5, description: 'Cereal groats, meal and pellets', hsnCode: '1103' },
+    { id: 39, rate: 5, description: 'Cereal grains otherwise worked', hsnCode: '1104' },
+    
+    // EDIBLE OILS
+    { id: 40, rate: 5, description: 'Soya-bean oil and its fractions', hsnCode: '1507' },
+    { id: 41, rate: 5, description: 'Ground-nut oil and its fractions', hsnCode: '1508' },
+    { id: 42, rate: 5, description: 'Olive oil and its fractions', hsnCode: '1509' },
+    { id: 43, rate: 5, description: 'Palm oil and its fractions', hsnCode: '1511' },
+    { id: 44, rate: 5, description: 'Sunflower-seed oil', hsnCode: '1512' },
+    { id: 45, rate: 5, description: 'Coconut oil', hsnCode: '1513' },
+    { id: 46, rate: 5, description: 'Rape, colza or mustard oil', hsnCode: '1514' },
+    
+    // SUGAR AND CONFECTIONERY
+    { id: 47, rate: 5, description: 'Raw sugar (without flavouring)', hsnCode: '1701' },
+    { id: 48, rate: 18, description: 'Sugar confectionery', hsnCode: '1704' },
+    
+    // SERVICES - SAC CODES
+    { id: 49, rate: 18, description: 'Brokerage and Commission Services', hsnCode: '9983' },
+    { id: 50, rate: 5, description: 'Goods Transport Services by Road', hsnCode: '9965' },
+    { id: 51, rate: 18, description: 'Goods Transport Services by Air', hsnCode: '9964' },
+    { id: 52, rate: 5, description: 'Transport of goods by Rail', hsnCode: '9966' },
+    { id: 53, rate: 5, description: 'Transport of goods by inland waterways', hsnCode: '9967' },
+    { id: 54, rate: 18, description: 'Storage and warehousing services', hsnCode: '9968' },
+    { id: 55, rate: 18, description: 'Packaging services', hsnCode: '9985' },
+    { id: 56, rate: 18, description: 'Cleaning services', hsnCode: '9986' },
+    { id: 57, rate: 18, description: 'Membership services of trade unions', hsnCode: '9992' },
+    { id: 58, rate: 18, description: 'Other professional, technical and business services', hsnCode: '9982' },
+    
+    // TEXTILES (OTHER THAN COTTON)
+    { id: 59, rate: 5, description: 'Silk yarn', hsnCode: '5004' },
+    { id: 60, rate: 5, description: 'Wool yarn', hsnCode: '5106' },
+    { id: 61, rate: 12, description: 'Synthetic filament yarn', hsnCode: '5401' },
+    { id: 62, rate: 12, description: 'Synthetic staple fibres', hsnCode: '5501' },
+    
+    // JUTE AND OTHER VEGETABLE TEXTILE FIBRES
+    { id: 63, rate: 5, description: 'Jute and other textile bast fibres', hsnCode: '5303' },
+    { id: 64, rate: 5, description: 'Coconut (coir)', hsnCode: '5305' },
+    
+    // METAL PRODUCTS (for equipment/machinery)
+    { id: 65, rate: 18, description: 'Iron and steel products', hsnCode: '7308' },
+    { id: 66, rate: 18, description: 'Machinery and mechanical appliances', hsnCode: '8419' },
+    
+    // CHEMICALS AND FERTILIZERS
+    { id: 67, rate: 5, description: 'Fertilizers', hsnCode: '3102' },
+    { id: 68, rate: 18, description: 'Pesticides', hsnCode: '3808' },
 ];
 
 // Commodity Master - Multi-commodity support with Auto-GST

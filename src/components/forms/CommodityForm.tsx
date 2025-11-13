@@ -5,30 +5,17 @@ import { commoditySchema, CommodityFormData } from '../../schemas/settingsSchema
 import {
   generateSymbol,
   shouldSupportCciTerms,
-  getCommodityTemplates,
   sanitizeCommodityName,
   sanitizeSymbol,
   autoDetectGSTInfo,
 } from '../../utils/commodityHelpers';
 import { validateCommodityRules } from '../../services/commodityBusinessRuleEngine';
-import { DraftManager } from '../../services/draftManager';
 import GSTInfoPanel from '../commodity/GSTInfoPanel';
 import BusinessRuleViolations from '../commodity/BusinessRuleViolations';
-import DraftRecoveryPrompt from '../commodity/DraftRecoveryPrompt';
 
 interface CommodityFormProps {
   commodity: Commodity | null;
   commodities: Commodity[];
-  masterData: {
-    tradeTypes: MasterDataItem[];
-    bargainTypes: MasterDataItem[];
-    varieties: MasterDataItem[];
-    weightmentTerms: MasterDataItem[];
-    passingTerms: MasterDataItem[];
-    deliveryTerms: StructuredTerm[];
-    paymentTerms: StructuredTerm[];
-    commissions: CommissionStructure[];
-  };
   onSave: (data: Omit<Commodity, 'id'>) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
@@ -37,30 +24,29 @@ interface CommodityFormProps {
 const CommodityForm: React.FC<CommodityFormProps> = ({
   commodity,
   commodities,
-  masterData,
   onSave,
   onCancel,
   isSaving,
 }) => {
+  // State for basic commodity info
   const [formData, setFormData] = useState<CommodityFormData>({
     name: commodity?.name || '',
     symbol: commodity?.symbol || '',
     unit: commodity?.unit || 'Bales',
-    // GST fields - auto-determined
     hsnCode: commodity?.hsnCode || '',
     gstRate: commodity?.gstRate ?? 0,
     gstExemptionAvailable: commodity?.gstExemptionAvailable ?? false,
     gstCategory: commodity?.gstCategory || 'Agricultural',
     isProcessed: commodity?.isProcessed ?? false,
     isActive: commodity?.isActive ?? true,
-    tradeTypeIds: commodity?.tradeTypeIds || [],
-    bargainTypeIds: commodity?.bargainTypeIds || [],
-    varietyIds: commodity?.varietyIds || [],
-    weightmentTermIds: commodity?.weightmentTermIds || [],
-    passingTermIds: commodity?.passingTermIds || [],
-    deliveryTermIds: commodity?.deliveryTermIds || [],
-    paymentTermIds: commodity?.paymentTermIds || [],
-    commissionIds: commodity?.commissionIds || [],
+    tradeTypes: commodity?.tradeTypes || [],
+    bargainTypes: commodity?.bargainTypes || [],
+    varieties: commodity?.varieties || [],
+    weightmentTerms: commodity?.weightmentTerms || [],
+    passingTerms: commodity?.passingTerms || [],
+    deliveryTerms: commodity?.deliveryTerms || [],
+    paymentTerms: commodity?.paymentTerms || [],
+    commissions: commodity?.commissions || [],
     supportsCciTerms: commodity?.supportsCciTerms ?? false,
     description: commodity?.description || '',
   });
@@ -71,36 +57,17 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     warnings: Array<{rule: string; message: string; field?: string}>;
     info: Array<{rule: string; message: string; field?: string}>;
   }>({ errors: [], warnings: [], info: [] });
-  const [showTemplateSelector, setShowTemplateSelector] = useState(!commodity);
   const [autoSymbol, setAutoSymbol] = useState(!commodity?.symbol);
-  const [showDraftRecovery, setShowDraftRecovery] = useState(false);
-  const [draftAge, setDraftAge] = useState(0);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Check for draft on mount
-  useEffect(() => {
-    if (!commodity) {
-      const draft = DraftManager.loadDraft();
-      if (draft) {
-        const age = DraftManager.getDraftAge();
-        if (age !== null) {
-          setDraftAge(age);
-          setShowDraftRecovery(true);
-        }
-      }
-    }
-  }, [commodity]);
-
-  // Auto-save draft
-  useEffect(() => {
-    if (!isSaving && formData.name) {
-      const timer = setTimeout(() => {
-        DraftManager.saveDraft(formData, commodity?.id);
-        setLastSaved(new Date());
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, commodity?.id, isSaving]);
+  // State for inline item management
+  const [newTradeType, setNewTradeType] = useState('');
+  const [newBargainType, setNewBargainType] = useState('');
+  const [newVariety, setNewVariety] = useState('');
+  const [newWeightmentTerm, setNewWeightmentTerm] = useState('');
+  const [newPassingTerm, setNewPassingTerm] = useState('');
+  const [newDeliveryTerm, setNewDeliveryTerm] = useState({ name: '', days: 0 });
+  const [newPaymentTerm, setNewPaymentTerm] = useState({ name: '', days: 0 });
+  const [newCommission, setNewCommission] = useState({ name: '', type: 'PERCENTAGE' as 'PERCENTAGE' | 'PER_BALE', value: 0 });
 
   // Auto-generate symbol when name changes
   useEffect(() => {
@@ -141,7 +108,6 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     if (formData.name) {
       const result = validateCommodityRules(formData as any, {
         existingCommodities: commodities,
-        masterData,
       });
       setRuleViolations({
         errors: result.errors,
@@ -149,22 +115,20 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
         info: result.info,
       });
     }
-  }, [formData, commodities, masterData]);
+  }, [formData, commodities]);
 
   const handleChange = (field: keyof CommodityFormData, value: any) => {
-    // Apply sanitization based on field
     let sanitizedValue = value;
     
     if (field === 'name' && typeof value === 'string') {
       sanitizedValue = sanitizeCommodityName(value);
     } else if (field === 'symbol' && typeof value === 'string') {
       sanitizedValue = sanitizeSymbol(value);
-      setAutoSymbol(false); // Disable auto-generation if user manually edits symbol
+      setAutoSymbol(false);
     }
     
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
     
-    // Clear error for this field
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -174,133 +138,130 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     }
   };
 
-  const handleDraftRecover = () => {
-    const draft = DraftManager.loadDraft(commodity?.id);
-    if (draft) {
-      setFormData(draft.formData);
-      setShowDraftRecovery(false);
+  // Inline item management functions
+  const addTradeType = () => {
+    if (newTradeType.trim()) {
+      const newItem: MasterDataItem = {
+        id: Date.now(),
+        name: newTradeType.trim(),
+      };
+      setFormData(prev => ({ ...prev, tradeTypes: [...prev.tradeTypes, newItem] }));
+      setNewTradeType('');
     }
   };
 
-  const handleDraftDiscard = () => {
-    DraftManager.deleteDraft(commodity?.id);
-    setShowDraftRecovery(false);
+  const removeTradeType = (id: number) => {
+    setFormData(prev => ({ ...prev, tradeTypes: prev.tradeTypes.filter(item => item.id !== id) }));
   };
 
-  const applyTemplate = (templateName: string) => {
-    const templates = getCommodityTemplates();
-    const template = templates.find(t => t.name === templateName);
-    
-    if (template) {
-      // Auto-detect GST for the template
-      const gstInfo = autoDetectGSTInfo(template.name, template.isProcessed);
-      
-      setFormData({
-        name: template.name,
-        symbol: template.symbol,
-        unit: template.unit,
-        hsnCode: gstInfo.hsnCode,
-        gstRate: gstInfo.gstRate,
-        gstExemptionAvailable: gstInfo.exemptionAvailable,
-        gstCategory: gstInfo.category as any,
-        isProcessed: template.isProcessed,
-        isActive: true,
-        tradeTypeIds: template.defaultTradeTypeIds,
-        bargainTypeIds: template.defaultBargainTypeIds,
-        varietyIds: [],
-        weightmentTermIds: template.defaultWeightmentTermIds,
-        passingTermIds: template.defaultPassingTermIds,
-        deliveryTermIds: template.defaultDeliveryTermIds,
-        paymentTermIds: template.defaultPaymentTermIds,
-        commissionIds: template.defaultCommissionIds,
-        supportsCciTerms: template.supportsCciTerms,
-        description: template.description,
-      });
-      setShowTemplateSelector(false);
-      setAutoSymbol(false);
+  const addBargainType = () => {
+    if (newBargainType.trim()) {
+      const newItem: MasterDataItem = {
+        id: Date.now(),
+        name: newBargainType.trim(),
+      };
+      setFormData(prev => ({ ...prev, bargainTypes: [...prev.bargainTypes, newItem] }));
+      setNewBargainType('');
     }
   };
 
-  const selectAllInCategory = (field: keyof CommodityFormData, allIds: number[]) => {
-    setFormData(prev => ({ ...prev, [field]: allIds }));
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+  const removeBargainType = (id: number) => {
+    setFormData(prev => ({ ...prev, bargainTypes: prev.bargainTypes.filter(item => item.id !== id) }));
+  };
+
+  const addVariety = () => {
+    if (newVariety.trim()) {
+      const newItem: MasterDataItem = {
+        id: Date.now(),
+        name: newVariety.trim(),
+      };
+      setFormData(prev => ({ ...prev, varieties: [...prev.varieties, newItem] }));
+      setNewVariety('');
     }
   };
 
-  const deselectAllInCategory = (field: keyof CommodityFormData) => {
-    setFormData(prev => ({ ...prev, [field]: [] }));
+  const removeVariety = (id: number) => {
+    setFormData(prev => ({ ...prev, varieties: prev.varieties.filter(item => item.id !== id) }));
   };
 
-  const handleMultiSelectChange = (field: keyof CommodityFormData, id: number, checked: boolean) => {
-    setFormData(prev => {
-      const currentIds = (prev[field] as number[]) || [];
-      const newIds = checked
-        ? [...currentIds, id]
-        : currentIds.filter(existingId => existingId !== id);
-      return { ...prev, [field]: newIds };
-    });
-    // Clear error for this field
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+  const addWeightmentTerm = () => {
+    if (newWeightmentTerm.trim()) {
+      const newItem: MasterDataItem = {
+        id: Date.now(),
+        name: newWeightmentTerm.trim(),
+      };
+      setFormData(prev => ({ ...prev, weightmentTerms: [...prev.weightmentTerms, newItem] }));
+      setNewWeightmentTerm('');
     }
   };
 
-  // Helper component for multi-select sections with select all/deselect all
-  const MultiSelectSection: React.FC<{
-    label: string;
-    field: keyof CommodityFormData;
-    items: Array<{ id: number; name: string; days?: number }>;
-    required?: boolean;
-  }> = ({ label, field, items, required = false }) => (
-    <div>
-      <div className="flex justify-between items-center mb-2">
-        <label className="block text-sm font-medium text-gray-700">
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
-        <div className="flex space-x-2">
-          <button
-            type="button"
-            onClick={() => selectAllInCategory(field, items.map(i => i.id))}
-            className="text-xs text-blue-600 hover:underline"
-          >
-            Select All
-          </button>
-          <button
-            type="button"
-            onClick={() => deselectAllInCategory(field)}
-            className="text-xs text-gray-600 hover:underline"
-          >
-            Deselect All
-          </button>
-        </div>
-      </div>
-      <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-        {items.map(item => (
-          <label key={item.id} className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={(formData[field] as number[]).includes(item.id)}
-              onChange={e => handleMultiSelectChange(field, item.id, e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
-            />
-            <span className="text-sm text-gray-700">
-              {item.name}{item.days !== undefined ? ` (${item.days} days)` : ''}
-            </span>
-          </label>
-        ))}
-      </div>
-      {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>}
-    </div>
-  );
+  const removeWeightmentTerm = (id: number) => {
+    setFormData(prev => ({ ...prev, weightmentTerms: prev.weightmentTerms.filter(item => item.id !== id) }));
+  };
+
+  const addPassingTerm = () => {
+    if (newPassingTerm.trim()) {
+      const newItem: MasterDataItem = {
+        id: Date.now(),
+        name: newPassingTerm.trim(),
+      };
+      setFormData(prev => ({ ...prev, passingTerms: [...prev.passingTerms, newItem] }));
+      setNewPassingTerm('');
+    }
+  };
+
+  const removePassingTerm = (id: number) => {
+    setFormData(prev => ({ ...prev, passingTerms: prev.passingTerms.filter(item => item.id !== id) }));
+  };
+
+  const addDeliveryTerm = () => {
+    if (newDeliveryTerm.name.trim() && newDeliveryTerm.days >= 0) {
+      const newItem: StructuredTerm = {
+        id: Date.now(),
+        name: newDeliveryTerm.name.trim(),
+        days: newDeliveryTerm.days,
+      };
+      setFormData(prev => ({ ...prev, deliveryTerms: [...prev.deliveryTerms, newItem] }));
+      setNewDeliveryTerm({ name: '', days: 0 });
+    }
+  };
+
+  const removeDeliveryTerm = (id: number) => {
+    setFormData(prev => ({ ...prev, deliveryTerms: prev.deliveryTerms.filter(item => item.id !== id) }));
+  };
+
+  const addPaymentTerm = () => {
+    if (newPaymentTerm.name.trim() && newPaymentTerm.days >= 0) {
+      const newItem: StructuredTerm = {
+        id: Date.now(),
+        name: newPaymentTerm.name.trim(),
+        days: newPaymentTerm.days,
+      };
+      setFormData(prev => ({ ...prev, paymentTerms: [...prev.paymentTerms, newItem] }));
+      setNewPaymentTerm({ name: '', days: 0 });
+    }
+  };
+
+  const removePaymentTerm = (id: number) => {
+    setFormData(prev => ({ ...prev, paymentTerms: prev.paymentTerms.filter(item => item.id !== id) }));
+  };
+
+  const addCommission = () => {
+    if (newCommission.name.trim() && newCommission.value > 0) {
+      const newItem: CommissionStructure = {
+        id: Date.now(),
+        name: newCommission.name.trim(),
+        type: newCommission.type,
+        value: newCommission.value,
+      };
+      setFormData(prev => ({ ...prev, commissions: [...prev.commissions, newItem] }));
+      setNewCommission({ name: '', type: 'PERCENTAGE', value: 0 });
+    }
+  };
+
+  const removeCommission = (id: number) => {
+    setFormData(prev => ({ ...prev, commissions: prev.commissions.filter(item => item.id !== id) }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -309,7 +270,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     try {
       const validatedData = commoditySchema.parse(formData);
 
-      // Check for duplicate name (case-insensitive)
+      // Check for duplicate name
       const isDuplicate = commodities.some(
         c =>
           c.id !== commodity?.id &&
@@ -321,7 +282,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
         return;
       }
 
-      // Check for duplicate symbol (case-insensitive)
+      // Check for duplicate symbol
       const isDuplicateSymbol = commodities.some(
         c =>
           c.id !== commodity?.id &&
@@ -351,9 +312,6 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
 
       await onSave(validatedData);
       
-      // Delete draft on successful save
-      DraftManager.deleteDraft(commodity?.id);
-      
     } catch (error: any) {
       if (error.errors) {
         const newErrors: Record<string, string> = {};
@@ -366,17 +324,61 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Draft Recovery Prompt */}
-      {showDraftRecovery && (
-        <DraftRecoveryPrompt
-          onRecover={handleDraftRecover}
-          onDiscard={handleDraftDiscard}
-          draftAge={draftAge}
+  // Helper component for inline list management
+  const InlineListManager: React.FC<{
+    label: string;
+    items: MasterDataItem[];
+    newItemValue: string;
+    onNewItemChange: (value: string) => void;
+    onAdd: () => void;
+    onRemove: (id: number) => void;
+    required?: boolean;
+    errorMessage?: string;
+  }> = ({ label, items, newItemValue, onNewItemChange, onAdd, onRemove, required, errorMessage }) => (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      
+      {/* Add new item */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={newItemValue}
+          onChange={(e) => onNewItemChange(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), onAdd())}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+          placeholder={`Add ${label.toLowerCase()}`}
         />
+        <Button type="button" onClick={onAdd} variant="secondary" className="text-sm">
+          Add
+        </Button>
+      </div>
+
+      {/* List of items */}
+      {items.length > 0 && (
+        <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+          {items.map(item => (
+            <div key={item.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+              <span className="text-sm text-gray-700">{item.name}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(item.id)}
+                className="text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
       )}
 
+      {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Business Rule Violations */}
       <BusinessRuleViolations
         errors={ruleViolations.errors}
@@ -384,38 +386,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
         info={ruleViolations.info}
       />
 
-      {/* Commodity Template Selector (only for new commodities) */}
-      {!commodity && showTemplateSelector && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-900 mb-3">
-            Quick Start: Use a Template (Optional)
-          </h3>
-          <p className="text-xs text-blue-700 mb-3">
-            Select a pre-configured template to automatically fill in common settings, or close this to enter manually.
-          </p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {getCommodityTemplates().map(template => (
-              <button
-                key={template.name}
-                type="button"
-                onClick={() => applyTemplate(template.name)}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Use {template.name} Template
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowTemplateSelector(false)}
-            className="text-xs text-blue-600 hover:underline"
-          >
-            Close and enter manually
-          </button>
-        </div>
-      )}
-
-      {/* GST Information Panel - Auto-Determined */}
+      {/* GST Information Panel */}
       {formData.name && (
         <GSTInfoPanel
           commodityName={formData.name}
@@ -470,9 +441,6 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               </label>
             )}
           </div>
-          {autoSymbol && !commodity && (
-            <p className="text-xs text-gray-500 mt-1">Symbol will be auto-generated from name</p>
-          )}
           {errors.symbol && <p className="text-red-500 text-xs mt-1">{errors.symbol}</p>}
         </div>
 
@@ -483,9 +451,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           <select
             value={formData.unit}
             onChange={e => handleChange('unit', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
-              errors.unit ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
           >
             <option value="Kgs">Kgs</option>
             <option value="Qty">Qty</option>
@@ -494,7 +460,6 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             <option value="Quintal">Quintal</option>
             <option value="Tonnes">Tonnes</option>
           </select>
-          {errors.unit && <p className="text-red-500 text-xs mt-1">{errors.unit}</p>}
         </div>
 
         <div>
@@ -541,205 +506,221 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             <span className="text-sm font-medium text-gray-700">Supports CCI Terms</span>
           </label>
         </div>
-
-        {/* Last Saved Indicator */}
-        {lastSaved && (
-          <div className="text-xs text-gray-500 italic">
-            <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            Draft auto-saved {new Date(lastSaved).toLocaleTimeString()}
-          </div>
-        )}
       </div>
 
-      {/* Trading Parameters */}
+      {/* Trading Parameters - Inline Management */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Trading Parameters</h3>
+        <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+          Trading Parameters (Add Multiple)
+        </h3>
 
-        {/* Trade Types */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Trade Types <span className="text-red-500">*</span>
-            </label>
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={() => selectAllInCategory('tradeTypeIds', masterData.tradeTypes.map(t => t.id))}
-                className="text-xs text-blue-600 hover:underline"
-              >
-                Select All
-              </button>
-              <button
-                type="button"
-                onClick={() => deselectAllInCategory('tradeTypeIds')}
-                className="text-xs text-gray-600 hover:underline"
-              >
-                Deselect All
-              </button>
-            </div>
-          </div>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.tradeTypes.map(type => (
-              <label key={type.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.tradeTypeIds.includes(type.id)}
-                  onChange={e => handleMultiSelectChange('tradeTypeIds', type.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">{type.name}</span>
-              </label>
-            ))}
-          </div>
-          {errors.tradeTypeIds && <p className="text-red-500 text-xs mt-1">{errors.tradeTypeIds}</p>}
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Trade Types */}
+          <InlineListManager
+            label="Trade Types"
+            items={formData.tradeTypes}
+            newItemValue={newTradeType}
+            onNewItemChange={setNewTradeType}
+            onAdd={addTradeType}
+            onRemove={removeTradeType}
+            required
+            errorMessage={errors.tradeTypes}
+          />
 
-        {/* Bargain Types */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Bargain Types <span className="text-red-500">*</span>
-          </label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.bargainTypes.map(type => (
-              <label key={type.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.bargainTypeIds.includes(type.id)}
-                  onChange={e => handleMultiSelectChange('bargainTypeIds', type.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">{type.name}</span>
-              </label>
-            ))}
-          </div>
-          {errors.bargainTypeIds && <p className="text-red-500 text-xs mt-1">{errors.bargainTypeIds}</p>}
-        </div>
+          {/* Bargain Types */}
+          <InlineListManager
+            label="Bargain Types"
+            items={formData.bargainTypes}
+            newItemValue={newBargainType}
+            onNewItemChange={setNewBargainType}
+            onAdd={addBargainType}
+            onRemove={removeBargainType}
+            required
+            errorMessage={errors.bargainTypes}
+          />
 
-        {/* Varieties */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Varieties</label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.varieties.map(variety => (
-              <label key={variety.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.varietyIds.includes(variety.id)}
-                  onChange={e => handleMultiSelectChange('varietyIds', variety.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">{variety.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+          {/* Varieties */}
+          <InlineListManager
+            label="Varieties"
+            items={formData.varieties}
+            newItemValue={newVariety}
+            onNewItemChange={setNewVariety}
+            onAdd={addVariety}
+            onRemove={removeVariety}
+          />
 
-        {/* Weightment Terms */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Weightment Terms <span className="text-red-500">*</span>
-          </label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.weightmentTerms.map(term => (
-              <label key={term.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.weightmentTermIds.includes(term.id)}
-                  onChange={e => handleMultiSelectChange('weightmentTermIds', term.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">{term.name}</span>
-              </label>
-            ))}
-          </div>
-          {errors.weightmentTermIds && <p className="text-red-500 text-xs mt-1">{errors.weightmentTermIds}</p>}
-        </div>
+          {/* Weightment Terms */}
+          <InlineListManager
+            label="Weightment Terms"
+            items={formData.weightmentTerms}
+            newItemValue={newWeightmentTerm}
+            onNewItemChange={setNewWeightmentTerm}
+            onAdd={addWeightmentTerm}
+            onRemove={removeWeightmentTerm}
+            required
+            errorMessage={errors.weightmentTerms}
+          />
 
-        {/* Passing Terms */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Passing Terms <span className="text-red-500">*</span>
-          </label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.passingTerms.map(term => (
-              <label key={term.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.passingTermIds.includes(term.id)}
-                  onChange={e => handleMultiSelectChange('passingTermIds', term.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">{term.name}</span>
-              </label>
-            ))}
-          </div>
-          {errors.passingTermIds && <p className="text-red-500 text-xs mt-1">{errors.passingTermIds}</p>}
+          {/* Passing Terms */}
+          <InlineListManager
+            label="Passing Terms"
+            items={formData.passingTerms}
+            newItemValue={newPassingTerm}
+            onNewItemChange={setNewPassingTerm}
+            onAdd={addPassingTerm}
+            onRemove={removePassingTerm}
+            required
+            errorMessage={errors.passingTerms}
+          />
         </div>
 
         {/* Delivery Terms */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
             Delivery Terms <span className="text-red-500">*</span>
           </label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.deliveryTerms.map(term => (
-              <label key={term.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.deliveryTermIds.includes(term.id)}
-                  onChange={e => handleMultiSelectChange('deliveryTermIds', term.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
-              </label>
-            ))}
+          
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newDeliveryTerm.name}
+              onChange={(e) => setNewDeliveryTerm(prev => ({ ...prev, name: e.target.value }))}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Term name (e.g., Ex-Gin)"
+            />
+            <input
+              type="number"
+              value={newDeliveryTerm.days}
+              onChange={(e) => setNewDeliveryTerm(prev => ({ ...prev, days: parseInt(e.target.value) || 0 }))}
+              className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Days"
+              min="0"
+            />
+            <Button type="button" onClick={addDeliveryTerm} variant="secondary" className="text-sm">
+              Add
+            </Button>
           </div>
-          {errors.deliveryTermIds && <p className="text-red-500 text-xs mt-1">{errors.deliveryTermIds}</p>}
+
+          {formData.deliveryTerms.length > 0 && (
+            <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+              {formData.deliveryTerms.map(term => (
+                <div key={term.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                  <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
+                  <button
+                    type="button"
+                    onClick={() => removeDeliveryTerm(term.id)}
+                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {errors.deliveryTerms && <p className="text-red-500 text-xs mt-1">{errors.deliveryTerms}</p>}
         </div>
 
         {/* Payment Terms */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
             Payment Terms <span className="text-red-500">*</span>
           </label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.paymentTerms.map(term => (
-              <label key={term.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.paymentTermIds.includes(term.id)}
-                  onChange={e => handleMultiSelectChange('paymentTermIds', term.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
-              </label>
-            ))}
+          
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newPaymentTerm.name}
+              onChange={(e) => setNewPaymentTerm(prev => ({ ...prev, name: e.target.value }))}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Term name (e.g., Advance)"
+            />
+            <input
+              type="number"
+              value={newPaymentTerm.days}
+              onChange={(e) => setNewPaymentTerm(prev => ({ ...prev, days: parseInt(e.target.value) || 0 }))}
+              className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Days"
+              min="0"
+            />
+            <Button type="button" onClick={addPaymentTerm} variant="secondary" className="text-sm">
+              Add
+            </Button>
           </div>
-          {errors.paymentTermIds && <p className="text-red-500 text-xs mt-1">{errors.paymentTermIds}</p>}
+
+          {formData.paymentTerms.length > 0 && (
+            <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+              {formData.paymentTerms.map(term => (
+                <div key={term.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                  <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
+                  <button
+                    type="button"
+                    onClick={() => removePaymentTerm(term.id)}
+                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {errors.paymentTerms && <p className="text-red-500 text-xs mt-1">{errors.paymentTerms}</p>}
         </div>
 
         {/* Commission Structures */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
             Commission Structures <span className="text-red-500">*</span>
           </label>
-          <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-            {masterData.commissions.map(commission => (
-              <label key={commission.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.commissionIds.includes(commission.id)}
-                  onChange={e => handleMultiSelectChange('commissionIds', commission.id, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">
-                  {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/bale`})
-                </span>
-              </label>
-            ))}
+          
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newCommission.name}
+              onChange={(e) => setNewCommission(prev => ({ ...prev, name: e.target.value }))}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Commission name"
+            />
+            <select
+              value={newCommission.type}
+              onChange={(e) => setNewCommission(prev => ({ ...prev, type: e.target.value as 'PERCENTAGE' | 'PER_BALE' }))}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="PERCENTAGE">Percentage</option>
+              <option value="PER_BALE">Per Bale</option>
+            </select>
+            <input
+              type="number"
+              value={newCommission.value}
+              onChange={(e) => setNewCommission(prev => ({ ...prev, value: parseFloat(e.target.value) || 0 }))}
+              className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Value"
+              min="0"
+              step="0.1"
+            />
+            <Button type="button" onClick={addCommission} variant="secondary" className="text-sm">
+              Add
+            </Button>
           </div>
-          {errors.commissionIds && <p className="text-red-500 text-xs mt-1">{errors.commissionIds}</p>}
+
+          {formData.commissions.length > 0 && (
+            <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+              {formData.commissions.map(commission => (
+                <div key={commission.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                  <span className="text-sm text-gray-700">
+                    {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/bale`})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeCommission(commission.id)}
+                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {errors.commissions && <p className="text-red-500 text-xs mt-1">{errors.commissions}</p>}
         </div>
       </div>
 
