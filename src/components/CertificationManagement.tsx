@@ -149,7 +149,7 @@ const CertificationManagement: React.FC<CertificationManagementProps> = ({
       // Upload document if new file
       let certificateDocument = editingCertification?.certificateDocument;
       if (formData.certificateFile) {
-        const uploadResponse = await businessPartnerApi.uploadDocument(
+        const uploadResponse = await businessPartnerApi.uploadCertificationDocument(
           partnerId,
           formData.certificateFile,
           'CERTIFICATION'
