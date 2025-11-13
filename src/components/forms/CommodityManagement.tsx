@@ -91,19 +91,6 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
     setHasUnsavedChanges(false);
   };
 
-  const handleCopyCommodity = (commodity: Commodity) => {
-    const copiedCommodity: Commodity = {
-      ...commodity,
-      id: 0, // Will be assigned by backend
-      name: `${commodity.name} (Copy)`,
-      symbol: `${commodity.symbol}CP`,
-    };
-    setEditingCommodity(copiedCommodity);
-    setIsModalOpen(true);
-    setHasUnsavedChanges(true);
-    toast.info('Commodity Copied', `Creating a copy of ${commodity.name}. Please update name and symbol.`);
-  };
-
   const handleBulkStatusChange = async (status: boolean) => {
     const selectedCount = filteredCommodities.length;
     const confirmed = await showConfirm(
@@ -386,14 +373,6 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
             title="Edit commodity"
           >
             Edit
-          </button>
-          <button
-            onClick={() => handleCopyCommodity(commodity)}
-            className="text-green-600 hover:underline text-sm font-medium"
-            disabled={isSaving}
-            title="Create a copy of this commodity"
-          >
-            Copy
           </button>
           <button
             onClick={() => handleDelete(commodity)}
