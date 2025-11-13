@@ -6,7 +6,6 @@ import Modal from '../ui/Modal';
 import LocationForm from '../forms/LocationForm';
 import { Location, User, AuditLog } from '../../types';
 import { Button } from '../ui/Form';
-import { isDuplicateLocation } from '../../utils/validation';
 
 interface LocationManagementProps {
   initialData: Location[];
@@ -19,12 +18,6 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSaveLocation = (location: Omit<Location, 'id'>) => {
-    // Check for duplicate location
-    if (isDuplicateLocation(locations, location.city, location.state, location.country)) {
-      alert(`A location with "${location.city}, ${location.state}, ${location.country}" already exists. Please use a different location.`);
-      return;
-    }
-
     const newLocation = { ...location, id: Date.now() };
     setLocations([newLocation, ...locations]);
     addAuditLog({

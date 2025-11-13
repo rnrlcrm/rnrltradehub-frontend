@@ -5,6 +5,7 @@ import Header from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
 import SalesContracts from './pages/SalesContracts';
 import VendorsAndClients from './pages/VendorsAndClients';
+import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Invoices from './pages/Invoices';
@@ -17,10 +18,9 @@ import AuditTrail from './pages/AuditTrail';
 import GrievanceOfficer from './pages/GrievanceOfficer';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import RolesAndRights from './pages/RolesAndRights';
 import Chatbot from './pages/Chatbot';
 import Login from './pages/Login';
-import MyProfile from './pages/MyProfile';
-import ProfileUpdateApprovals from './pages/ProfileUpdateApprovals';
 import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
 import { User, AuditLog, MasterDataItem, SalesContract } from './types';
 import { DialogProvider } from './components/dialogs/CustomDialogs';
@@ -131,7 +131,7 @@ const App: React.FC = () => {
     if (savedUser) {
       try {
         setCurrentUser(JSON.parse(savedUser));
-      } catch {
+      } catch (e) {
         localStorage.removeItem('currentUser');
       }
     }
@@ -156,8 +156,8 @@ const App: React.FC = () => {
       case 'vendors-clients': return <VendorsAndClients currentUser={currentUser} addAuditLog={addAuditLog} currentOrganization={currentOrganization} />;
       case 'reports': return <Reports currentUser={currentUser} />;
       case 'audit-trail': return <AuditTrail currentUser={currentUser} auditLogs={auditLogs} />;
-      case 'my-profile': return <MyProfile />;
-      case 'profile-approvals': return <ProfileUpdateApprovals />;
+      case 'user-management': return <UserManagement currentUser={currentUser} />;
+      case 'roles-rights': return <RolesAndRights currentUser={currentUser} />;
       case 'settings': return <Settings currentUser={currentUser} addAuditLog={addAuditLog} />;
       case 'grievance-officer': return <GrievanceOfficer currentUser={currentUser} addAuditLog={addAuditLog} />;
       case 'privacy-policy': return <PrivacyPolicy />;

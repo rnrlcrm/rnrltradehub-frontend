@@ -207,7 +207,7 @@ export function getApplicableRules(formData: any): BusinessRule[] {
  * Check if a specific rule applies
  */
 export function isRuleApplicable(ruleId: string, formData: any): boolean {
-  const rule = ALL_RULES.find(businessRule => businessRule.id === ruleId);
+  const rule = ALL_RULES.find(r => r.id === ruleId);
   return rule ? rule.isActive && rule.condition(formData) : false;
 }
 

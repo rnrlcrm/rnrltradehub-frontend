@@ -5,7 +5,6 @@ import Modal from '../ui/Modal';
 import OrganizationForm from './OrganizationForm';
 import { Organization, User, AuditLog } from '../../types';
 import { Button } from '../ui/Form';
-import { isDuplicateName, isDuplicateCode } from '../../utils/validation';
 
 interface OrganizationManagementProps {
   initialData: Organization[];
@@ -29,18 +28,6 @@ const OrganizationManagement: React.FC<OrganizationManagementProps> = ({ initial
   };
 
   const handleSave = (orgData: Omit<Organization, 'id'>) => {
-    // Check for duplicate name
-    if (isDuplicateName(organizations, orgData.name, editingOrganization?.id)) {
-      alert(`An organization with the name "${orgData.name}" already exists. Please use a different name.`);
-      return;
-    }
-
-    // Check for duplicate code
-    if (isDuplicateCode(organizations, orgData.code, editingOrganization?.id)) {
-      alert(`An organization with the code "${orgData.code}" already exists. Please use a different code.`);
-      return;
-    }
-
     if (editingOrganization) {
       const updatedOrganizations = organizations.map(org => 
         org.id === editingOrganization.id ? { ...org, ...orgData } : org

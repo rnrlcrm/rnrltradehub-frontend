@@ -80,7 +80,7 @@ export class SessionManager {
       if (stored) {
         try {
           this.sessionInfo = JSON.parse(stored);
-        } catch {
+        } catch (e) {
           return false;
         }
       } else {
@@ -124,7 +124,7 @@ export class SessionManager {
   /**
    * Expire session
    */
-  private expireSession(_reason: 'inactivity' | 'max_duration' | 'manual'): void {
+  private expireSession(reason: 'inactivity' | 'max_duration' | 'manual'): void {
     if (this.sessionInfo) {
       this.sessionInfo.isActive = false;
       localStorage.removeItem('sessionInfo');
@@ -276,25 +276,3 @@ export function initializeSessionManager(
 export function getSessionManager(): SessionManager | null {
   return sessionManager;
 }
-
-/**
- * Convenience methods for compatibility
- */
-export const sessionManagerInstance = {
-  startSession: (userId: string, token: string) => {
-    if (!sessionManager) {
-      sessionManager = new SessionManager();
-    }
-    sessionManager.initSession(userId);
-  },
-  endSession: () => {
-    if (sessionManager) {
-      sessionManager.logout();
-    }
-  },
-  updateActivity: () => {
-    if (sessionManager) {
-      sessionManager.updateActivity();
-    }
-  },
-};

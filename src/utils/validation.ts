@@ -36,42 +36,6 @@ export const isDuplicateCode = <T extends { code?: string }>(
 };
 
 /**
- * Check for duplicate HSN code
- */
-export const isDuplicateHsnCode = <T extends { hsnCode?: string }>(
-  items: T[],
-  hsnCode: string,
-  excludeId?: number | string
-): boolean => {
-  if (!hsnCode) return false;
-  return items.some(
-    item =>
-      item.hsnCode?.toLowerCase().trim() === hsnCode.toLowerCase().trim() &&
-      (excludeId === undefined || ('id' in item && item.id !== excludeId))
-  );
-};
-
-/**
- * Check for duplicate location (city + state + country combination)
- */
-export const isDuplicateLocation = <T extends { city: string; state: string; country: string }>(
-  items: T[],
-  city: string,
-  state: string,
-  country: string,
-  excludeId?: number | string
-): boolean => {
-  if (!city || !state || !country) return false;
-  return items.some(
-    item =>
-      item.city.toLowerCase().trim() === city.toLowerCase().trim() &&
-      item.state.toLowerCase().trim() === state.toLowerCase().trim() &&
-      item.country.toLowerCase().trim() === country.toLowerCase().trim() &&
-      (excludeId === undefined || ('id' in item && item.id !== excludeId))
-  );
-};
-
-/**
  * Validate GSTIN format
  */
 export const isValidGSTIN = (gstin: string): boolean => {

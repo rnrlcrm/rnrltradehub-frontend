@@ -645,8 +645,8 @@ export function getModificationImpact(
   };
   
   // Check critical fields
-  const criticalFieldsAffected = fields.filter(field => 
-    config.lockedFields.critical.includes(field)
+  const criticalFieldsAffected = fields.filter(f => 
+    config.lockedFields.critical.includes(f)
   );
   if (criticalFieldsAffected.length > 0) {
     impact.riskLevel = 'CRITICAL';
@@ -657,8 +657,8 @@ export function getModificationImpact(
   }
   
   // Check financial fields
-  const financialFieldsAffected = fields.filter(field => 
-    config.lockedFields.financial.includes(field)
+  const financialFieldsAffected = fields.filter(f => 
+    config.lockedFields.financial.includes(f)
   );
   if (financialFieldsAffected.length > 0) {
     impact.riskLevel = impact.riskLevel === 'CRITICAL' ? 'CRITICAL' : 'HIGH';
@@ -669,8 +669,8 @@ export function getModificationImpact(
   }
   
   // Check party fields
-  const partyFieldsAffected = fields.filter(field => 
-    config.lockedFields.party.includes(field)
+  const partyFieldsAffected = fields.filter(f => 
+    config.lockedFields.party.includes(f)
   );
   if (partyFieldsAffected.length > 0) {
     impact.riskLevel = impact.riskLevel === 'LOW' ? 'MEDIUM' : impact.riskLevel;

@@ -150,8 +150,8 @@ export class DataIsolationService {
     if (scope.allBranches && user.businessPartnerId) {
       // All branches of user's partner
       return allBranches
-        .filter(branch => branch.partnerId === user.businessPartnerId)
-        .map(branch => branch.id);
+        .filter(b => b.partnerId === user.businessPartnerId)
+        .map(b => b.id);
     }
 
     if (scope.ownBranchOnly && user.branchIds) {

@@ -75,17 +75,17 @@ export class AIEngine {
 
   private suggestPricing(contract: Partial<Contract>): AISuggestion | null {
     // Analyze historical pricing for similar contracts
-    const similarContracts = this.contractHistory.filter(historicalContract => 
-      historicalContract.variety === contract.variety &&
-      Math.abs(historicalContract.quantity - (contract.quantity || 0)) < 50
+    const similarContracts = this.contractHistory.filter(c => 
+      c.variety === contract.variety &&
+      Math.abs(c.quantity - (contract.quantity || 0)) < 50
     );
 
     if (similarContracts.length < 3) return null;
 
-    const avgPrice = similarContracts.reduce((sum, historicalContract) => sum + historicalContract.rate, 0) / similarContracts.length;
+    const avgPrice = similarContracts.reduce((sum, c) => sum + c.rate, 0) / similarContracts.length;
     const lastMonthAvg = similarContracts
-      .filter(historicalContract => new Date(historicalContract.createdAt).getMonth() === new Date().getMonth())
-      .reduce((sum, historicalContract) => sum + historicalContract.rate, 0) / Math.max(1, similarContracts.length);
+      .filter(c => new Date(c.createdAt).getMonth() === new Date().getMonth())
+      .reduce((sum, c) => sum + c.rate, 0) / Math.max(1, similarContracts.length);
 
     const trend = lastMonthAvg > avgPrice ? 'increasing' : 'decreasing';
     const suggestedPrice = Math.round(lastMonthAvg);
@@ -187,7 +187,7 @@ export class AIEngine {
     }
 
     // Check for new clients
-    if (contract.clientId && !this.contractHistory.find(historicalContract => historicalContract.clientId === contract.clientId)) {
+    if (contract.clientId && !this.contractHistory.find(c => c.clientId === contract.clientId)) {
       risks.push('New client. Verify credentials and consider advance payment.');
       riskLevel = 'high';
     }
@@ -305,8 +305,8 @@ export class AnalyticsEngine {
   }
 
   private calculateOverview(contracts: Contract[]) {
-    const active = contracts.filter(contract => contract.status === 'Active');
-    const totalValue = contracts.reduce((sum, contract) => sum + (contract.quantity * contract.rate), 0);
+    const active = contracts.filter(c => c.status === 'Active');
+    const totalValue = contracts.reduce((sum, c) => sum + (c.quantity * c.rate), 0);
 
     return {
       totalContracts: contracts.length,
@@ -401,14 +401,14 @@ export class AnalyticsEngine {
   }
 
   private calculatePerformanceMetrics(contracts: Contract[]) {
-    const processingTimes = contracts.map(contract => {
-      const created = new Date(contract.createdAt).getTime();
-      const updated = new Date(contract.updatedAt || contract.createdAt).getTime();
+    const processingTimes = contracts.map(c => {
+      const created = new Date(c.createdAt).getTime();
+      const updated = new Date(c.updatedAt || c.createdAt).getTime();
       return (updated - created) / 1000; // seconds
     });
 
-    const completed = contracts.filter(contract => contract.status === 'Completed').length;
-    const errors = contracts.filter(contract => contract.status === 'Error').length;
+    const completed = contracts.filter(c => c.status === 'Completed').length;
+    const errors = contracts.filter(c => c.status === 'Error').length;
 
     return {
       avgProcessingTime: processingTimes.reduce((a, b) => a + b, 0) / Math.max(1, processingTimes.length),
@@ -433,11 +433,11 @@ export class AnalyticsEngine {
         [],
         ['Monthly Trends'],
         ['Period', 'Contracts', 'Value', 'Growth %'],
-        ...dashboard.trends.map(trend => [trend.period, trend.contracts, trend.value, trend.growth.toFixed(2)]),
+        ...dashboard.trends.map(t => [t.period, t.contracts, t.value, t.growth.toFixed(2)]),
         [],
         ['Top Clients'],
         ['Name', 'Contracts', 'Value'],
-        ...dashboard.topClients.map(client => [client.name, client.contracts, client.value])
+        ...dashboard.topClients.map(c => [c.name, c.contracts, c.value])
       ];
 
       return rows.map(row => row.join(',')).join('\n');
