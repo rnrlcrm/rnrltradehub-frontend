@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MasterDataManagement from '../components/forms/MasterDataManagement';
 import OrganizationManagement from '../components/forms/OrganizationManagement';
@@ -8,6 +7,7 @@ import StructuredTermManagement from '../components/forms/StructuredTermManageme
 import CciTermManagement from '../components/forms/CciTermManagement';
 import GstRateManagement from '../components/forms/GstRateManagement';
 import FYManagement from '../components/forms/FYManagement';
+import CommodityManagement from '../components/forms/CommodityManagement';
 import UserManagement from './UserManagement';
 import RolesAndRights from './RolesAndRights';
 import { mockMasterData, mockLocations, mockOrganizationsDetailed } from '../data/mockData';
@@ -74,8 +74,16 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
       {/* Tab Content */}
       {activeTab === 'master-data' && (
         <>
-          {/* Organizations - Featured Section */}
+          {/* Commodity Master - Featured Section */}
           <div className="mt-6">
+            <CommodityManagement 
+              currentUser={currentUser} 
+              addAuditLog={addAuditLog} 
+            />
+          </div>
+
+          {/* Organizations - Featured Section */}
+          <div className="mt-8">
             <OrganizationManagement 
               initialData={mockOrganizationsDetailed} 
               currentUser={currentUser} 
@@ -83,7 +91,7 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
             />
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
             <MasterDataManagement title="Trade Types" initialData={mockMasterData.tradeTypes} currentUser={currentUser} addAuditLog={addAuditLog} />
             <MasterDataManagement title="Bargain Types" initialData={mockMasterData.bargainTypes} currentUser={currentUser} addAuditLog={addAuditLog} />
             <MasterDataManagement title="Varieties" initialData={mockMasterData.varieties} currentUser={currentUser} addAuditLog={addAuditLog} />

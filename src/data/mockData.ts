@@ -1,5 +1,5 @@
 
-import { User, SalesContract, BusinessPartner, Invoice, Payment, Dispute, Commission, AuditLog, MasterDataItem, Location, CommissionStructure, StructuredTerm, CciTerm, GstRate, Organization } from '../types';
+import { User, SalesContract, BusinessPartner, Invoice, Payment, Dispute, Commission, AuditLog, MasterDataItem, Location, CommissionStructure, StructuredTerm, CciTerm, GstRate, Organization, Commodity } from '../types';
 
 export const mockUsers: User[] = [
   { id: 1, name: 'Admin User', email: 'admin@rnrl.com', role: 'Admin' },
@@ -281,6 +281,80 @@ const gstRates: GstRate[] = [
     { id: 2, rate: 18, description: 'GST on Services', hsnCode: '9983' },
 ];
 
+// Commodity Master - Multi-commodity support with Auto-GST
+const commodities: Commodity[] = [
+    {
+        id: 1,
+        name: 'Cotton',
+        symbol: 'CTN',
+        unit: 'Bales',
+        // GST auto-determined from GST Act
+        hsnCode: '5201', // Cotton, not carded or combed
+        gstRate: 5, // 5% as per GST Act Schedule I
+        gstExemptionAvailable: false,
+        gstCategory: 'Agricultural',
+        isProcessed: false,
+        isActive: true,
+        // Cotton has all trade types
+        tradeTypeIds: [1, 2], // Normal Trade, CCI Trade
+        bargainTypeIds: [1, 2], // Pucca Sauda, Subject to Approval
+        varietyIds: [1, 2, 3], // MCU-5, DCH-32, Shankar-6
+        weightmentTermIds: [1, 2], // At Seller's Gin, At Buyer's Mill
+        passingTermIds: [1, 2], // Lab Report, Visual Inspection
+        deliveryTermIds: [1, 2], // Ex-Gin, FOR
+        paymentTermIds: [1, 2, 3, 4], // All payment terms
+        commissionIds: [1, 2, 3], // All commission types
+        supportsCciTerms: true, // Cotton supports CCI terms
+        description: 'Raw cotton and cotton products',
+    },
+    {
+        id: 2,
+        name: 'Wheat',
+        symbol: 'WHT',
+        unit: 'Quintal',
+        // GST auto-determined - Wheat is exempt
+        hsnCode: '1001', // Wheat and meslin
+        gstRate: 0, // Exempt under Schedule (unbranded/unprocessed)
+        gstExemptionAvailable: true,
+        gstCategory: 'Agricultural',
+        isProcessed: false,
+        isActive: true,
+        tradeTypeIds: [1], // Only Normal Trade
+        bargainTypeIds: [1, 2],
+        varietyIds: [], // Will be added separately for wheat
+        weightmentTermIds: [1, 2],
+        passingTermIds: [1, 2],
+        deliveryTermIds: [1, 2],
+        paymentTermIds: [1, 2, 3, 4],
+        commissionIds: [1, 2, 3],
+        supportsCciTerms: false, // Wheat doesn't support CCI terms
+        description: 'Wheat grains and related products',
+    },
+    {
+        id: 3,
+        name: 'Rice',
+        symbol: 'RIC',
+        unit: 'Quintal',
+        // GST auto-determined - Rice is exempt (unbranded)
+        hsnCode: '1006', // Rice
+        gstRate: 0, // Exempt if unbranded/not pre-packaged
+        gstExemptionAvailable: true,
+        gstCategory: 'Agricultural',
+        isProcessed: false,
+        isActive: true,
+        tradeTypeIds: [1], // Only Normal Trade
+        bargainTypeIds: [1, 2],
+        varietyIds: [], // Will be added separately for rice
+        weightmentTermIds: [1, 2],
+        passingTermIds: [1, 2],
+        deliveryTermIds: [1, 2],
+        paymentTermIds: [1, 2, 3, 4],
+        commissionIds: [1, 2, 3],
+        supportsCciTerms: false, // Rice doesn't support CCI terms
+        description: 'Rice grains and related products',
+    },
+];
+
 export const mockOrganizationsDetailed: Organization[] = [
     {
         id: 1,
@@ -327,5 +401,5 @@ export const mockOrganizationsDetailed: Organization[] = [
 ];
 
 export const mockMasterData = {
-    tradeTypes, varieties, disputeReasons, weightmentTerms, passingTerms, financialYears, bargainTypes, deliveryTerms, paymentTerms, commissions, cciTerms, organizations: mockOrganizations, locations: mockLocations, gstRates
+    tradeTypes, varieties, disputeReasons, weightmentTerms, passingTerms, financialYears, bargainTypes, deliveryTerms, paymentTerms, commissions, cciTerms, organizations: mockOrganizations, locations: mockLocations, gstRates, commodities
 };

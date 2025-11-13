@@ -1,3 +1,32 @@
+// Unit types for commodities
+export type CommodityUnit = 'Kgs' | 'Qty' | 'Candy' | 'Bales' | 'Quintal' | 'Tonnes';
+
+// Commodity interface for multi-commodity support
+export interface Commodity {
+  id: number;
+  name: string; // e.g., "Cotton", "Wheat", "Rice"
+  symbol: string; // e.g., "CTN", "WHT", "RIC"
+  unit: CommodityUnit; // Primary trading unit
+  // GST is now auto-determined based on commodity name and HSN code
+  hsnCode: string; // HSN code as per GST Act (auto-determined)
+  gstRate: number; // GST rate % (auto-determined from HSN)
+  gstExemptionAvailable: boolean; // Auto-determined
+  gstCategory: 'Agricultural' | 'Processed' | 'Industrial' | 'Service'; // Auto-determined
+  isProcessed: boolean; // User specifies if processed (affects GST)
+  isActive: boolean;
+  // Trading parameters available for this commodity
+  tradeTypeIds: number[]; // Available trade types for this commodity
+  bargainTypeIds: number[]; // Available bargain types
+  varietyIds: number[]; // Available varieties
+  weightmentTermIds: number[]; // Available weightment terms
+  passingTermIds: number[]; // Available passing terms
+  deliveryTermIds: number[]; // Available delivery terms
+  paymentTermIds: number[]; // Available payment terms
+  commissionIds: number[]; // Available commission structures
+  // CCI specific (only for cotton)
+  supportsCciTerms: boolean; // true for cotton, false for others
+  description?: string; // Optional description
+}
 
 // EMD percentage configuration by buyer type
 export interface EmdByBuyerType {

@@ -20,6 +20,7 @@ import {
   CommissionStructure,
   CciTerm,
   StructuredTerm,
+  Commodity,
 } from '../types';
 
 // Mock data imports (used when USE_MOCK_API is true)
@@ -363,6 +364,65 @@ export const structuredTermsApi = {
   },
 };
 
+// ============================================================================
+// COMMODITIES
+// ============================================================================
+
+export const commoditiesApi = {
+  getAll: async (): Promise<ApiResponse<Commodity[]>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return { data: mockMasterData.commodities, success: true };
+    }
+    return apiClient.get<Commodity[]>('/settings/commodities');
+  },
+
+  getById: async (id: number): Promise<ApiResponse<Commodity>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const commodity = mockMasterData.commodities.find(c => c.id === id);
+      if (!commodity) {
+        throw { message: 'Commodity not found', code: '404' };
+      }
+      return { data: commodity, success: true };
+    }
+    return apiClient.get<Commodity>(`/settings/commodities/${id}`);
+  },
+
+  create: async (data: Omit<Commodity, 'id'>): Promise<ApiResponse<Commodity>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const newCommodity: Commodity = {
+        ...data,
+        id: Date.now(),
+      };
+      return { data: newCommodity, success: true, message: 'Commodity created successfully' };
+    }
+    return apiClient.post<Commodity>('/settings/commodities', data);
+  },
+
+  update: async (id: number, data: Partial<Commodity>): Promise<ApiResponse<Commodity>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const updated: Commodity = {
+        ...(mockMasterData.commodities.find(c => c.id === id) || {} as Commodity),
+        ...data,
+        id,
+      };
+      return { data: updated, success: true, message: 'Commodity updated successfully' };
+    }
+    return apiClient.put<Commodity>(`/settings/commodities/${id}`, data);
+  },
+
+  delete: async (id: number): Promise<ApiResponse<void>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return { data: undefined as void, success: true, message: 'Commodity deleted successfully' };
+    }
+    return apiClient.delete<void>(`/settings/commodities/${id}`);
+  },
+};
+
 // Export all APIs
 export const settingsApi = {
   organizations: organizationsApi,
@@ -372,4 +432,5 @@ export const settingsApi = {
   commissions: commissionsApi,
   cciTerms: cciTermsApi,
   structuredTerms: structuredTermsApi,
+  commodities: commoditiesApi,
 };
