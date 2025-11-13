@@ -150,17 +150,42 @@ export const financialYearApi = {
   },
 
   /**
-   * Validate FY split readiness
-   * Checks if FY can be safely split
+   * Validate FY split readiness with comprehensive data integrity checks
+   * Checks if FY can be safely split without data loss or corruption
    */
   validateSplit: async (fyId: number): Promise<ApiResponse<{
     canSplit: boolean;
     warnings: string[];
     blockers: string[];
     pendingItems: FYPendingItems;
+    dataIntegrityReport: {
+      overallStatus: 'PASS' | 'FAIL' | 'WARNING';
+      checks: Array<{
+        checkName: string;
+        status: 'PASS' | 'FAIL' | 'WARNING';
+        message: string;
+        affectedRecords?: number;
+      }>;
+    };
+    accountingBalance: {
+      totalDebit: number;
+      totalCredit: number;
+      isBalanced: boolean;
+      openingBalance: number;
+      closingBalance: number;
+    };
+    moduleWiseSummary: {
+      salesContracts: { pending: number; ongoing: number; completed: number };
+      purchaseContracts: { pending: number; ongoing: number; completed: number };
+      invoices: { unpaid: number; partiallyPaid: number; paid: number };
+      payments: { pending: number; cleared: number };
+      commissions: { due: number; paid: number; pending: number };
+      deliveryOrders: { pending: number; inTransit: number; delivered: number };
+      disputes: { open: number; underReview: number; resolved: number };
+    };
   }>> => {
     if (USE_MOCK_API) {
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const mockValidation = {
         canSplit: true,
@@ -168,6 +193,7 @@ export const financialYearApi = {
           '12 unpaid invoices will be carried forward',
           '8 due commissions will be migrated',
           '3 open disputes need attention',
+          'Some bank statements are not reconciled',
         ],
         blockers: [],
         pendingItems: {
@@ -175,6 +201,59 @@ export const financialYearApi = {
           dueCommissions: { count: 8, totalAmount: 125000, items: [] },
           openDisputes: { count: 3, items: [] },
           activeContracts: { count: 25, items: [] },
+        },
+        dataIntegrityReport: {
+          overallStatus: 'WARNING' as const,
+          checks: [
+            {
+              checkName: 'Accounting Balance Check (Double Entry)',
+              status: 'PASS' as const,
+              message: 'All accounting entries are balanced (Debit = Credit)',
+            },
+            {
+              checkName: 'Orphaned Records Check',
+              status: 'PASS' as const,
+              message: 'No orphaned records found',
+              affectedRecords: 0,
+            },
+            {
+              checkName: 'Cross-Module Consistency Check',
+              status: 'PASS' as const,
+              message: 'All modules are consistent',
+            },
+            {
+              checkName: 'Foreign Key Integrity Check',
+              status: 'PASS' as const,
+              message: 'All foreign key references are valid',
+            },
+            {
+              checkName: 'Bank Reconciliation Check',
+              status: 'WARNING' as const,
+              message: 'Some bank statements are not reconciled',
+              affectedRecords: 3,
+            },
+            {
+              checkName: 'Tax Calculation Check (GST, TDS)',
+              status: 'PASS' as const,
+              message: 'All tax calculations are correct',
+            },
+          ],
+        },
+        accountingBalance: {
+          totalDebit: 10000000,
+          totalCredit: 10000000,
+          isBalanced: true,
+          openingBalance: 500000,
+          closingBalance: 500000,
+        },
+        moduleWiseSummary: {
+          salesContracts: { pending: 8, ongoing: 12, completed: 45 },
+          purchaseContracts: { pending: 5, ongoing: 10, completed: 38 },
+          invoices: { unpaid: 12, partiallyPaid: 5, paid: 156 },
+          payments: { pending: 8, cleared: 145 },
+          commissions: { due: 8, paid: 78, pending: 3 },
+          deliveryOrders: { pending: 6, inTransit: 4, delivered: 142 },
+          disputes: { open: 3, underReview: 2, resolved: 15 },
         },
       };
       

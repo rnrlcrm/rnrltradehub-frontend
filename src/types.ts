@@ -183,6 +183,7 @@ export interface Organization {
   id: number;
   name: string;
   code: string;
+  organizationType: 'PROPRIETORSHIP' | 'PARTNERSHIP' | 'PRIVATE_LIMITED' | 'PUBLIC_LIMITED' | 'LLP' | 'OPC';
   address: string;
   city: string;
   state: string;
@@ -198,7 +199,25 @@ export interface Organization {
   accountNumber: string;
   ifscCode: string;
   branchName: string;
+  accountType?: 'CURRENT' | 'SAVINGS' | 'CASH_CREDIT' | 'OVERDRAFT';
+  beneficiaryName?: string;
   isActive: boolean;
+  // Multi-tenant support
+  organizationId?: string; // Unique org identifier for multi-tenant
+  parentOrganizationId?: number; // For organization hierarchy
+  // Contact person
+  contactPersonName?: string;
+  contactPersonPhone?: string;
+  contactPersonEmail?: string;
+  contactPersonDesignation?: string;
+  // Compliance
+  gstRegistrationDate?: string;
+  panRegistrationDate?: string;
+  // Audit fields
+  createdBy?: string;
+  createdAt?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
 export interface StructuredTerm {

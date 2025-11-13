@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import OrganizationManagement from '../components/forms/OrganizationManagement';
 import LocationManagement from '../components/forms/LocationManagement';
 import CciTermManagement from '../components/forms/CciTermManagement';
-import FYManagement from '../components/forms/FYManagement';
+import FYManagementEnhanced from '../components/forms/FYManagementEnhanced';
 import CommodityManagement from '../components/forms/CommodityManagement';
 import { mockMasterData, mockLocations, mockOrganizationsDetailed } from '../data/mockData';
 import { User, AuditLog } from '../types';
@@ -119,7 +119,7 @@ const Settings: React.FC<SettingsProps> = ({ currentUser, addAuditLog }) => {
         )}
 
         {activeTab === 'fy-management' && (
-          <FYManagement />
+          <FYManagementEnhanced />
         )}
       </div>
 

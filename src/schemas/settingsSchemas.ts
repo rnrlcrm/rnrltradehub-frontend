@@ -19,6 +19,48 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^[6-9]\d{9}$/;
 const hsnRegex = /^\d{4}(\d{2})?(\d{2})?$/;
 
+// GST State Code Mapping as per Indian GST Act
+const gstStateMapping: Record<string, string> = {
+  '01': 'Jammu and Kashmir',
+  '02': 'Himachal Pradesh',
+  '03': 'Punjab',
+  '04': 'Chandigarh',
+  '05': 'Uttarakhand',
+  '06': 'Haryana',
+  '07': 'Delhi',
+  '08': 'Rajasthan',
+  '09': 'Uttar Pradesh',
+  '10': 'Bihar',
+  '11': 'Sikkim',
+  '12': 'Arunachal Pradesh',
+  '13': 'Nagaland',
+  '14': 'Manipur',
+  '15': 'Mizoram',
+  '16': 'Tripura',
+  '17': 'Meghalaya',
+  '18': 'Assam',
+  '19': 'West Bengal',
+  '20': 'Jharkhand',
+  '21': 'Odisha',
+  '22': 'Chhattisgarh',
+  '23': 'Madhya Pradesh',
+  '24': 'Gujarat',
+  '26': 'Dadra and Nagar Haveli and Daman and Diu',
+  '27': 'Maharashtra',
+  '29': 'Karnataka',
+  '30': 'Goa',
+  '31': 'Lakshadweep',
+  '32': 'Kerala',
+  '33': 'Tamil Nadu',
+  '34': 'Puducherry',
+  '35': 'Andaman and Nicobar Islands',
+  '36': 'Telangana',
+  '37': 'Andhra Pradesh',
+  '38': 'Ladakh',
+  '97': 'Other Territory',
+  '99': 'Centre Jurisdiction',
+};
+
 // Sanitization helper to prevent XSS attacks
 const sanitizeString = (str: string) => {
   return str.trim()
@@ -108,6 +150,59 @@ export const organizationSchema = z.object({
     .max(100, 'Email must be less than 100 characters')
     .transform((val) => val.toLowerCase().trim()),
   
+  // Organization Type
+  organizationType: z.enum(['PROPRIETORSHIP', 'PARTNERSHIP', 'PRIVATE_LIMITED', 'PUBLIC_LIMITED', 'LLP', 'OPC'], {
+    errorMap: () => ({ message: 'Please select a valid organization type' }),
+  }),
+  
+  // Multi-tenant Support
+  organizationId: z.string()
+    .max(50, 'Organization ID must be less than 50 characters')
+    .regex(/^[A-Z0-9_-]+$/, 'Organization ID must contain only uppercase letters, numbers, hyphens, and underscores')
+    .transform((val) => val.toUpperCase().trim())
+    .optional()
+    .or(z.literal('')),
+  
+  parentOrganizationId: z.number().positive('Invalid parent organization').optional(),
+  
+  // Contact Person Details
+  contactPersonName: z.string()
+    .max(100, 'Contact person name must be less than 100 characters')
+    .transform(sanitizeString)
+    .optional()
+    .or(z.literal('')),
+  
+  contactPersonPhone: z.string()
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true;
+      return phoneRegex.test(val);
+    }, {
+      message: 'Invalid contact person phone. Must be 10 digits starting with 6-9',
+    }),
+  
+  contactPersonEmail: z.string()
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true;
+      return emailRegex.test(val);
+    }, {
+      message: 'Invalid contact person email format',
+    })
+    .transform((val) => val ? val.toLowerCase().trim() : ''),
+  
+  contactPersonDesignation: z.string()
+    .max(50, 'Designation must be less than 50 characters')
+    .transform(sanitizeString)
+    .optional()
+    .or(z.literal('')),
+  
+  // Compliance Dates
+  gstRegistrationDate: z.string().optional().or(z.literal('')),
+  panRegistrationDate: z.string().optional().or(z.literal('')),
+  
   // Banking Information - Critical for financial transactions
   bankName: z.string()
     .min(1, 'Bank name is required')
@@ -129,6 +224,16 @@ export const organizationSchema = z.object({
     .max(100, 'Branch name must be less than 100 characters')
     .transform(sanitizeString),
   
+  accountType: z.enum(['CURRENT', 'SAVINGS', 'CASH_CREDIT', 'OVERDRAFT'], {
+    errorMap: () => ({ message: 'Please select a valid account type' }),
+  }).optional(),
+  
+  beneficiaryName: z.string()
+    .max(100, 'Beneficiary name must be less than 100 characters')
+    .transform(sanitizeString)
+    .optional()
+    .or(z.literal('')),
+  
   // Status flag
   isActive: z.boolean().default(true),
 }).refine(
@@ -143,14 +248,27 @@ export const organizationSchema = z.object({
   }
 ).refine(
   (data) => {
-    // Validate state code in GSTIN matches state
+    // Validate state code in GSTIN matches state - enhanced with state mapping
     const stateCodeFromGstin = data.gstin.substring(0, 2);
-    // Note: This is a basic check. In production, you'd map state codes to state names
-    return parseInt(stateCodeFromGstin) >= 1 && parseInt(stateCodeFromGstin) <= 37;
+    return gstStateMapping[stateCodeFromGstin] !== undefined;
   },
   {
-    message: 'Invalid state code in GSTIN (first 2 digits)',
+    message: 'Invalid state code in GSTIN (first 2 digits). Must be valid Indian state code.',
     path: ['gstin'],
+  }
+).refine(
+  (data) => {
+    // CIN is mandatory for Private/Public Limited companies
+    if ((data.organizationType === 'PRIVATE_LIMITED' || 
+         data.organizationType === 'PUBLIC_LIMITED') && 
+        (!data.cin || data.cin === '')) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'CIN is mandatory for Private Limited and Public Limited companies',
+    path: ['cin'],
   }
 );
 
