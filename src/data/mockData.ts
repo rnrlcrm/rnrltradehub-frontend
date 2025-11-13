@@ -6,7 +6,7 @@ export const mockUsers: User[] = [
   { id: 2, name: 'Sales Manager', email: 'sales@rnrl.com', role: 'Sales' },
   { id: 3, name: 'Accounts Officer', email: 'accounts@rnrl.com', role: 'Accounts' },
   { id: 4, name: 'Dispute Handler', email: 'disputes@rnrl.com', role: 'Dispute Manager' },
-  { id: 5, name: 'Client Portal', email: 'client@example.com', role: 'Vendor/Client' },
+  { id: 5, name: 'Client Portal', email: 'client@example.com', role: 'Business Partner' },
 ];
 
 export const mockOrganizations: MasterDataItem[] = [

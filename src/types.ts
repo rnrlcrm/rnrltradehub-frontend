@@ -337,7 +337,7 @@ export interface SalesContract {
   isCarriedForward?: boolean;
 }
 
-export type UserRole = 'Admin' | 'Sales' | 'Accounts' | 'Dispute Manager' | 'Vendor/Client';
+export type UserRole = 'Admin' | 'Sales' | 'Accounts' | 'Dispute Manager' | 'Business Partner';
 
 export interface User {
   id: number;

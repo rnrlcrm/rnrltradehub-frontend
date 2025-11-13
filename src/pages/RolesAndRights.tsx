@@ -25,7 +25,7 @@ const allModules: Module[] = [
 ];
 
 const allPermissions: Permission[] = ['create', 'read', 'update', 'delete'];
-const allRoles: UserRole[] = ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'];
+const allRoles: UserRole[] = ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'];
 
 const RolesAndRights: React.FC<RolesAndRightsProps> = ({ currentUser }) => {
   const [permissions, setPermissions] = useState(JSON.parse(JSON.stringify(initialPermissions)));

@@ -37,7 +37,7 @@ export const mockPermissions: PermissionsMap = {
     'Disputes': ['read', 'update'],
     'Grievance Officer': ['read'],
   },
-  'Vendor/Client': {
+  'Business Partner': {
     'Sales Contracts': ['read'],
     'Invoices': ['read'],
     'Payments': ['read'],

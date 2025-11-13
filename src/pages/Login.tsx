@@ -157,10 +157,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, availableUsers }) => {
                 Sales Demo
               </button>
               <button
-                onClick={() => handleDemoLogin('Vendor/Client')}
+                onClick={() => handleDemoLogin('Business Partner')}
                 className="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition"
               >
-                Vendor Demo
+                Partner Demo
               </button>
             </div>
           </div>
