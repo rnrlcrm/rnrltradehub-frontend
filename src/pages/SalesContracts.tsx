@@ -134,7 +134,7 @@ const SalesContracts: React.FC<SalesContractsProps> = ({ currentUser, currentOrg
 
   const handleApprove = (contract: SalesContract) => {
       setContracts(contracts.map(c => c.id === contract.id ? { ...c, status: 'Active' } : c));
-      addAuditLog({ user: 'System (External)', role: 'Vendor/Client', action: 'Approve', module: 'Sales Contracts', details: `Contract ${contract.scNo} approved by external party.`, reason: 'External approval received' });
+      addAuditLog({ user: 'System (External)', role: 'Business Partner', action: 'Approve', module: 'Sales Contracts', details: `Contract ${contract.scNo} approved by external party.`, reason: 'External approval received' });
   };
 
   const handleReject = (contract: SalesContract) => {
@@ -149,7 +149,7 @@ const SalesContracts: React.FC<SalesContractsProps> = ({ currentUser, currentOrg
       }
       if (selectedContract) {
           setContracts(contracts.map(c => c.id === selectedContract.id ? { ...c, status: 'Rejected' } : c));
-          addAuditLog({ user: 'System (External)', role: 'Vendor/Client', action: 'Reject', module: 'Sales Contracts', details: `Contract ${selectedContract.scNo} rejected by external party.`, reason: rejectionReason });
+          addAuditLog({ user: 'System (External)', role: 'Business Partner', action: 'Reject', module: 'Sales Contracts', details: `Contract ${selectedContract.scNo} rejected by external party.`, reason: rejectionReason });
       }
       setIsRejectionModalOpen(false);
       setRejectionReason('');

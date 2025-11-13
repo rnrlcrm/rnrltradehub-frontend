@@ -6,7 +6,7 @@ export const mockUsers: User[] = [
   { id: 2, name: 'Sales Manager', email: 'sales@rnrl.com', role: 'Sales' },
   { id: 3, name: 'Accounts Officer', email: 'accounts@rnrl.com', role: 'Accounts' },
   { id: 4, name: 'Dispute Handler', email: 'disputes@rnrl.com', role: 'Dispute Manager' },
-  { id: 5, name: 'Client Portal', email: 'client@example.com', role: 'Vendor/Client' },
+  { id: 5, name: 'Client Portal', email: 'client@example.com', role: 'Business Partner' },
 ];
 
 export const mockOrganizations: MasterDataItem[] = [
@@ -111,7 +111,7 @@ export const mockCommissions: Commission[] = [
 
 export const mockAuditLogs: AuditLog[] = [
   { id: 1, timestamp: '2024-07-26 10:00:15', user: 'Admin User', role: 'Admin', module: 'Sales Contracts', action: 'Create', details: 'Created contract SC-2024-003', reason: 'New deal finalized' },
-  { id: 2, timestamp: '2024-07-26 10:05:20', user: 'Sales Manager', role: 'Sales', module: 'Business Partner', action: 'Update', details: 'Updated contact for Global Textiles Inc.', reason: 'Contact person changed' },
+  { id: 2, timestamp: '2024-07-26 10:05:20', user: 'Sales Manager', role: 'Sales', module: 'Business Partners', action: 'Update', details: 'Updated contact for Global Textiles Inc.', reason: 'Contact person changed' },
   { id: 3, timestamp: '2024-07-26 T 11:00:00', user: 'Accounts Officer', role: 'Accounts', module: 'Payments', action: 'Create', details: 'Recorded payment PAY-2024-001 for INV-2024-001', reason: 'Payment received' },
 ];
 

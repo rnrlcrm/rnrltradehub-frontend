@@ -511,9 +511,637 @@ const PartnerRegistration: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Step Content - Placeholder for now, will implement each step */}
+          {/* Step Content */}
           <div className="min-h-[400px]">
-            <p className="text-center text-slate-500">Step {currentStep} content will be implemented</p>
+            {/* Step 1: Company Information */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Company Information</h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Registration Type
+                  </label>
+                  <select
+                    value={formData.registrationType || 'COMPANY'}
+                    onChange={(e) => handleChange('registrationType', e.target.value as RegistrationType)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="COMPANY">Company</option>
+                    <option value="INDIVIDUAL">Individual</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Legal Name / Company Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.legalName || ''}
+                    onChange={(e) => handleChange('legalName', e.target.value)}
+                    placeholder="Enter full legal name as per PAN"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Trade Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tradeName || ''}
+                    onChange={(e) => handleChange('tradeName', e.target.value)}
+                    placeholder="Business/brand name if different from legal name"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="mt-1 text-sm text-slate-500">Leave blank if same as legal name</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Business Type *
+                  </label>
+                  <select
+                    value={formData.businessType || 'BUYER'}
+                    onChange={(e) => handleChange('businessType', e.target.value as BusinessPartnerType)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="BUYER">Buyer</option>
+                    <option value="SELLER">Seller</option>
+                    <option value="TRADER">Trader</option>
+                    <option value="CONTROLLER">Controller</option>
+                    <option value="TRANSPORTER">Transporter</option>
+                    <option value="SUB_BROKER">Sub-Broker</option>
+                  </select>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {isGSTMandatory() ? '⚠️ GST is mandatory for this business type' : 'ℹ️ GST is optional for this business type'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Contact Information & Verification */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Contact Information</h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Primary Contact Person *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.primaryContactPerson || ''}
+                    onChange={(e) => handleChange('primaryContactPerson', e.target.value)}
+                    placeholder="Full name of contact person"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Email Address * {emailVerified && <span className="text-green-600">✓ Verified</span>}
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="email"
+                      value={formData.primaryContactEmail || ''}
+                      onChange={(e) => {
+                        handleChange('primaryContactEmail', e.target.value);
+                        setEmailVerified(false);
+                        setOtpSent(prev => ({ ...prev, email: false }));
+                      }}
+                      placeholder="your@email.com"
+                      className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={emailVerified}
+                    />
+                    {!emailVerified && !otpSent.email && (
+                      <button
+                        onClick={sendEmailOTP}
+                        disabled={loading || !formData.primaryContactEmail}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Send OTP
+                      </button>
+                    )}
+                  </div>
+                  
+                  {otpSent.email && !emailVerified && (
+                    <div className="mt-3 flex gap-3">
+                      <input
+                        type="text"
+                        value={emailOTP}
+                        onChange={(e) => setEmailOTP(e.target.value)}
+                        placeholder="Enter 6-digit OTP"
+                        maxLength={6}
+                        className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={verifyEmailOTP}
+                        disabled={loading || emailOTP.length !== 6}
+                        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        Verify
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Mobile Number * {mobileVerified && <span className="text-green-600">✓ Verified</span>}
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="tel"
+                      value={formData.primaryContactPhone || ''}
+                      onChange={(e) => {
+                        handleChange('primaryContactPhone', e.target.value);
+                        setMobileVerified(false);
+                        setOtpSent(prev => ({ ...prev, mobile: false }));
+                      }}
+                      placeholder="10-digit mobile number"
+                      maxLength={10}
+                      className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={mobileVerified}
+                    />
+                    {!mobileVerified && !otpSent.mobile && (
+                      <button
+                        onClick={sendMobileOTP}
+                        disabled={loading || !formData.primaryContactPhone}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Send OTP
+                      </button>
+                    )}
+                  </div>
+                  
+                  {otpSent.mobile && !mobileVerified && (
+                    <div className="mt-3 flex gap-3">
+                      <input
+                        type="text"
+                        value={mobileOTP}
+                        onChange={(e) => setMobileOTP(e.target.value)}
+                        placeholder="Enter 6-digit OTP"
+                        maxLength={6}
+                        className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={verifyMobileOTP}
+                        disabled={loading || mobileOTP.length !== 6}
+                        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        Verify
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Tax Information */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Tax Information</h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    PAN Number *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.pan || ''}
+                    onChange={(e) => handleChange('pan', e.target.value.toUpperCase())}
+                    placeholder="ABCDE1234F"
+                    maxLength={10}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                  />
+                  <p className="mt-1 text-sm text-slate-600">10-character PAN number</p>
+                </div>
+
+                {formData.registrationType === 'INDIVIDUAL' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Aadhar Number *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.aadharNumber || ''}
+                      onChange={(e) => handleChange('aadharNumber', e.target.value)}
+                      placeholder="1234-5678-9012"
+                      maxLength={12}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.hasGST || false}
+                      onChange={(e) => handleChange('hasGST', e.target.checked)}
+                      className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                      disabled={isGSTMandatory()}
+                    />
+                    <span className="text-sm font-medium text-slate-700">
+                      I have GST registration {isGSTMandatory() && '(Mandatory for your business type)'}
+                    </span>
+                  </label>
+                </div>
+
+                {formData.hasGST && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      GST Number *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.gstNumber || ''}
+                      onChange={(e) => handleChange('gstNumber', e.target.value.toUpperCase())}
+                      placeholder="27ABCDE1234F1Z5"
+                      maxLength={15}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                    />
+                    <p className="mt-1 text-sm text-slate-600">15-character GSTIN</p>
+                  </div>
+                )}
+
+                {formData.registrationType === 'COMPANY' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        CIN Number (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.cin || ''}
+                        onChange={(e) => handleChange('cin', e.target.value.toUpperCase())}
+                        placeholder="U12345MH2020PTC123456"
+                        maxLength={21}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                      />
+                      <p className="mt-1 text-sm text-slate-600">Corporate Identification Number (for companies)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        TAN Number (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.tan || ''}
+                        onChange={(e) => handleChange('tan', e.target.value.toUpperCase())}
+                        placeholder="ABCD12345E"
+                        maxLength={10}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                      />
+                      <p className="mt-1 text-sm text-slate-600">Tax Deduction Account Number</p>
+                    </div>
+                  </>
+                )}
+
+                {needsDeclaration() && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-sm text-amber-800">
+                      ℹ️ As a transporter without GST, you'll need to upload a declaration document in the next steps.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Address Information */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Registered Address</h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Address Line 1 *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.registeredAddress?.addressLine1 || ''}
+                    onChange={(e) => handleChange('registeredAddress.addressLine1', e.target.value)}
+                    placeholder="Building/Street"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Address Line 2
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.registeredAddress?.addressLine2 || ''}
+                    onChange={(e) => handleChange('registeredAddress.addressLine2', e.target.value)}
+                    placeholder="Locality/Area (Optional)"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.registeredAddress?.city || ''}
+                      onChange={(e) => handleChange('registeredAddress.city', e.target.value)}
+                      placeholder="City"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      State *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.registeredAddress?.state || ''}
+                      onChange={(e) => handleChange('registeredAddress.state', e.target.value)}
+                      placeholder="State"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Pincode *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.registeredAddress?.pincode || ''}
+                      onChange={(e) => handleChange('registeredAddress.pincode', e.target.value)}
+                      placeholder="6-digit pincode"
+                      maxLength={6}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Country
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.registeredAddress?.country || 'India'}
+                      onChange={(e) => handleChange('registeredAddress.country', e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Bank Details */}
+            {currentStep === 5 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Bank Details</h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Bank Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bankDetails?.bankName || ''}
+                    onChange={(e) => handleChange('bankDetails.bankName', e.target.value)}
+                    placeholder="e.g., HDFC Bank, State Bank of India"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Account Holder Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bankDetails?.accountHolderName || ''}
+                    onChange={(e) => handleChange('bankDetails.accountHolderName', e.target.value)}
+                    placeholder="As per bank records"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Account Number *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bankDetails?.accountNumber || ''}
+                    onChange={(e) => handleChange('bankDetails.accountNumber', e.target.value)}
+                    placeholder="Bank account number"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    IFSC Code *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bankDetails?.ifscCode || ''}
+                    onChange={(e) => handleChange('bankDetails.ifscCode', e.target.value.toUpperCase())}
+                    placeholder="HDFC0000001"
+                    maxLength={11}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                  />
+                  <p className="mt-1 text-sm text-slate-600">11-character IFSC code</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Branch Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bankDetails?.branchName || ''}
+                    onChange={(e) => handleChange('bankDetails.branchName', e.target.value)}
+                    placeholder="Branch name (optional)"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Account Type
+                  </label>
+                  <select
+                    value={formData.bankDetails?.accountType || 'CURRENT'}
+                    onChange={(e) => handleChange('bankDetails.accountType', e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="CURRENT">Current Account</option>
+                    <option value="SAVINGS">Savings Account</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Document Upload */}
+            {currentStep === 6 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Document Upload</h2>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <h3 className="font-semibold text-blue-900 mb-2">📄 Required Documents</h3>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• PAN Card (Mandatory)</li>
+                    <li>• Cancelled Check (Mandatory)</li>
+                    {formData.hasGST && <li>• GST Certificate (Mandatory)</li>}
+                    {needsDeclaration() && <li>• Transporter Declaration (Mandatory)</li>}
+                    {formData.registrationType === 'INDIVIDUAL' && <li>• Aadhar Card (Mandatory)</li>}
+                  </ul>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      PAN Card * {documents.some(d => d.documentType === 'PAN_CARD') && <span className="text-green-600">✓</span>}
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleDocumentUpload('PAN_CARD', e.target.files?.[0] || null)}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Cancelled Check * {documents.some(d => d.documentType === 'CANCELLED_CHECK') && <span className="text-green-600">✓</span>}
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleDocumentUpload('CANCELLED_CHECK', e.target.files?.[0] || null)}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {formData.hasGST && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        GST Certificate * {documents.some(d => d.documentType === 'GST_CERTIFICATE') && <span className="text-green-600">✓</span>}
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload('GST_CERTIFICATE', e.target.files?.[0] || null)}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  )}
+
+                  {needsDeclaration() && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Transporter Declaration * {documents.some(d => d.documentType === 'TRANSPORTER_DECLARATION') && <span className="text-green-600">✓</span>}
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleDocumentUpload('TRANSPORTER_DECLARATION', e.target.files?.[0] || null)}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  )}
+
+                  {formData.registrationType === 'INDIVIDUAL' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Aadhar Card * {documents.some(d => d.documentType === 'AADHAR_CARD') && <span className="text-green-600">✓</span>}
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload('AADHAR_CARD', e.target.files?.[0] || null)}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-sm text-slate-600 mt-4">
+                  Accepted formats: PDF, JPG, PNG (Max 5MB per file)
+                </p>
+              </div>
+            )}
+
+            {/* Step 7: Terms & Conditions */}
+            {currentStep === 7 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Terms & Conditions</h2>
+                
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 max-h-60 overflow-y-auto">
+                  <h3 className="font-semibold text-slate-900 mb-3">Summary</h3>
+                  <ul className="text-sm text-slate-700 space-y-2">
+                    <li>✓ All information provided is accurate and complete</li>
+                    <li>✓ Documents uploaded are authentic and valid</li>
+                    <li>✓ Application will be reviewed within 2-3 business days</li>
+                    <li>✓ Login credentials will be sent via email upon approval</li>
+                    <li>✓ Annual KYC renewal is mandatory</li>
+                    <li>✓ Any changes to profile require re-approval</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.agreeToTerms || false}
+                      onChange={(e) => handleChange('agreeToTerms', e.target.checked)}
+                      className="w-5 h-5 mt-0.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-slate-700">
+                      I agree to the <a href="#" className="text-blue-600 hover:underline">Terms and Conditions</a> *
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.agreeToPrivacyPolicy || false}
+                      onChange={(e) => handleChange('agreeToPrivacyPolicy', e.target.checked)}
+                      className="w-5 h-5 mt-0.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-slate-700">
+                      I agree to the <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a> *
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.agreeToDataSharing || false}
+                      onChange={(e) => handleChange('agreeToDataSharing', e.target.checked)}
+                      className="w-5 h-5 mt-0.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-slate-700">
+                      I consent to data sharing across RNRL organizations for business purposes *
+                    </span>
+                  </label>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+                  <p className="text-sm text-green-800">
+                    <strong>✓ Review Complete!</strong> Click "Submit Application" to complete your registration.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Navigation */}

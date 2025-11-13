@@ -42,19 +42,19 @@ const NavItem: React.FC<{
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navItems = [
-    { name: 'Dashboard', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
-    { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
-    { name: 'Sales Contracts', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
-    { name: 'Invoices', icon: InvoiceIcon, roles: ['Admin', 'Accounts', 'Vendor/Client'] },
-    { name: 'Payments', icon: PaymentIcon, roles: ['Admin', 'Accounts', 'Vendor/Client'] },
+    { name: 'Dashboard', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
+    { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
+    { name: 'Sales Contracts', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
+    { name: 'Invoices', icon: InvoiceIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
+    { name: 'Payments', icon: PaymentIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
     { name: 'Commissions', icon: CommissionIcon, roles: ['Admin', 'Accounts'] },
     { name: 'Commission Accounting', icon: CommissionIcon, roles: ['Admin', 'Accounts'] },
     { name: 'Disputes', icon: DisputeIcon, roles: ['Admin', 'Dispute Manager', 'Sales'] },
-    { name: 'Vendors & Clients', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts'] },
+    { name: 'Business Partners', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Reports', icon: ReportIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Audit Trail', icon: AuditIcon, roles: ['Admin'] },
     { name: 'Settings', icon: SettingsIcon, roles: ['Admin'] },
-    { name: 'Grievance Officer', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Vendor/Client'] },
+    { name: 'Grievance Officer', icon: UsersIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
   ];
 
   const accessibleItems = navItems.filter(item => item.roles.includes(currentUser.role));

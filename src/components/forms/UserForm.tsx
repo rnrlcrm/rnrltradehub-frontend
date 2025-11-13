@@ -21,7 +21,7 @@ const modules = [
   'Payments',
   'Commissions',
   'Disputes',
-  'Vendors & Clients',
+  'Business Partners',
   'Reports',
   'Audit Trail',
   'User Management',
@@ -190,7 +190,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, readOnly, onSave, onCancel })
             <option value="Sales">Sales</option>
             <option value="Accounts">Accounts</option>
             <option value="Dispute Manager">Dispute Manager</option>
-            <option value="Vendor/Client">Vendor/Client</option>
+            <option value="Business Partner">Business Partner</option>
           </FormInput>
         </FormRow>
 
