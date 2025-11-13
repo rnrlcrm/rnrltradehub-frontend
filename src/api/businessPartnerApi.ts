@@ -553,9 +553,9 @@ export const businessPartnerApi = {
   },
 
   /**
-   * Upload document (generic - used for certifications too)
+   * Upload certification document (used specifically for certifications)
    */
-  async uploadDocument(partnerId: string, file: File, documentType: string): Promise<{ data: { fileUrl: string } }> {
+  async uploadCertificationDocument(partnerId: string, file: File, documentType: string): Promise<{ data: { fileUrl: string } }> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('documentType', documentType);
