@@ -113,7 +113,7 @@ export function calculateCarryingCharge(
   days: number
 ): number {
   let chargePercent = 0;
-  let chargeDays = days;
+  const chargeDays = days;
   
   if (days <= cciSetting.carrying_charge_tier1_days) {
     // Tier 1: 0-30 days
@@ -549,7 +549,7 @@ export function calculateCarryingChargeWithEmdStatus(
   emdRequired: number
 ): { amount: number; informationalOnly: boolean; note?: string } {
   let chargePercent = 0;
-  let chargeDays = days;
+  const chargeDays = days;
   
   if (days <= cciSetting.carrying_charge_tier1_days) {
     chargePercent = cciSetting.carrying_charge_tier1_percent;
