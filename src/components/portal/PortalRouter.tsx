@@ -7,10 +7,10 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 
-// Import portal components (these will be created or already exist)
-import { ClientPortal } from '../../pages/ClientPortal';
-import { VendorPortal } from '../../pages/VendorPortal';
+// Import portal components
 import BackOfficePortal from './BackOfficePortal';
+import PartnerRegistration from '../../pages/PartnerRegistration';
+import MyPartnerProfile from '../../pages/MyPartnerProfile';
 
 export const PortalRouter: React.FC = () => {
   const { user, isAuthenticated } = useUser();
@@ -25,9 +25,10 @@ export const PortalRouter: React.FC = () => {
     case 'back_office':
       return <BackOfficePortal />;
     case 'client':
-      return <ClientPortal />;
     case 'vendor':
-      return <VendorPortal />;
+    case 'partner':
+      // All external partners use the same profile interface
+      return <MyPartnerProfile partnerId={user.id} />;
     default:
       return <Navigate to="/login" replace />;
   }
