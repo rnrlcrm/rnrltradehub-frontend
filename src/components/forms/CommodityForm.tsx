@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Commodity, MasterDataItem, GstRate, StructuredTerm, CommissionStructure } from '../../types';
+import { Commodity, MasterDataItem, StructuredTerm, CommissionStructure } from '../../types';
 import { Button } from '../ui/Form';
 import { commoditySchema, CommodityFormData } from '../../schemas/settingsSchemas';
 import {
   generateSymbol,
   shouldSupportCciTerms,
   getCommodityTemplates,
-  validateCommodityBusinessRules,
   sanitizeCommodityName,
   sanitizeSymbol,
-  getCommoditySuggestions,
+  autoDetectGSTInfo,
 } from '../../utils/commodityHelpers';
+import { validateCommodityRules } from '../../services/commodityBusinessRuleEngine';
+import { DraftManager } from '../../services/draftManager';
+import GSTInfoPanel from '../commodity/GSTInfoPanel';
+import BusinessRuleViolations from '../commodity/BusinessRuleViolations';
+import DraftRecoveryPrompt from '../commodity/DraftRecoveryPrompt';
 
 interface CommodityFormProps {
   commodity: Commodity | null;
@@ -24,7 +28,6 @@ interface CommodityFormProps {
     deliveryTerms: StructuredTerm[];
     paymentTerms: StructuredTerm[];
     commissions: CommissionStructure[];
-    gstRates: GstRate[];
   };
   onSave: (data: Omit<Commodity, 'id'>) => Promise<void>;
   onCancel: () => void;
@@ -43,7 +46,12 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     name: commodity?.name || '',
     symbol: commodity?.symbol || '',
     unit: commodity?.unit || 'Bales',
-    defaultGstRateId: commodity?.defaultGstRateId || null,
+    // GST fields - auto-determined
+    hsnCode: commodity?.hsnCode || '',
+    gstRate: commodity?.gstRate ?? 0,
+    gstExemptionAvailable: commodity?.gstExemptionAvailable ?? false,
+    gstCategory: commodity?.gstCategory || 'Agricultural',
+    isProcessed: commodity?.isProcessed ?? false,
     isActive: commodity?.isActive ?? true,
     tradeTypeIds: commodity?.tradeTypeIds || [],
     bargainTypeIds: commodity?.bargainTypeIds || [],
@@ -58,10 +66,43 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [ruleViolations, setRuleViolations] = useState<{
+    errors: Array<{rule: string; message: string; field?: string}>;
+    warnings: Array<{rule: string; message: string; field?: string}>;
+    info: Array<{rule: string; message: string; field?: string}>;
+  }>({ errors: [], warnings: [], info: [] });
   const [showTemplateSelector, setShowTemplateSelector] = useState(!commodity);
   const [autoSymbol, setAutoSymbol] = useState(!commodity?.symbol);
+  const [showDraftRecovery, setShowDraftRecovery] = useState(false);
+  const [draftAge, setDraftAge] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Auto-generate symbol when name changes (if not editing and autoSymbol is enabled)
+  // Check for draft on mount
+  useEffect(() => {
+    if (!commodity) {
+      const draft = DraftManager.loadDraft();
+      if (draft) {
+        const age = DraftManager.getDraftAge();
+        if (age !== null) {
+          setDraftAge(age);
+          setShowDraftRecovery(true);
+        }
+      }
+    }
+  }, [commodity]);
+
+  // Auto-save draft
+  useEffect(() => {
+    if (!isSaving && formData.name) {
+      const timer = setTimeout(() => {
+        DraftManager.saveDraft(formData, commodity?.id);
+        setLastSaved(new Date());
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [formData, commodity?.id, isSaving]);
+
+  // Auto-generate symbol when name changes
   useEffect(() => {
     if (autoSymbol && formData.name && !commodity) {
       const generatedSymbol = generateSymbol(formData.name);
@@ -70,6 +111,20 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
       }
     }
   }, [formData.name, autoSymbol, commodity]);
+
+  // Auto-determine GST based on name and processing status
+  useEffect(() => {
+    if (formData.name && !commodity) {
+      const gstInfo = autoDetectGSTInfo(formData.name, formData.isProcessed);
+      setFormData(prev => ({
+        ...prev,
+        hsnCode: gstInfo.hsnCode,
+        gstRate: gstInfo.gstRate,
+        gstExemptionAvailable: gstInfo.exemptionAvailable,
+        gstCategory: gstInfo.category as any,
+      }));
+    }
+  }, [formData.name, formData.isProcessed, commodity]);
 
   // Auto-set CCI Terms support for cotton
   useEffect(() => {
@@ -80,6 +135,21 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
       }
     }
   }, [formData.name, commodity]);
+
+  // Validate business rules in real-time
+  useEffect(() => {
+    if (formData.name) {
+      const result = validateCommodityRules(formData as any, {
+        existingCommodities: commodities,
+        masterData,
+      });
+      setRuleViolations({
+        errors: result.errors,
+        warnings: result.warnings,
+        info: result.info,
+      });
+    }
+  }, [formData, commodities, masterData]);
 
   const handleChange = (field: keyof CommodityFormData, value: any) => {
     // Apply sanitization based on field
@@ -104,16 +174,36 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     }
   };
 
+  const handleDraftRecover = () => {
+    const draft = DraftManager.loadDraft(commodity?.id);
+    if (draft) {
+      setFormData(draft.formData);
+      setShowDraftRecovery(false);
+    }
+  };
+
+  const handleDraftDiscard = () => {
+    DraftManager.deleteDraft(commodity?.id);
+    setShowDraftRecovery(false);
+  };
+
   const applyTemplate = (templateName: string) => {
     const templates = getCommodityTemplates();
     const template = templates.find(t => t.name === templateName);
     
     if (template) {
+      // Auto-detect GST for the template
+      const gstInfo = autoDetectGSTInfo(template.name, template.isProcessed);
+      
       setFormData({
         name: template.name,
         symbol: template.symbol,
         unit: template.unit,
-        defaultGstRateId: template.defaultGstRateId,
+        hsnCode: gstInfo.hsnCode,
+        gstRate: gstInfo.gstRate,
+        gstExemptionAvailable: gstInfo.exemptionAvailable,
+        gstCategory: gstInfo.category as any,
+        isProcessed: template.isProcessed,
         isActive: true,
         tradeTypeIds: template.defaultTradeTypeIds,
         bargainTypeIds: template.defaultBargainTypeIds,
@@ -244,22 +334,26 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
       }
 
       // Validate business rules
-      const businessRuleErrors = validateCommodityBusinessRules(
-        validatedData,
-        commodities,
-        commodity?.id
-      );
+      const businessRuleErrors = validateCommodityRules(validatedData as any, {
+        existingCommodities: commodities,
+      });
 
-      if (businessRuleErrors.length > 0) {
+      if (businessRuleErrors.errors.length > 0) {
         const newErrors: Record<string, string> = {};
-        businessRuleErrors.forEach(err => {
-          newErrors[err.field] = err.message;
+        businessRuleErrors.errors.forEach(err => {
+          if (err.field) {
+            newErrors[err.field] = err.message;
+          }
         });
         setErrors(newErrors);
         return;
       }
 
       await onSave(validatedData);
+      
+      // Delete draft on successful save
+      DraftManager.deleteDraft(commodity?.id);
+      
     } catch (error: any) {
       if (error.errors) {
         const newErrors: Record<string, string> = {};
@@ -274,6 +368,22 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Draft Recovery Prompt */}
+      {showDraftRecovery && (
+        <DraftRecoveryPrompt
+          onRecover={handleDraftRecover}
+          onDiscard={handleDraftDiscard}
+          draftAge={draftAge}
+        />
+      )}
+
+      {/* Business Rule Violations */}
+      <BusinessRuleViolations
+        errors={ruleViolations.errors}
+        warnings={ruleViolations.warnings}
+        info={ruleViolations.info}
+      />
+
       {/* Commodity Template Selector (only for new commodities) */}
       {!commodity && showTemplateSelector && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -303,6 +413,14 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             Close and enter manually
           </button>
         </div>
+      )}
+
+      {/* GST Information Panel - Auto-Determined */}
+      {formData.name && (
+        <GSTInfoPanel
+          commodityName={formData.name}
+          isProcessed={formData.isProcessed}
+        />
       )}
 
       {/* Basic Information */}
@@ -380,24 +498,6 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Default GST Rate
-          </label>
-          <select
-            value={formData.defaultGstRateId || ''}
-            onChange={e => handleChange('defaultGstRateId', e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">-- Select GST Rate --</option>
-            {masterData.gstRates.map(rate => (
-              <option key={rate.id} value={rate.id}>
-                {rate.rate}% - {rate.description}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
             value={formData.description}
@@ -409,7 +509,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           />
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-6">
           <label className="flex items-center space-x-2">
             <input
               type="checkbox"
@@ -423,6 +523,17 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           <label className="flex items-center space-x-2">
             <input
               type="checkbox"
+              checked={formData.isProcessed}
+              onChange={e => handleChange('isProcessed', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded"
+            />
+            <span className="text-sm font-medium text-gray-700">Is Processed?</span>
+            <span className="text-xs text-gray-500">(affects GST rate)</span>
+          </label>
+
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
               checked={formData.supportsCciTerms}
               onChange={e => handleChange('supportsCciTerms', e.target.checked)}
               className="w-4 h-4 text-blue-600 rounded"
@@ -430,6 +541,16 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             <span className="text-sm font-medium text-gray-700">Supports CCI Terms</span>
           </label>
         </div>
+
+        {/* Last Saved Indicator */}
+        {lastSaved && (
+          <div className="text-xs text-gray-500 italic">
+            <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Draft auto-saved {new Date(lastSaved).toLocaleTimeString()}
+          </div>
+        )}
       </div>
 
       {/* Trading Parameters */}

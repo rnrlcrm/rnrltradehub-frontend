@@ -9,7 +9,7 @@
  */
 
 import { Commodity, MasterDataItem, GstRate, StructuredTerm, CommissionStructure } from '../types';
-import { detectSQLInjection, detectXSS } from './sanitization';
+import { detectSQLInjection, detectXSS } from '../utils/sanitization';
 
 export interface ValidationError {
   field: string;
