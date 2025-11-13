@@ -13,6 +13,7 @@ import {
   sanitizeCommodityName as sanitizeNameUtil, 
   sanitizeSymbol as sanitizeSymbolUtil 
 } from './sanitization';
+import { autoDetectGST } from '../services/gstDeterminationEngine';
 
 // Re-export sanitization functions with original names
 export const sanitizeCommodityName = sanitizeNameUtil;
@@ -67,33 +68,22 @@ export const shouldSupportCciTerms = (commodityName: string): boolean => {
 };
 
 /**
- * Get suggested GST rate ID based on commodity category
+ * Auto-determine GST information for commodity
+ * Uses GST Determination Engine based on HSN codes and GST Act
  */
-export const getSuggestedGstRateId = (commodityName: string): number | null => {
-  const name = commodityName.toLowerCase();
-  
-  // Agricultural commodities typically have 5% GST (ID: 1 in our mock data)
-  if (
-    name.includes('cotton') ||
-    name.includes('wheat') ||
-    name.includes('rice') ||
-    name.includes('grain')
-  ) {
-    return 1; // 5% GST
-  }
-  
-  return null;
+export const autoDetectGSTInfo = (commodityName: string, isProcessed: boolean = false) => {
+  return autoDetectGST(commodityName, isProcessed);
 };
 
 /**
  * Get commodity template configuration
- * Pre-configured settings for common commodities
+ * Pre-configured settings for common commodities with auto-GST
  */
 interface CommodityTemplate {
   name: string;
   symbol: string;
   unit: CommodityUnit;
-  defaultGstRateId: number | null;
+  isProcessed: boolean;
   supportsCciTerms: boolean;
   description: string;
   // Default trading parameter IDs (based on mock data)
@@ -112,9 +102,9 @@ export const getCommodityTemplates = (): CommodityTemplate[] => {
       name: 'Cotton',
       symbol: 'CTN',
       unit: 'Bales',
-      defaultGstRateId: 1, // 5% GST
+      isProcessed: false, // Raw cotton
       supportsCciTerms: true,
-      description: 'Raw cotton and cotton products',
+      description: 'Raw cotton and cotton products - HSN 5201, 5% GST',
       defaultTradeTypeIds: [1, 2], // Normal Trade, CCI Trade
       defaultBargainTypeIds: [1, 2], // Pucca Sauda, Subject to Approval
       defaultWeightmentTermIds: [1, 2],
@@ -127,9 +117,9 @@ export const getCommodityTemplates = (): CommodityTemplate[] => {
       name: 'Wheat',
       symbol: 'WHT',
       unit: 'Quintal',
-      defaultGstRateId: 1, // 5% GST
+      isProcessed: false, // Unprocessed wheat
       supportsCciTerms: false,
-      description: 'Wheat grains and related products',
+      description: 'Wheat grains - HSN 1001, GST Exempt (unbranded)',
       defaultTradeTypeIds: [1], // Normal Trade only
       defaultBargainTypeIds: [1, 2],
       defaultWeightmentTermIds: [1, 2],
@@ -142,9 +132,9 @@ export const getCommodityTemplates = (): CommodityTemplate[] => {
       name: 'Rice',
       symbol: 'RIC',
       unit: 'Quintal',
-      defaultGstRateId: 1, // 5% GST
+      isProcessed: false, // Unprocessed rice
       supportsCciTerms: false,
-      description: 'Rice grains and related products',
+      description: 'Rice grains - HSN 1006, GST Exempt (unbranded)',
       defaultTradeTypeIds: [1], // Normal Trade only
       defaultBargainTypeIds: [1, 2],
       defaultWeightmentTermIds: [1, 2],
@@ -244,7 +234,7 @@ export const canDeleteCommodity = (
 };
 
 /**
- * Get smart suggestions for commodity configuration
+ * Get smart suggestions for commodity configuration with Auto-GST
  */
 export const getCommoditySuggestions = (
   partialName: string
@@ -260,10 +250,17 @@ export const getCommoditySuggestions = (
   );
   
   if (matchingTemplate) {
+    // Auto-detect GST based on commodity name
+    const gstInfo = autoDetectGSTInfo(matchingTemplate.name, matchingTemplate.isProcessed);
+    
     return {
       symbol: matchingTemplate.symbol,
       unit: matchingTemplate.unit,
-      defaultGstRateId: matchingTemplate.defaultGstRateId,
+      hsnCode: gstInfo.hsnCode,
+      gstRate: gstInfo.gstRate,
+      gstExemptionAvailable: gstInfo.exemptionAvailable,
+      gstCategory: gstInfo.category as any,
+      isProcessed: matchingTemplate.isProcessed,
       supportsCciTerms: matchingTemplate.supportsCciTerms,
       description: matchingTemplate.description,
       tradeTypeIds: matchingTemplate.defaultTradeTypeIds,
@@ -276,12 +273,18 @@ export const getCommoditySuggestions = (
     };
   }
   
-  // Generate basic suggestions based on name
+  // Generate basic suggestions based on name with auto-GST
+  const gstInfo = autoDetectGSTInfo(partialName, false);
+  
   return {
     symbol: generateSymbol(partialName),
     unit: getDefaultUnit(partialName),
+    hsnCode: gstInfo.hsnCode,
+    gstRate: gstInfo.gstRate,
+    gstExemptionAvailable: gstInfo.exemptionAvailable,
+    gstCategory: gstInfo.category as any,
+    isProcessed: false,
     supportsCciTerms: shouldSupportCciTerms(partialName),
-    defaultGstRateId: getSuggestedGstRateId(partialName),
   };
 };
 

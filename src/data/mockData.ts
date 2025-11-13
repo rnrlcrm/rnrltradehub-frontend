@@ -281,14 +281,19 @@ const gstRates: GstRate[] = [
     { id: 2, rate: 18, description: 'GST on Services', hsnCode: '9983' },
 ];
 
-// Commodity Master - Multi-commodity support
+// Commodity Master - Multi-commodity support with Auto-GST
 const commodities: Commodity[] = [
     {
         id: 1,
         name: 'Cotton',
         symbol: 'CTN',
         unit: 'Bales',
-        defaultGstRateId: 1, // 5% GST on Cotton
+        // GST auto-determined from GST Act
+        hsnCode: '5201', // Cotton, not carded or combed
+        gstRate: 5, // 5% as per GST Act Schedule I
+        gstExemptionAvailable: false,
+        gstCategory: 'Agricultural',
+        isProcessed: false,
         isActive: true,
         // Cotton has all trade types
         tradeTypeIds: [1, 2], // Normal Trade, CCI Trade
@@ -307,7 +312,12 @@ const commodities: Commodity[] = [
         name: 'Wheat',
         symbol: 'WHT',
         unit: 'Quintal',
-        defaultGstRateId: 1, // 5% GST (assuming same category)
+        // GST auto-determined - Wheat is exempt
+        hsnCode: '1001', // Wheat and meslin
+        gstRate: 0, // Exempt under Schedule (unbranded/unprocessed)
+        gstExemptionAvailable: true,
+        gstCategory: 'Agricultural',
+        isProcessed: false,
         isActive: true,
         tradeTypeIds: [1], // Only Normal Trade
         bargainTypeIds: [1, 2],
@@ -325,7 +335,12 @@ const commodities: Commodity[] = [
         name: 'Rice',
         symbol: 'RIC',
         unit: 'Quintal',
-        defaultGstRateId: 1, // 5% GST (assuming same category)
+        // GST auto-determined - Rice is exempt (unbranded)
+        hsnCode: '1006', // Rice
+        gstRate: 0, // Exempt if unbranded/not pre-packaged
+        gstExemptionAvailable: true,
+        gstCategory: 'Agricultural',
+        isProcessed: false,
         isActive: true,
         tradeTypeIds: [1], // Only Normal Trade
         bargainTypeIds: [1, 2],

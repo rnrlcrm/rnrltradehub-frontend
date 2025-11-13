@@ -7,7 +7,12 @@ export interface Commodity {
   name: string; // e.g., "Cotton", "Wheat", "Rice"
   symbol: string; // e.g., "CTN", "WHT", "RIC"
   unit: CommodityUnit; // Primary trading unit
-  defaultGstRateId: number | null; // Default GST rate for this commodity
+  // GST is now auto-determined based on commodity name and HSN code
+  hsnCode: string; // HSN code as per GST Act (auto-determined)
+  gstRate: number; // GST rate % (auto-determined from HSN)
+  gstExemptionAvailable: boolean; // Auto-determined
+  gstCategory: 'Agricultural' | 'Processed' | 'Industrial' | 'Service'; // Auto-determined
+  isProcessed: boolean; // User specifies if processed (affects GST)
   isActive: boolean;
   // Trading parameters available for this commodity
   tradeTypeIds: number[]; // Available trade types for this commodity

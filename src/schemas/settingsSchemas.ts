@@ -243,9 +243,19 @@ export const commoditySchema = z.object({
     errorMap: () => ({ message: 'Please select a valid unit' }),
   }),
   
-  defaultGstRateId: z.number()
-    .nullable()
-    .optional(),
+  // GST fields - all auto-determined, just for reference/override
+  hsnCode: z.string()
+    .regex(/^\d{4}(\d{2})?(\d{2})?$/, 'HSN code must be 4, 6, or 8 digits'),
+  
+  gstRate: z.number()
+    .min(0, 'GST rate cannot be negative')
+    .max(100, 'GST rate cannot exceed 100%'),
+  
+  gstExemptionAvailable: z.boolean(),
+  
+  gstCategory: z.enum(['Agricultural', 'Processed', 'Industrial', 'Service']),
+  
+  isProcessed: z.boolean(),
   
   isActive: z.boolean(),
   
