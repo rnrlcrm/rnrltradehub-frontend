@@ -1,105 +1,356 @@
 /**
- * Business Partner API with Multi-Branch Support
+ * Complete Business Partner API
+ * With Verification, KYC, Change Requests, Sub-Broker Support
  */
 
 import { apiClient } from './client';
 import {
-  EnhancedBusinessPartner,
+  BusinessPartner,
+  PartnerRegistrationRequest,
+  RegistrationResponse,
+  VerificationRequest,
+  VerificationResponse,
+  SendOTPRequest,
+  ChangeRequest,
+  KYCRecord,
+  SubUser,
   BusinessBranch,
-  BusinessPartnerOnboardingRequest,
-  BusinessPartnerUserRequest,
+  DocumentRecord,
+  PartnerFilters,
+  PartnerStatistics,
+  SubBrokerUserRegistration,
+  ChatbotCommand,
 } from '../types/businessPartner';
 
 export const businessPartnerApi = {
+  // ==================== REGISTRATION ====================
+  
   /**
-   * Get all business partners with filters
+   * Step 1: Start registration (self-service or chatbot)
+   * Returns partner ID for verification flow
    */
-  async getAllPartners(filters?: {
-    businessType?: string;
-    status?: string;
-    search?: string;
-  }): Promise<EnhancedBusinessPartner[]> {
-    const queryParams = new URLSearchParams(filters as Record<string, string>).toString();
-    const response = await apiClient.get<EnhancedBusinessPartner[]>(
-      `/api/business-partners${queryParams ? `?${queryParams}` : ''}`
+  async startRegistration(data: PartnerRegistrationRequest): Promise<RegistrationResponse> {
+    const response = await apiClient.post<RegistrationResponse>(
+      '/api/partners/register/start',
+      data
     );
     return response.data;
   },
 
   /**
-   * Get business partner by ID
+   * Send OTP for verification
    */
-  async getPartnerById(partnerId: string): Promise<EnhancedBusinessPartner> {
-    const response = await apiClient.get<EnhancedBusinessPartner>(`/api/business-partners/${partnerId}`);
+  async sendOTP(request: SendOTPRequest): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/api/partners/verification/send-otp', request);
     return response.data;
   },
 
   /**
-   * Create new business partner (onboarding)
+   * Verify OTP (email or mobile)
    */
-  async createPartner(partner: BusinessPartnerOnboardingRequest): Promise<{
-    partner: EnhancedBusinessPartner;
-    primaryUser: BusinessPartnerUserRequest;
-  }> {
-    const response = await apiClient.post<{
-      partner: EnhancedBusinessPartner;
-      primaryUser: BusinessPartnerUserRequest;
-    }>('/api/business-partners', partner);
+  async verifyOTP(request: VerificationRequest): Promise<VerificationResponse> {
+    const response = await apiClient.post<VerificationResponse>(
+      '/api/partners/verification/verify-otp',
+      request
+    );
     return response.data;
   },
 
   /**
-   * Update business partner
+   * Complete registration after verification
+   * Submits for admin approval
    */
-  async updatePartner(
+  async completeRegistration(partnerId: string): Promise<BusinessPartner> {
+    const response = await apiClient.post<BusinessPartner>(
+      `/api/partners/${partnerId}/complete`,
+      {}
+    );
+    return response.data;
+  },
+
+  // ==================== PARTNER MANAGEMENT ====================
+
+  /**
+   * Get all partners with advanced filters
+   */
+  async getAllPartners(filters?: PartnerFilters): Promise<BusinessPartner[]> {
+    const queryParams = new URLSearchParams(filters as any).toString();
+    const response = await apiClient.get<BusinessPartner[]>(
+      `/api/partners${queryParams ? `?${queryParams}` : ''}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get partner by ID
+   */
+  async getPartnerById(partnerId: string): Promise<BusinessPartner> {
+    const response = await apiClient.get<BusinessPartner>(`/api/partners/${partnerId}`);
+    return response.data;
+  },
+
+  /**
+   * Get partner statistics
+   */
+  async getStatistics(): Promise<PartnerStatistics> {
+    const response = await apiClient.get<PartnerStatistics>('/api/partners/statistics');
+    return response.data;
+  },
+
+  /**
+   * Search partners
+   */
+  async searchPartners(query: string): Promise<BusinessPartner[]> {
+    const response = await apiClient.get<BusinessPartner[]>(`/api/partners/search?q=${query}`);
+    return response.data;
+  },
+
+  // ==================== APPROVAL WORKFLOW ====================
+
+  /**
+   * Get pending approvals
+   */
+  async getPendingApprovals(): Promise<BusinessPartner[]> {
+    const response = await apiClient.get<BusinessPartner[]>('/api/partners/pending-approvals');
+    return response.data;
+  },
+
+  /**
+   * Approve partner registration
+   * Creates primary user account and sends welcome email
+   */
+  async approvePartner(
     partnerId: string,
-    updates: Partial<EnhancedBusinessPartner>
-  ): Promise<EnhancedBusinessPartner> {
-    const response = await apiClient.put<EnhancedBusinessPartner>(
-      `/api/business-partners/${partnerId}`,
-      updates
+    notes?: string
+  ): Promise<{ partner: BusinessPartner; primaryUser: SubUser; temporaryPassword: string }> {
+    const response = await apiClient.post(`/api/partners/${partnerId}/approve`, { notes });
+    return response.data;
+  },
+
+  /**
+   * Reject partner registration
+   */
+  async rejectPartner(partnerId: string, reason: string): Promise<BusinessPartner> {
+    const response = await apiClient.post<BusinessPartner>(
+      `/api/partners/${partnerId}/reject`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  // ==================== CHANGE REQUESTS ====================
+
+  /**
+   * Create change request for profile edit
+   */
+  async createChangeRequest(
+    partnerId: string,
+    changes: any,
+    notes?: string
+  ): Promise<ChangeRequest> {
+    const response = await apiClient.post<ChangeRequest>(
+      `/api/partners/${partnerId}/change-requests`,
+      { changes, notes }
     );
     return response.data;
   },
 
   /**
-   * Approve business partner
+   * Get change requests for partner
    */
-  async approvePartner(partnerId: string, notes?: string): Promise<EnhancedBusinessPartner> {
-    const response = await apiClient.post<EnhancedBusinessPartner>(
-      `/api/business-partners/${partnerId}/approve`,
+  async getChangeRequests(partnerId: string): Promise<ChangeRequest[]> {
+    const response = await apiClient.get<ChangeRequest[]>(
+      `/api/partners/${partnerId}/change-requests`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get all pending change requests (admin)
+   */
+  async getAllPendingChangeRequests(): Promise<ChangeRequest[]> {
+    const response = await apiClient.get<ChangeRequest[]>('/api/partners/change-requests/pending');
+    return response.data;
+  },
+
+  /**
+   * Approve change request
+   */
+  async approveChangeRequest(
+    changeRequestId: string,
+    notes?: string
+  ): Promise<ChangeRequest> {
+    const response = await apiClient.post<ChangeRequest>(
+      `/api/partners/change-requests/${changeRequestId}/approve`,
       { notes }
     );
     return response.data;
   },
 
   /**
-   * Reject business partner
+   * Reject change request
    */
-  async rejectPartner(partnerId: string, reason: string): Promise<EnhancedBusinessPartner> {
-    const response = await apiClient.post<EnhancedBusinessPartner>(
-      `/api/business-partners/${partnerId}/reject`,
+  async rejectChangeRequest(
+    changeRequestId: string,
+    reason: string
+  ): Promise<ChangeRequest> {
+    const response = await apiClient.post<ChangeRequest>(
+      `/api/partners/change-requests/${changeRequestId}/reject`,
       { reason }
     );
     return response.data;
   },
 
+  // ==================== KYC MANAGEMENT ====================
+
   /**
-   * Get all branches for a partner
+   * Get current KYC status
    */
-  async getPartnerBranches(partnerId: string): Promise<BusinessBranch[]> {
-    const response = await apiClient.get<BusinessBranch[]>(
-      `/api/business-partners/${partnerId}/branches`
+  async getCurrentKYC(partnerId: string): Promise<KYCRecord | null> {
+    const response = await apiClient.get<KYCRecord | null>(
+      `/api/partners/${partnerId}/kyc/current`
     );
     return response.data;
   },
 
   /**
-   * Add branch to partner
+   * Get KYC history
+   */
+  async getKYCHistory(partnerId: string): Promise<KYCRecord[]> {
+    const response = await apiClient.get<KYCRecord[]>(`/api/partners/${partnerId}/kyc/history`);
+    return response.data;
+  },
+
+  /**
+   * Start KYC renewal
+   */
+  async startKYCRenewal(partnerId: string): Promise<KYCRecord> {
+    const response = await apiClient.post<KYCRecord>(
+      `/api/partners/${partnerId}/kyc/renew`,
+      {}
+    );
+    return response.data;
+  },
+
+  /**
+   * Submit KYC documents
+   */
+  async submitKYCDocuments(
+    partnerId: string,
+    kycId: string,
+    documents: { documentType: string; file: File }[]
+  ): Promise<KYCRecord> {
+    const formData = new FormData();
+    documents.forEach((doc, index) => {
+      formData.append(`documents[${index}][type]`, doc.documentType);
+      formData.append(`documents[${index}][file]`, doc.file);
+    });
+
+    const response = await apiClient.post<KYCRecord>(
+      `/api/partners/${partnerId}/kyc/${kycId}/documents`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get partners with expiring KYC
+   */
+  async getExpiringKYC(days: number = 30): Promise<BusinessPartner[]> {
+    const response = await apiClient.get<BusinessPartner[]>(
+      `/api/partners/kyc/expiring?days=${days}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Complete KYC verification (admin)
+   */
+  async verifyKYC(
+    partnerId: string,
+    kycId: string,
+    notes: string
+  ): Promise<KYCRecord> {
+    const response = await apiClient.post<KYCRecord>(
+      `/api/partners/${partnerId}/kyc/${kycId}/verify`,
+      { notes }
+    );
+    return response.data;
+  },
+
+  // ==================== SUB-USER MANAGEMENT ====================
+
+  /**
+   * Add sub-user (only after partner approval)
+   */
+  async addSubUser(partnerId: string, subUser: Omit<SubUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<SubUser> {
+    const response = await apiClient.post<SubUser>(
+      `/api/partners/${partnerId}/sub-users`,
+      subUser
+    );
+    return response.data;
+  },
+
+  /**
+   * Get sub-users for partner
+   */
+  async getSubUsers(partnerId: string): Promise<SubUser[]> {
+    const response = await apiClient.get<SubUser[]>(`/api/partners/${partnerId}/sub-users`);
+    return response.data;
+  },
+
+  /**
+   * Update sub-user
+   */
+  async updateSubUser(
+    partnerId: string,
+    subUserId: string,
+    updates: Partial<SubUser>
+  ): Promise<SubUser> {
+    const response = await apiClient.put<SubUser>(
+      `/api/partners/${partnerId}/sub-users/${subUserId}`,
+      updates
+    );
+    return response.data;
+  },
+
+  /**
+   * Delete sub-user
+   */
+  async deleteSubUser(partnerId: string, subUserId: string): Promise<void> {
+    await apiClient.delete(`/api/partners/${partnerId}/sub-users/${subUserId}`);
+  },
+
+  /**
+   * Approve sub-user (admin)
+   */
+  async approveSubUser(partnerId: string, subUserId: string): Promise<SubUser> {
+    const response = await apiClient.post<SubUser>(
+      `/api/partners/${partnerId}/sub-users/${subUserId}/approve`,
+      {}
+    );
+    return response.data;
+  },
+
+  // ==================== BRANCH MANAGEMENT ====================
+
+  /**
+   * Get branches for partner
+   */
+  async getBranches(partnerId: string): Promise<BusinessBranch[]> {
+    const response = await apiClient.get<BusinessBranch[]>(
+      `/api/partners/${partnerId}/branches`
+    );
+    return response.data;
+  },
+
+  /**
+   * Add branch
    */
   async addBranch(partnerId: string, branch: Omit<BusinessBranch, 'id'>): Promise<BusinessBranch> {
     const response = await apiClient.post<BusinessBranch>(
-      `/api/business-partners/${partnerId}/branches`,
+      `/api/partners/${partnerId}/branches`,
       branch
     );
     return response.data;
@@ -114,7 +365,7 @@ export const businessPartnerApi = {
     updates: Partial<BusinessBranch>
   ): Promise<BusinessBranch> {
     const response = await apiClient.put<BusinessBranch>(
-      `/api/business-partners/${partnerId}/branches/${branchId}`,
+      `/api/partners/${partnerId}/branches/${branchId}`,
       updates
     );
     return response.data;
@@ -124,72 +375,137 @@ export const businessPartnerApi = {
    * Delete branch
    */
   async deleteBranch(partnerId: string, branchId: string): Promise<void> {
-    await apiClient.delete(`/api/business-partners/${partnerId}/branches/${branchId}`);
+    await apiClient.delete(`/api/partners/${partnerId}/branches/${branchId}`);
   },
 
+  // ==================== DOCUMENT MANAGEMENT ====================
+
   /**
-   * Get branch by ID
+   * Upload document
    */
-  async getBranchById(partnerId: string, branchId: string): Promise<BusinessBranch> {
-    const response = await apiClient.get<BusinessBranch>(
-      `/api/business-partners/${partnerId}/branches/${branchId}`
+  async uploadDocument(
+    partnerId: string,
+    documentType: string,
+    file: File
+  ): Promise<DocumentRecord> {
+    const formData = new FormData();
+    formData.append('documentType', documentType);
+    formData.append('file', file);
+
+    const response = await apiClient.post<DocumentRecord>(
+      `/api/partners/${partnerId}/documents`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
     );
     return response.data;
   },
 
   /**
-   * Approve primary user for business partner
+   * Get documents
    */
-  async approvePrimaryUser(partnerId: string): Promise<{
-    user: BusinessPartnerUserRequest;
-    temporaryPassword: string;
-  }> {
-    const response = await apiClient.post<{
-      user: BusinessPartnerUserRequest;
-      temporaryPassword: string;
-    }>(`/api/business-partners/${partnerId}/approve-user`, {});
-    return response.data;
-  },
-
-  /**
-   * Reject primary user for business partner
-   */
-  async rejectPrimaryUser(partnerId: string, reason: string): Promise<void> {
-    await apiClient.post(`/api/business-partners/${partnerId}/reject-user`, { reason });
-  },
-
-  /**
-   * Get partners by branch
-   */
-  async getPartnersByBranch(branchId: string): Promise<EnhancedBusinessPartner[]> {
-    const response = await apiClient.get<EnhancedBusinessPartner[]>(
-      `/api/branches/${branchId}/partners`
+  async getDocuments(partnerId: string): Promise<DocumentRecord[]> {
+    const response = await apiClient.get<DocumentRecord[]>(
+      `/api/partners/${partnerId}/documents`
     );
     return response.data;
   },
 
   /**
-   * Get all branches (for selection dropdowns)
+   * Delete document
    */
-  async getAllBranches(): Promise<BusinessBranch[]> {
-    const response = await apiClient.get<BusinessBranch[]>('/api/branches');
+  async deleteDocument(partnerId: string, documentId: string): Promise<void> {
+    await apiClient.delete(`/api/partners/${partnerId}/documents/${documentId}`);
+  },
+
+  /**
+   * Verify document (admin)
+   */
+  async verifyDocument(
+    partnerId: string,
+    documentId: string,
+    notes: string
+  ): Promise<DocumentRecord> {
+    const response = await apiClient.post<DocumentRecord>(
+      `/api/partners/${partnerId}/documents/${documentId}/verify`,
+      { notes }
+    );
+    return response.data;
+  },
+
+  // ==================== SUB-BROKER FEATURES ====================
+
+  /**
+   * Register user as sub-broker
+   * Sub-brokers can register Buyer/Seller/Trader users
+   */
+  async subBrokerRegisterUser(data: SubBrokerUserRegistration): Promise<RegistrationResponse> {
+    const response = await apiClient.post<RegistrationResponse>(
+      '/api/partners/sub-broker/register-user',
+      data
+    );
     return response.data;
   },
 
   /**
-   * Search branches
+   * Get users registered by sub-broker
    */
-  async searchBranches(query: string, filters?: {
-    state?: string;
-    partnerId?: string;
-  }): Promise<BusinessBranch[]> {
-    const queryParams = new URLSearchParams({ 
-      q: query,
-      ...filters as Record<string, string>
-    }).toString();
-    const response = await apiClient.get<BusinessBranch[]>(
-      `/api/branches/search?${queryParams}`
+  async getSubBrokerUsers(subBrokerId: string): Promise<BusinessPartner[]> {
+    const response = await apiClient.get<BusinessPartner[]>(
+      `/api/partners/${subBrokerId}/registered-users`
     );
+    return response.data;
+  },
+
+  // ==================== CHATBOT INTEGRATION ====================
+
+  /**
+   * Process chatbot command for registration
+   */
+  async processChatbotCommand(command: ChatbotCommand): Promise<any> {
+    const response = await apiClient.post('/api/partners/chatbot/command', command);
+    return response.data;
+  },
+
+  /**
+   * Get registration status for chatbot
+   */
+  async getChatbotRegistrationStatus(conversationId: string): Promise<any> {
+    const response = await apiClient.get(
+      `/api/partners/chatbot/status/${conversationId}`
+    );
+    return response.data;
+  },
+
+  // ==================== BACK OFFICE ====================
+
+  /**
+   * Create partner from back office
+   */
+  async backOfficeCreatePartner(data: PartnerRegistrationRequest): Promise<BusinessPartner> {
+    const response = await apiClient.post<BusinessPartner>(
+      '/api/partners/back-office/create',
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Save as draft (back office only)
+   */
+  async saveDraft(data: Partial<PartnerRegistrationRequest>): Promise<BusinessPartner> {
+    const response = await apiClient.post<BusinessPartner>(
+      '/api/partners/back-office/draft',
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Get drafts (back office)
+   */
+  async getDrafts(): Promise<BusinessPartner[]> {
+    const response = await apiClient.get<BusinessPartner[]>('/api/partners/back-office/drafts');
     return response.data;
   },
 };
+
