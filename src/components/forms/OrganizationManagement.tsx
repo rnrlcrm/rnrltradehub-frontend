@@ -145,6 +145,7 @@ const OrganizationManagement: React.FC<OrganizationManagementProps> = ({ initial
           organization={editingOrganization}
           onSave={handleSave}
           onCancel={handleCloseModal}
+          existingOrganizations={organizations}
         />
       </Modal>
     </>
