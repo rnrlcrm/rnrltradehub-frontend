@@ -22,13 +22,14 @@ import {
 } from '../types/businessPartner';
 import { businessPartnerApi } from '../api/businessPartnerApi';
 import BranchManagement from '../components/BranchManagement';
+import CertificationManagement from '../components/CertificationManagement';
 
 interface Props {
   userId: string;
   partnerId: string;
 }
 
-type Section = 'overview' | 'contact' | 'compliance' | 'address' | 'banking' | 'branches' | 'sub-users' | 'documents' | 'kyc' | 'audit-trail';
+type Section = 'overview' | 'contact' | 'compliance' | 'address' | 'banking' | 'branches' | 'certifications' | 'sub-users' | 'documents' | 'kyc' | 'audit-trail';
 
 const MyPartnerProfile: React.FC<Props> = ({ userId, partnerId }) => {
   const [partner, setPartner] = useState<BusinessPartner | null>(null);
@@ -381,6 +382,7 @@ const MyPartnerProfile: React.FC<Props> = ({ userId, partnerId }) => {
               { id: 'address', label: 'Address', icon: '📍' },
               { id: 'banking', label: 'Banking', icon: '🏦' },
               { id: 'branches', label: 'Branches', icon: '🏢' },
+              { id: 'certifications', label: 'Certifications', icon: '🏅' },
               { id: 'sub-users', label: 'Sub-Users', icon: '👥' },
               { id: 'documents', label: 'Documents', icon: '📄' },
               { id: 'kyc', label: 'KYC Status', icon: '✅' },
@@ -560,6 +562,10 @@ const MyPartnerProfile: React.FC<Props> = ({ userId, partnerId }) => {
 
           {activeSection === 'branches' && (
             <BranchManagement partnerId={partnerId} readOnly={false} />
+          )}
+
+          {activeSection === 'certifications' && (
+            <CertificationManagement partnerId={partnerId} readOnly={false} />
           )}
 
           {activeSection === 'sub-users' && (

@@ -507,5 +507,102 @@ export const businessPartnerApi = {
     const response = await apiClient.get<BusinessPartner[]>('/api/partners/back-office/drafts');
     return response.data;
   },
+
+  // ==================== CERTIFICATIONS (After Approval) ====================
+
+  /**
+   * Get all certifications for a partner
+   */
+  async getCertifications(partnerId: string): Promise<{ data: any[] }> {
+    const response = await apiClient.get(`/api/partners/${partnerId}/certifications`);
+    return { data: response.data || [] };
+  },
+
+  /**
+   * Add new certification (user after approval)
+   * Back office will be notified for verification
+   */
+  async addCertification(partnerId: string, certification: any): Promise<any> {
+    const response = await apiClient.post(
+      `/api/partners/${partnerId}/certifications`,
+      certification
+    );
+    return response.data;
+  },
+
+  /**
+   * Update certification
+   */
+  async updateCertification(
+    partnerId: string,
+    certificationId: string,
+    updates: any
+  ): Promise<any> {
+    const response = await apiClient.put(
+      `/api/partners/${partnerId}/certifications/${certificationId}`,
+      updates
+    );
+    return response.data;
+  },
+
+  /**
+   * Delete certification
+   */
+  async deleteCertification(partnerId: string, certificationId: string): Promise<void> {
+    await apiClient.delete(`/api/partners/${partnerId}/certifications/${certificationId}`);
+  },
+
+  /**
+   * Upload document (generic - used for certifications too)
+   */
+  async uploadDocument(partnerId: string, file: File, documentType: string): Promise<{ data: { fileUrl: string } }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('documentType', documentType);
+    
+    const response = await apiClient.post(
+      `/api/partners/${partnerId}/documents/upload`,
+      formData
+    );
+    return { data: { fileUrl: response.data.fileUrl || '' } };
+  },
+
+  // ==================== BACK OFFICE - CERTIFICATION VERIFICATION ====================
+
+  /**
+   * Get pending certifications for verification (Back Office)
+   */
+  async getPendingCertifications(): Promise<any[]> {
+    const response = await apiClient.get('/api/partners/certifications/pending');
+    return response.data;
+  },
+
+  /**
+   * Verify certification (Back Office)
+   */
+  async verifyCertification(
+    partnerId: string,
+    certificationId: string,
+    notes?: string
+  ): Promise<void> {
+    await apiClient.post(
+      `/api/partners/${partnerId}/certifications/${certificationId}/verify`,
+      { notes }
+    );
+  },
+
+  /**
+   * Reject certification (Back Office)
+   */
+  async rejectCertification(
+    partnerId: string,
+    certificationId: string,
+    reason: string
+  ): Promise<void> {
+    await apiClient.post(
+      `/api/partners/${partnerId}/certifications/${certificationId}/reject`,
+      { reason }
+    );
+  },
 };
 

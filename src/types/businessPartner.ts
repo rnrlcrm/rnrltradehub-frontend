@@ -60,7 +60,29 @@ export type DocumentType =
   | 'TRANSPORTER_DECLARATION'  // For transporters without GST
   | 'PARTNERSHIP_DEED'
   | 'KYC_DOCUMENTS'           // For annual KYC
+  | 'CERTIFICATION'           // Product certifications (organic, etc.)
   | 'OTHER';
+
+export type CertificationType =
+  | 'ORGANIC_COTTON'           // Organic Cotton Certification
+  | 'GOTS'                     // Global Organic Textile Standard
+  | 'OCS'                      // Organic Content Standard
+  | 'FAIR_TRADE'               // Fair Trade Certification
+  | 'BCI'                      // Better Cotton Initiative
+  | 'OEKO_TEX'                 // OEKO-TEX Standard 100
+  | 'ISO_9001'                 // Quality Management
+  | 'ISO_14001'                // Environmental Management
+  | 'GRS'                      // Global Recycled Standard
+  | 'RCS'                      // Recycled Claim Standard
+  | 'REGENERATIVE'             // Regenerative Agriculture
+  | 'OTHER';
+
+export type CertificationStatus =
+  | 'PENDING_VERIFICATION'     // Submitted, awaiting back office verification
+  | 'VERIFIED'                 // Verified by back office
+  | 'EXPIRED'                  // Certificate expired
+  | 'REJECTED'                 // Rejected by back office
+  | 'SUSPENDED';               // Temporarily suspended
 
 // ==================== VERIFICATION ====================
 
@@ -214,6 +236,66 @@ export interface DocumentRecord {
   isActive: boolean;
 }
 
+// ==================== CERTIFICATIONS ====================
+
+export interface ProductCertification {
+  id: string;
+  partnerId: string;
+  
+  // Certification Info
+  certificationType: CertificationType;
+  certificationName: string;    // e.g., "GOTS Organic Cotton Certificate"
+  certificationBody: string;    // Issuing organization
+  certificateNumber: string;    // Unique certificate number
+  
+  // Scope
+  productsScope: string[];      // What products are certified: ["Cotton", "Cotton Yarn"]
+  locationScope?: string;       // Which location: "All" or specific branch IDs
+  
+  // Validity
+  issueDate: string;
+  expiryDate: string;
+  isExpiring: boolean;          // Auto: expiryDate within 90 days
+  isExpired: boolean;           // Auto: expiryDate < today
+  
+  // Documentation
+  certificateDocument: {
+    fileUrl: string;
+    fileName: string;
+    uploadedAt: string;
+    uploadedBy: string;
+  };
+  
+  // Status & Verification (Back Office)
+  status: CertificationStatus;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  verificationNotes?: string;
+  rejectionReason?: string;
+  
+  // Renewal
+  renewalReminderSent: boolean;
+  renewalReminder30Days?: string;
+  renewalReminder7Days?: string;
+  
+  // Trade Visibility
+  isVisibleInTrade: boolean;    // Show in trade matching
+  isPublic: boolean;            // Show to all or only verified buyers
+  
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  
+  // Audit
+  auditTrail: {
+    timestamp: string;
+    user: string;
+    action: string;
+    details: string;
+  }[];
+}
+
 // ==================== CHANGE REQUEST ====================
 
 export interface ChangeRequest {
@@ -330,6 +412,9 @@ export interface BusinessPartner {
   
   // Documents
   documents: DocumentRecord[];
+  
+  // Product Certifications (NEW - User manages after approval)
+  certifications: ProductCertification[];
   
   // Users
   primaryUserId?: string;      // Created after approval
