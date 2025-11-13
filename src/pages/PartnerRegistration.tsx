@@ -547,6 +547,20 @@ const PartnerRegistration: React.FC<Props> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Trade Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tradeName || ''}
+                    onChange={(e) => handleChange('tradeName', e.target.value)}
+                    placeholder="Business/brand name if different from legal name"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="mt-1 text-sm text-slate-500">Leave blank if same as legal name</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
                     Business Type *
                   </label>
                   <select
@@ -753,6 +767,40 @@ const PartnerRegistration: React.FC<Props> = ({
                     />
                     <p className="mt-1 text-sm text-slate-600">15-character GSTIN</p>
                   </div>
+                )}
+
+                {formData.registrationType === 'COMPANY' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        CIN Number (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.cin || ''}
+                        onChange={(e) => handleChange('cin', e.target.value.toUpperCase())}
+                        placeholder="U12345MH2020PTC123456"
+                        maxLength={21}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                      />
+                      <p className="mt-1 text-sm text-slate-600">Corporate Identification Number (for companies)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        TAN Number (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.tan || ''}
+                        onChange={(e) => handleChange('tan', e.target.value.toUpperCase())}
+                        placeholder="ABCD12345E"
+                        maxLength={10}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                      />
+                      <p className="mt-1 text-sm text-slate-600">Tax Deduction Account Number</p>
+                    </div>
+                  </>
                 )}
 
                 {needsDeclaration() && (
