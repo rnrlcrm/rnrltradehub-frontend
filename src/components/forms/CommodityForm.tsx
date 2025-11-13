@@ -33,6 +33,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     name: commodity?.name || '',
     symbol: commodity?.symbol || '',
     unit: commodity?.unit || 'Bales',
+    rateUnit: commodity?.rateUnit || commodity?.unit || 'Bales',
     hsnCode: commodity?.hsnCode || '',
     gstRate: commodity?.gstRate ?? 0,
     gstExemptionAvailable: commodity?.gstExemptionAvailable ?? false,
@@ -75,6 +76,26 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     gstRate: 18, // 18% as per SAC 9983
     sacCode: '9983'
   });
+
+  // Prevent backspace key from navigating back in browser
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if backspace is pressed outside of an input/textarea/select element
+      const target = e.target as HTMLElement;
+      const isInputElement = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.tagName === 'SELECT' ||
+        target.isContentEditable;
+      
+      if (e.key === 'Backspace' && !isInputElement) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Auto-generate symbol when name changes
   useEffect(() => {
@@ -356,12 +377,18 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           type="text"
           value={newItemValue}
           onChange={(e) => onNewItemChange(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), onAdd())}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              onAdd();
+            }
+          }}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
           placeholder={`Add ${label.toLowerCase()}`}
         />
-        <Button type="button" onClick={onAdd} variant="secondary" className="text-sm">
-          Add
+        <Button type="button" onClick={(e) => { e.preventDefault(); onAdd(); }} variant="secondary" className="text-sm px-3">
+          +
         </Button>
       </div>
 
@@ -373,7 +400,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               <span className="text-sm text-gray-700">{item.name}</span>
               <button
                 type="button"
-                onClick={() => onRemove(item.id)}
+                onClick={(e) => { e.preventDefault(); onRemove(item.id); }}
                 className="text-red-600 hover:text-red-800 text-sm font-medium"
               >
                 Remove
@@ -456,7 +483,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Primary Unit <span className="text-red-500">*</span>
+            Primary Unit (Trade Unit) <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.unit}
@@ -470,18 +497,43 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             <option value="Quintal">Quintal</option>
             <option value="Tonnes">Tonnes</option>
           </select>
+          <p className="text-xs text-gray-500 mt-1">The unit used for trading (e.g., Cotton is traded in Bales)</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Rate Basis Unit <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.rateUnit || formData.unit}
+            onChange={e => handleChange('rateUnit', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Kgs">Kgs</option>
+            <option value="Qty">Qty</option>
+            <option value="Candy">Candy</option>
+            <option value="Bales">Bales</option>
+            <option value="Quintal">Quintal</option>
+            <option value="Tonnes">Tonnes</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">The unit used for pricing (e.g., Cotton rate is quoted per Candy)</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description <span className="text-red-500">*</span>
+          </label>
           <textarea
             value={formData.description}
             onChange={e => handleChange('description', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+              errors.description ? 'border-red-500' : 'border-gray-300'
+            }`}
             rows={2}
             placeholder="Brief description of the commodity"
             maxLength={500}
           />
+          {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
         </div>
 
         <div className="flex items-center space-x-6">
@@ -493,6 +545,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               className="w-4 h-4 text-blue-600 rounded"
             />
             <span className="text-sm font-medium text-gray-700">Active</span>
+            <span className="text-xs text-gray-500" title="When unchecked, commodity won't be available for new contracts">(Available for trading)</span>
           </label>
 
           <label className="flex items-center space-x-2">
@@ -503,7 +556,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               className="w-4 h-4 text-blue-600 rounded"
             />
             <span className="text-sm font-medium text-gray-700">Is Processed?</span>
-            <span className="text-xs text-gray-500">(affects GST rate)</span>
+            <span className="text-xs text-gray-500" title="Processed goods may attract higher GST rates than raw agricultural products">(affects GST rate)</span>
           </label>
 
           <label className="flex items-center space-x-2">
@@ -514,7 +567,17 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               className="w-4 h-4 text-blue-600 rounded"
             />
             <span className="text-sm font-medium text-gray-700">Supports CCI Terms</span>
+            <span className="text-xs text-gray-500" title="Cotton Corporation of India terms - only applicable to cotton commodity">(Cotton only)</span>
           </label>
+        </div>
+        
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs text-gray-700">
+          <p className="font-semibold mb-1">Field Explanations:</p>
+          <ul className="space-y-1 ml-4 list-disc">
+            <li><strong>Active:</strong> Controls whether this commodity is available for creating new contracts. Inactive commodities are hidden from selection.</li>
+            <li><strong>Is Processed:</strong> Indicates if the commodity is processed (e.g., refined oil, polished rice). Processed goods typically attract higher GST rates than raw agricultural products.</li>
+            <li><strong>Supports CCI Terms:</strong> CCI (Cotton Corporation of India) terms apply specific rules for cotton trading including EMD, carrying charges, and lifting terms. Only enable this for cotton commodities.</li>
+          </ul>
         </div>
       </div>
 
@@ -557,6 +620,8 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
             onNewItemChange={setNewVariety}
             onAdd={addVariety}
             onRemove={removeVariety}
+            required
+            errorMessage={errors.varieties}
           />
 
           {/* Weightment Terms */}
@@ -595,6 +660,13 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="text"
               value={newDeliveryTerm.name}
               onChange={(e) => setNewDeliveryTerm(prev => ({ ...prev, name: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addDeliveryTerm();
+                }
+              }}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Term name (e.g., Ex-Gin)"
             />
@@ -602,12 +674,19 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="number"
               value={newDeliveryTerm.days}
               onChange={(e) => setNewDeliveryTerm(prev => ({ ...prev, days: parseInt(e.target.value) || 0 }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addDeliveryTerm();
+                }
+              }}
               className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Days"
               min="0"
             />
-            <Button type="button" onClick={addDeliveryTerm} variant="secondary" className="text-sm">
-              Add
+            <Button type="button" onClick={(e) => { e.preventDefault(); addDeliveryTerm(); }} variant="secondary" className="text-sm px-3">
+              +
             </Button>
           </div>
 
@@ -618,7 +697,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                   <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
                   <button
                     type="button"
-                    onClick={() => removeDeliveryTerm(term.id)}
+                    onClick={(e) => { e.preventDefault(); removeDeliveryTerm(term.id); }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
                   >
                     Remove
@@ -641,6 +720,13 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="text"
               value={newPaymentTerm.name}
               onChange={(e) => setNewPaymentTerm(prev => ({ ...prev, name: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addPaymentTerm();
+                }
+              }}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Term name (e.g., Advance)"
             />
@@ -648,12 +734,19 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               type="number"
               value={newPaymentTerm.days}
               onChange={(e) => setNewPaymentTerm(prev => ({ ...prev, days: parseInt(e.target.value) || 0 }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addPaymentTerm();
+                }
+              }}
               className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Days"
               min="0"
             />
-            <Button type="button" onClick={addPaymentTerm} variant="secondary" className="text-sm">
-              Add
+            <Button type="button" onClick={(e) => { e.preventDefault(); addPaymentTerm(); }} variant="secondary" className="text-sm px-3">
+              +
             </Button>
           </div>
 
@@ -664,7 +757,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                   <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
                   <button
                     type="button"
-                    onClick={() => removePaymentTerm(term.id)}
+                    onClick={(e) => { e.preventDefault(); removePaymentTerm(term.id); }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
                   >
                     Remove
@@ -681,12 +774,20 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           <label className="block text-sm font-medium text-gray-700">
             Commission Structures <span className="text-red-500">*</span>
           </label>
+          <p className="text-xs text-gray-500">Commission will be based on the Primary Unit ({formData.unit})</p>
           
           <div className="flex gap-2">
             <input
               type="text"
               value={newCommission.name}
               onChange={(e) => setNewCommission(prev => ({ ...prev, name: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addCommission();
+                }
+              }}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Commission name"
             />
@@ -696,19 +797,26 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
               className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="PERCENTAGE">Percentage</option>
-              <option value="PER_BALE">Per Bale</option>
+              <option value="PER_BALE">Per {formData.unit}</option>
             </select>
             <input
               type="number"
               value={newCommission.value}
               onChange={(e) => setNewCommission(prev => ({ ...prev, value: parseFloat(e.target.value) || 0 }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addCommission();
+                }
+              }}
               className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Value"
               min="0"
               step="0.1"
             />
-            <Button type="button" onClick={addCommission} variant="secondary" className="text-sm">
-              Add
+            <Button type="button" onClick={(e) => { e.preventDefault(); addCommission(); }} variant="secondary" className="text-sm px-3">
+              +
             </Button>
           </div>
 
@@ -718,7 +826,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                 <div key={commission.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
                   <div className="flex-1">
                     <span className="text-sm text-gray-700 font-medium">
-                      {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/bale`})
+                      {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/${formData.unit}`})
                     </span>
                     {commission.gstApplicable && (
                       <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
@@ -728,7 +836,7 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeCommission(commission.id)}
+                    onClick={(e) => { e.preventDefault(); removeCommission(commission.id); }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
                   >
                     Remove

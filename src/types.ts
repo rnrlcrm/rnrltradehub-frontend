@@ -7,14 +7,15 @@ export interface Commodity {
   id: number;
   name: string; // e.g., "Cotton", "Wheat", "Rice"
   symbol: string; // e.g., "CTN", "WHT", "RIC"
-  unit: CommodityUnit; // Primary trading unit
+  unit: CommodityUnit; // Primary trading unit (e.g., Bales for cotton)
+  rateUnit?: CommodityUnit; // Rate basis unit (e.g., Candy for cotton rate) - Optional, defaults to unit
   // GST is now auto-determined based on commodity name and HSN code
   hsnCode: string; // HSN code as per GST Act (auto-determined)
   gstRate: number; // GST rate % (auto-determined from HSN)
   gstExemptionAvailable: boolean; // Auto-determined
   gstCategory: 'Agricultural' | 'Processed' | 'Industrial' | 'Service'; // Auto-determined
-  isProcessed: boolean; // User specifies if processed (affects GST)
-  isActive: boolean;
+  isProcessed: boolean; // User specifies if processed (affects GST) - Processed goods may attract higher GST
+  isActive: boolean; // Controls whether commodity is available for new contracts
   // Trading parameters stored directly in commodity (not as references to Settings)
   tradeTypes: MasterDataItem[]; // Trade types specific to this commodity
   bargainTypes: MasterDataItem[]; // Bargain types specific to this commodity
@@ -25,7 +26,7 @@ export interface Commodity {
   paymentTerms: StructuredTerm[]; // Payment terms specific to this commodity
   commissions: CommissionStructure[]; // Commission structures specific to this commodity
   // CCI specific (only for cotton)
-  supportsCciTerms: boolean; // true for cotton, false for others
+  supportsCciTerms: boolean; // CCI Terms are Cotton Corporation of India terms - only applicable to cotton commodity
   description?: string; // Optional description
 }
 

@@ -266,6 +266,10 @@ export const commoditySchema = z.object({
     errorMap: () => ({ message: 'Please select a valid unit' }),
   }),
   
+  rateUnit: z.enum(['Kgs', 'Qty', 'Candy', 'Bales', 'Quintal', 'Tonnes'], {
+    errorMap: () => ({ message: 'Please select a valid rate unit' }),
+  }),
+  
   // GST fields - all auto-determined, just for reference/override
   hsnCode: z.string()
     .regex(/^\d{4}(\d{2})?(\d{2})?$/, 'HSN code must be 4, 6, or 8 digits'),
@@ -290,7 +294,7 @@ export const commoditySchema = z.object({
     .min(1, 'At least one bargain type must be added'),
   
   varieties: z.array(masterDataItemSchema)
-    .default([]),
+    .min(1, 'At least one variety must be added'),
   
   weightmentTerms: z.array(masterDataItemSchema)
     .min(1, 'At least one weightment term must be added'),
@@ -310,9 +314,8 @@ export const commoditySchema = z.object({
   supportsCciTerms: z.boolean(),
   
   description: z.string()
-    .max(500, 'Description must be less than 500 characters')
-    .optional()
-    .or(z.literal('')),
+    .min(1, 'Description is required')
+    .max(500, 'Description must be less than 500 characters'),
 });
 
 export type CommodityFormData = z.infer<typeof commoditySchema>;
