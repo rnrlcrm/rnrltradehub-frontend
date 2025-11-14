@@ -23,6 +23,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RolesAndRights from './pages/RolesAndRights';
 import Chatbot from './pages/Chatbot';
+import TradeDesk from './pages/TradeDesk/TradeDesk';
 import Login from './pages/Login';
 import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
 import { User, AuditLog, MasterDataItem, SalesContract } from './types';
@@ -149,6 +150,7 @@ const App: React.FC = () => {
     const pageKey = activePage.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
     switch (pageKey) {
       case 'dashboard': return <Dashboard currentUser={currentUser} onCarryForward={handleCarryForward} />;
+      case 'trade-desk': return <TradeDesk currentUser={currentUser} />;
       case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
       case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
       case 'invoices': return <Invoices currentUser={currentUser} />;
