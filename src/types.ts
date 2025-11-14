@@ -30,6 +30,21 @@ export interface Commodity {
   description?: string; // Optional description
 }
 
+// Commodity Parameter interface for quality/specification parameters
+export interface CommodityParameter {
+  id: number;
+  commodityId: number;
+  parameterName: string; // e.g., "Staple Length", "Micronaire", "Strength", "Moisture", "Trash"
+  unit?: string; // Optional unit of measurement (e.g., "mm", "%", "g/tex")
+  minValue?: number; // Optional minimum value
+  maxValue?: number; // Optional maximum value
+  fieldType: 'numeric' | 'text' | 'dropdown'; // Type of input field
+  dropdownOptions?: string[]; // For dropdown type, comma-separated options
+  isActive: boolean; // Controls whether parameter is active
+  createdAt?: string; // ISO date string
+  updatedAt?: string; // ISO date string
+}
+
 // EMD percentage configuration by buyer type
 export interface EmdByBuyerType {
   kvic: number; // KVIC buyer EMD %

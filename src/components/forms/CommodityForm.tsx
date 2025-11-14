@@ -12,6 +12,8 @@ import {
 import { validateCommodityRules } from '../../services/commodityBusinessRuleEngine';
 import GSTInfoPanel from '../commodity/GSTInfoPanel';
 import BusinessRuleViolations from '../commodity/BusinessRuleViolations';
+import CommodityParametersTab from '../commodity/CommodityParametersTab';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/shadcn/tabs';
 
 interface CommodityFormProps {
   commodity: Commodity | null;
@@ -442,24 +444,26 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
     </div>
   );
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Business Rule Violations */}
-      <BusinessRuleViolations
-        errors={ruleViolations.errors}
-        warnings={ruleViolations.warnings}
-        info={ruleViolations.info}
-      />
-
-      {/* GST Information Panel */}
-      {formData.name && (
-        <GSTInfoPanel
-          commodityName={formData.name}
-          isProcessed={formData.isProcessed}
+  // For new commodity creation, show form directly without tabs
+  if (!commodity) {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Business Rule Violations */}
+        <BusinessRuleViolations
+          errors={ruleViolations.errors}
+          warnings={ruleViolations.warnings}
+          info={ruleViolations.info}
         />
-      )}
 
-      {/* Basic Information */}
+        {/* GST Information Panel */}
+        {formData.name && (
+          <GSTInfoPanel
+            commodityName={formData.name}
+            isProcessed={formData.isProcessed}
+          />
+        )}
+
+        {/* Basic Information */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Basic Information</h3>
         
@@ -937,10 +941,462 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
           Cancel
         </Button>
         <Button type="submit" disabled={isSaving}>
-          {isSaving ? 'Saving...' : commodity ? 'Update Commodity' : 'Create Commodity'}
+          {isSaving ? 'Saving...' : 'Create Commodity'}
         </Button>
       </div>
     </form>
+    );
+  }
+
+  // For editing existing commodity, show tabs with Parameters tab
+  return (
+    <div className="space-y-6">
+      {/* Business Rule Violations */}
+      <BusinessRuleViolations
+        errors={ruleViolations.errors}
+        warnings={ruleViolations.warnings}
+        info={ruleViolations.info}
+      />
+
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="details">Commodity Details</TabsTrigger>
+          <TabsTrigger value="parameters">Parameters</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="details" className="mt-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* GST Information Panel */}
+            {formData.name && (
+              <GSTInfoPanel
+                commodityName={formData.name}
+                isProcessed={formData.isProcessed}
+              />
+            )}
+
+            {/* Basic Information - Same as non-tabbed version */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Basic Information</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Commodity Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={e => handleChange('name', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Cotton, Wheat, Rice"
+                />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Symbol <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.symbol}
+                  onChange={e => handleChange('symbol', e.target.value.toUpperCase())}
+                  className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 w-full ${
+                    errors.symbol ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., CTN, WHT, RIC"
+                  maxLength={10}
+                />
+                {errors.symbol && <p className="text-red-500 text-xs mt-1">{errors.symbol}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Primary Unit (Trade Unit) <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.unit}
+                  onChange={e => handleChange('unit', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Bales">Bales</option>
+                  <option value="Kgs">Kgs</option>
+                  <option value="Qty">Qty</option>
+                  <option value="Candy">Candy</option>
+                  <option value="Quintal">Quintal</option>
+                  <option value="Tonnes">Tonnes</option>
+                </select>
+                {errors.unit && <p className="text-red-500 text-xs mt-1">{errors.unit}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rate Unit (Pricing Basis)
+                </label>
+                <select
+                  value={formData.rateUnit}
+                  onChange={e => handleChange('rateUnit', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Bales">Bales</option>
+                  <option value="Kgs">Kgs</option>
+                  <option value="Qty">Qty</option>
+                  <option value="Candy">Candy</option>
+                  <option value="Quintal">Quintal</option>
+                  <option value="Tonnes">Tonnes</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Rate basis for pricing (defaults to primary unit)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  HSN Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.hsnCode}
+                  onChange={e => handleChange('hsnCode', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+                    errors.hsnCode ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., 5201"
+                />
+                {errors.hsnCode && <p className="text-red-500 text-xs mt-1">{errors.hsnCode}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  GST Rate (%) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={formData.gstRate}
+                  onChange={e => handleChange('gstRate', parseFloat(e.target.value))}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+                    errors.gstRate ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  step="0.01"
+                />
+                {errors.gstRate && <p className="text-red-500 text-xs mt-1">{errors.gstRate}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  GST Category
+                </label>
+                <select
+                  value={formData.gstCategory}
+                  onChange={e => handleChange('gstCategory', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Agricultural">Agricultural</option>
+                  <option value="Processed">Processed</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Service">Service</option>
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-6">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.isProcessed}
+                    onChange={e => handleChange('isProcessed', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Is Processed Commodity</span>
+                </label>
+
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.gstExemptionAvailable}
+                    onChange={e => handleChange('gstExemptionAvailable', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm text-gray-700">GST Exemption Available</span>
+                </label>
+
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.supportsCciTerms}
+                    onChange={e => handleChange('supportsCciTerms', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Supports CCI Terms (Cotton Only)</span>
+                </label>
+
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={e => handleChange('isActive', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Active</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={e => handleChange('description', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  placeholder="Optional description"
+                />
+              </div>
+            </div>
+
+            {/* Trading Parameters */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">Trading Parameters</h3>
+              
+              <InlineListManager
+                label="Trade Types"
+                items={formData.tradeTypes}
+                newItemValue={newTradeType}
+                onNewItemChange={setNewTradeType}
+                onAdd={addTradeType}
+                onRemove={removeTradeType}
+                required
+                errorMessage={errors.tradeTypes}
+              />
+
+              <InlineListManager
+                label="Bargain Types"
+                items={formData.bargainTypes}
+                newItemValue={newBargainType}
+                onNewItemChange={setNewBargainType}
+                onAdd={addBargainType}
+                onRemove={removeBargainType}
+                required
+                errorMessage={errors.bargainTypes}
+              />
+
+              <InlineListManager
+                label="Varieties"
+                items={formData.varieties}
+                newItemValue={newVariety}
+                onNewItemChange={setNewVariety}
+                onAdd={addVariety}
+                onRemove={removeVariety}
+                required
+                errorMessage={errors.varieties}
+              />
+
+              <InlineListManager
+                label="Weightment Terms"
+                items={formData.weightmentTerms}
+                newItemValue={newWeightmentTerm}
+                onNewItemChange={setNewWeightmentTerm}
+                onAdd={addWeightmentTerm}
+                onRemove={removeWeightmentTerm}
+                required
+                errorMessage={errors.weightmentTerms}
+              />
+
+              <InlineListManager
+                label="Passing Terms"
+                items={formData.passingTerms}
+                newItemValue={newPassingTerm}
+                onNewItemChange={setNewPassingTerm}
+                onAdd={addPassingTerm}
+                onRemove={removePassingTerm}
+                required
+                errorMessage={errors.passingTerms}
+              />
+
+              {/* Delivery Terms */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Delivery Terms <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newDeliveryTerm.name}
+                    onChange={(e) => setNewDeliveryTerm({ ...newDeliveryTerm, name: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Term name"
+                  />
+                  <input
+                    type="number"
+                    value={newDeliveryTerm.days}
+                    onChange={(e) => setNewDeliveryTerm({ ...newDeliveryTerm, days: parseInt(e.target.value) })}
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Days"
+                    min="0"
+                  />
+                  <Button type="button" onClick={(e) => { e.preventDefault(); addDeliveryTerm(); }} variant="secondary" className="text-sm px-3">
+                    +
+                  </Button>
+                </div>
+
+                {formData.deliveryTerms.length > 0 && (
+                  <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                    {formData.deliveryTerms.map(term => (
+                      <div key={term.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); removeDeliveryTerm(term.id); }}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {errors.deliveryTerms && <p className="text-red-500 text-xs mt-1">{errors.deliveryTerms}</p>}
+              </div>
+
+              {/* Payment Terms */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Payment Terms <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newPaymentTerm.name}
+                    onChange={(e) => setNewPaymentTerm({ ...newPaymentTerm, name: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Term name"
+                  />
+                  <input
+                    type="number"
+                    value={newPaymentTerm.days}
+                    onChange={(e) => setNewPaymentTerm({ ...newPaymentTerm, days: parseInt(e.target.value) })}
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Days"
+                    min="0"
+                  />
+                  <Button type="button" onClick={(e) => { e.preventDefault(); addPaymentTerm(); }} variant="secondary" className="text-sm px-3">
+                    +
+                  </Button>
+                </div>
+
+                {formData.paymentTerms.length > 0 && (
+                  <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                    {formData.paymentTerms.map(term => (
+                      <div key={term.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <span className="text-sm text-gray-700">{term.name} ({term.days} days)</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); removePaymentTerm(term.id); }}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {errors.paymentTerms && <p className="text-red-500 text-xs mt-1">{errors.paymentTerms}</p>}
+              </div>
+
+              {/* Commissions */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Commission Structures <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-12 gap-2">
+                  <input
+                    type="text"
+                    value={newCommission.name}
+                    onChange={(e) => setNewCommission({ ...newCommission, name: e.target.value })}
+                    className="col-span-4 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Commission name"
+                  />
+                  <select
+                    value={newCommission.type}
+                    onChange={(e) => setNewCommission({ ...newCommission, type: e.target.value as any })}
+                    className="col-span-3 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="PERCENTAGE">Percentage</option>
+                    <option value="PER_BALE">Per {formData.unit}</option>
+                  </select>
+                  <input
+                    type="number"
+                    value={newCommission.value}
+                    onChange={(e) => setNewCommission({ ...newCommission, value: parseFloat(e.target.value) })}
+                    className="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Value"
+                    step="0.01"
+                    min="0"
+                  />
+                  <input
+                    type="number"
+                    value={newCommission.gstRate}
+                    onChange={(e) => setNewCommission({ ...newCommission, gstRate: parseFloat(e.target.value) })}
+                    className="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="GST%"
+                    step="0.01"
+                    min="0"
+                  />
+                  <Button type="button" onClick={(e) => { e.preventDefault(); addCommission(); }} variant="secondary" className="col-span-1 text-sm px-3">
+                    +
+                  </Button>
+                </div>
+
+                {formData.commissions.length > 0 && (
+                  <div className="border border-gray-200 rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                    {formData.commissions.map(commission => (
+                      <div key={commission.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <div className="flex-1">
+                          <span className="text-sm text-gray-700 font-medium">
+                            {commission.name} ({commission.type === 'PERCENTAGE' ? `${commission.value}%` : `₹${commission.value}/${formData.unit}`})
+                          </span>
+                          {commission.gstApplicable && (
+                            <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                              + {commission.gstRate}% GST (SAC {commission.sacCode})
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); removeCommission(commission.id); }}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {errors.commissions && <p className="text-red-500 text-xs mt-1">{errors.commissions}</p>}
+              </div>
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button type="button" onClick={onCancel} variant="secondary" disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Update Commodity'}
+              </Button>
+            </div>
+          </form>
+        </TabsContent>
+
+        <TabsContent value="parameters" className="mt-4">
+          <CommodityParametersTab 
+            commodityId={commodity.id} 
+            commodityUnit={formData.unit}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
