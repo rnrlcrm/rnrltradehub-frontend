@@ -171,7 +171,8 @@ export interface Location {
   id: number;
   country: string;
   state: string;
-  city: string;
+  region?: string; // Optional region/division (e.g., Vidarbha, Marathwada)
+  city: string; // Also referred to as station
 }
 
 export interface MasterDataItem {

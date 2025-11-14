@@ -20,6 +20,8 @@ import {
   DocumentType,
 } from '../types/businessPartner';
 import { businessPartnerApi } from '../api/businessPartnerApi';
+import LocationSelector from '../components/LocationSelector';
+import { useLocations } from '../hooks/useLocations';
 
 interface Props {
   source?: RegistrationSource;
@@ -38,6 +40,9 @@ const PartnerRegistration: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // Load location master data
+  const { locations, loading: locationsLoading } = useLocations();
+  
   // Form data
   const [formData, setFormData] = useState<Partial<PartnerRegistrationRequest>>({
     registrationSource: source,
@@ -46,10 +51,11 @@ const PartnerRegistration: React.FC<Props> = ({
     hasGST: false,
     registeredAddress: {
       addressLine1: '',
-      city: '',
-      state: '',
-      pincode: '',
       country: 'India',
+      state: '',
+      region: '',
+      city: '',
+      pincode: '',
     },
     bankDetails: {
       bankName: '',
@@ -844,60 +850,43 @@ const PartnerRegistration: React.FC<Props> = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      City *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.registeredAddress?.city || ''}
-                      onChange={(e) => handleChange('registeredAddress.city', e.target.value)}
-                      placeholder="City"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                {/* Location Selector */}
+                <LocationSelector
+                  value={{
+                    country: formData.registeredAddress?.country || 'India',
+                    state: formData.registeredAddress?.state || '',
+                    region: formData.registeredAddress?.region,
+                    city: formData.registeredAddress?.city || '',
+                  }}
+                  onChange={(location) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      registeredAddress: {
+                        ...prev.registeredAddress!,
+                        country: location.country,
+                        state: location.state,
+                        region: location.region,
+                        city: location.city,
+                      },
+                    }));
+                  }}
+                  locations={locations}
+                  required={true}
+                  showRegion={true}
+                />
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      State *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.registeredAddress?.state || ''}
-                      onChange={(e) => handleChange('registeredAddress.state', e.target.value)}
-                      placeholder="State"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Pincode *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.registeredAddress?.pincode || ''}
-                      onChange={(e) => handleChange('registeredAddress.pincode', e.target.value)}
-                      placeholder="6-digit pincode"
-                      maxLength={6}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Country
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.registeredAddress?.country || 'India'}
-                      onChange={(e) => handleChange('registeredAddress.country', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Pincode *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.registeredAddress?.pincode || ''}
+                    onChange={(e) => handleChange('registeredAddress.pincode', e.target.value)}
+                    placeholder="6-digit pincode"
+                    maxLength={6}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
               </div>
             )}

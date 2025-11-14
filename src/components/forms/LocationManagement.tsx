@@ -65,15 +65,26 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
       
       const parts = line.split(',').map(part => part.trim());
       
-      if (parts.length !== 3) {
-        errors.push(`Line ${i + 1}: Invalid format. Expected 3 columns (Country, State, City), got ${parts.length}`);
+      // Support both 3-column (Country,State,City) and 4-column (Country,State,Region,City) formats
+      if (parts.length !== 3 && parts.length !== 4) {
+        errors.push(`Line ${i + 1}: Invalid format. Expected 3 or 4 columns (Country,State,[Region],City), got ${parts.length}`);
         continue;
       }
       
-      const [country, state, city] = parts;
+      const country = parts[0];
+      const state = parts[1];
+      let region: string | undefined;
+      let city: string;
+      
+      if (parts.length === 4) {
+        region = parts[2] || undefined;
+        city = parts[3];
+      } else {
+        city = parts[2];
+      }
       
       if (!country || !state || !city) {
-        errors.push(`Line ${i + 1}: Missing required fields`);
+        errors.push(`Line ${i + 1}: Missing required fields (Country, State, City)`);
         continue;
       }
       
@@ -81,11 +92,12 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
       const isDuplicate = locations.some(
         loc => loc.country.toLowerCase() === country.toLowerCase() &&
                loc.state.toLowerCase() === state.toLowerCase() &&
-               loc.city.toLowerCase() === city.toLowerCase()
+               loc.city.toLowerCase() === city.toLowerCase() &&
+               (loc.region || '') === (region || '')
       );
       
       if (isDuplicate) {
-        errors.push(`Line ${i + 1}: Duplicate location - ${city}, ${state}, ${country}`);
+        errors.push(`Line ${i + 1}: Duplicate location - ${city}, ${region ? region + ', ' : ''}${state}, ${country}`);
         continue;
       }
       
@@ -93,6 +105,7 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
         id: Date.now() + i,
         country,
         state,
+        region,
         city,
       });
     }
@@ -131,7 +144,7 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
   };
 
   const downloadTemplate = () => {
-    const template = 'Country,State,City\nIndia,Maharashtra,Mumbai\nIndia,Gujarat,Ahmedabad\nIndia,Karnataka,Bangalore';
+    const template = 'Country,State,Region,City\nIndia,Maharashtra,Vidarbha,Nagpur\nIndia,Maharashtra,Marathwada,Aurangabad\nIndia,Gujarat,,Ahmedabad\nIndia,Karnataka,,Bangalore';
     const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -144,7 +157,11 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
   const columns = [
     { header: 'Country', accessor: 'country' },
     { header: 'State', accessor: 'state' },
-    { header: 'City', accessor: 'city' },
+    { 
+      header: 'Region', 
+      accessor: (item: Location) => item.region || '-'
+    },
+    { header: 'City / Station', accessor: 'city' },
     {
       header: 'Actions',
       accessor: (item: Location) => (
@@ -190,10 +207,12 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="text-sm font-semibold text-blue-900 mb-2">CSV Format Instructions:</h4>
             <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
-              <li>Format: Country,State,City (one location per line)</li>
+              <li>Format: Country,State,Region,City (one location per line)</li>
+              <li>Region is optional - leave empty if not applicable</li>
               <li>First line can be a header row (will be skipped)</li>
               <li>No quotes needed unless values contain commas</li>
               <li>Duplicates will be automatically detected and skipped</li>
+              <li>Examples: "India,Maharashtra,Vidarbha,Nagpur" or "India,Gujarat,,Ahmedabad"</li>
             </ul>
             <button
               onClick={downloadTemplate}
@@ -222,7 +241,7 @@ const LocationManagement: React.FC<LocationManagementProps> = ({ initialData, cu
                 setBulkUploadErrors([]);
               }}
               className="w-full h-64 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-              placeholder="Country,State,City&#10;India,Maharashtra,Mumbai&#10;India,Gujarat,Ahmedabad"
+              placeholder="Country,State,Region,City&#10;India,Maharashtra,Vidarbha,Nagpur&#10;India,Gujarat,,Ahmedabad"
             />
           </div>
           
