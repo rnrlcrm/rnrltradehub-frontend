@@ -108,10 +108,11 @@ export interface VerificationStatus {
 export interface Address {
   addressLine1: string;
   addressLine2?: string;
-  city: string;
+  country: string; // Default: India
   state: string;
+  region?: string; // Optional region/division (e.g., Vidarbha, Marathwada)
+  city: string; // Also referred to as station
   pincode: string;
-  country: string;
 }
 
 export interface ShipToAddress extends Address {

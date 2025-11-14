@@ -13,6 +13,8 @@
 import React, { useState, useEffect } from 'react';
 import { BusinessBranch } from '../types/businessPartner';
 import { businessPartnerApi } from '../api/businessPartnerApi';
+import LocationSelector from './LocationSelector';
+import { useLocations } from '../hooks/useLocations';
 
 interface Props {
   partnerId: string;
@@ -27,6 +29,9 @@ const BranchManagement: React.FC<Props> = ({ partnerId, readOnly = false, onBran
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBranch, setEditingBranch] = useState<BusinessBranch | null>(null);
   
+  // Load location master data
+  const { locations } = useLocations();
+  
   // Form state
   const [formData, setFormData] = useState<Partial<BusinessBranch>>({
     branchName: '',
@@ -34,10 +39,11 @@ const BranchManagement: React.FC<Props> = ({ partnerId, readOnly = false, onBran
     address: {
       addressLine1: '',
       addressLine2: '',
-      city: '',
-      state: '',
-      pincode: '',
       country: 'India',
+      state: '',
+      region: '',
+      city: '',
+      pincode: '',
     },
     gstNumber: '',
     panNumber: '',
@@ -83,10 +89,11 @@ const BranchManagement: React.FC<Props> = ({ partnerId, readOnly = false, onBran
       address: {
         addressLine1: '',
         addressLine2: '',
-        city: '',
-        state: '',
-        pincode: '',
         country: 'India',
+        state: '',
+        region: '',
+        city: '',
+        pincode: '',
       },
       gstNumber: '',
       panNumber: '',
@@ -409,27 +416,34 @@ const BranchManagement: React.FC<Props> = ({ partnerId, readOnly = false, onBran
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">City *</label>
-              <input
-                type="text"
-                value={formData.address?.city}
-                onChange={(e) => handleChange('address.city', e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2"
+            {/* Location Selector */}
+            <div className="md:col-span-2">
+              <LocationSelector
+                value={{
+                  country: formData.address?.country || 'India',
+                  state: formData.address?.state || '',
+                  region: formData.address?.region,
+                  city: formData.address?.city || '',
+                }}
+                onChange={(location) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    address: {
+                      ...prev.address!,
+                      country: location.country,
+                      state: location.state,
+                      region: location.region,
+                      city: location.city,
+                    },
+                  }));
+                }}
+                locations={locations}
+                required={true}
+                showRegion={true}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">State *</label>
-              <input
-                type="text"
-                value={formData.address?.state}
-                onChange={(e) => handleChange('address.state', e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2"
-              />
-            </div>
-
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Pincode * <span className="text-xs text-slate-500">(6 digits)</span>
               </label>
@@ -439,16 +453,6 @@ const BranchManagement: React.FC<Props> = ({ partnerId, readOnly = false, onBran
                 onChange={(e) => handleChange('address.pincode', e.target.value)}
                 className="w-full border border-slate-300 rounded-lg px-4 py-2"
                 maxLength={6}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Country</label>
-              <input
-                type="text"
-                value={formData.address?.country}
-                onChange={(e) => handleChange('address.country', e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2"
               />
             </div>
 

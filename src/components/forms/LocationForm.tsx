@@ -11,12 +11,13 @@ interface LocationFormProps {
 const LocationForm: React.FC<LocationFormProps> = ({ onSave, onCancel }) => {
   const [country, setCountry] = useState('India');
   const [state, setState] = useState('');
+  const [region, setRegion] = useState('');
   const [city, setCity] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (country && state && city) {
-      onSave({ country, state, city });
+      onSave({ country, state, region: region || undefined, city });
     }
   };
 
@@ -32,7 +33,17 @@ const LocationForm: React.FC<LocationFormProps> = ({ onSave, onCancel }) => {
           <FormInput id="state" type="text" value={state} onChange={e => setState(e.target.value)} required />
         </FormRow>
         <FormRow>
-          <FormLabel htmlFor="city">City</FormLabel>
+          <FormLabel htmlFor="region">Region / Division (Optional)</FormLabel>
+          <FormInput 
+            id="region" 
+            type="text" 
+            value={region} 
+            onChange={e => setRegion(e.target.value)} 
+            placeholder="e.g., Vidarbha, Marathwada"
+          />
+        </FormRow>
+        <FormRow>
+          <FormLabel htmlFor="city">City / Station</FormLabel>
           <FormInput id="city" type="text" value={city} onChange={e => setCity(e.target.value)} required />
         </FormRow>
       </div>
