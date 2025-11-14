@@ -21,7 +21,6 @@ import {
   Location,
   CciTerm,
   Commodity,
-  CommodityParameter,
 } from '../types';
 
 // Mock data imports (used when USE_MOCK_API is true)
@@ -354,28 +353,6 @@ export const commoditiesApi = {
 };
 
 // ============================================================================
-// COMMODITY PARAMETERS API
-// ============================================================================
-
-export const commodityParametersApi = {
-  getAll: async (commodityId: number): Promise<ApiResponse<CommodityParameter[]>> => {
-    return apiClient.get<CommodityParameter[]>(`/commodity/${commodityId}/parameters`);
-  },
-
-  create: async (commodityId: number, data: Omit<CommodityParameter, 'id' | 'commodityId' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<CommodityParameter>> => {
-    return apiClient.post<CommodityParameter>(`/commodity/${commodityId}/parameters`, data);
-  },
-
-  update: async (parameterId: number, data: Partial<CommodityParameter>): Promise<ApiResponse<CommodityParameter>> => {
-    return apiClient.put<CommodityParameter>(`/commodity/parameters/${parameterId}`, data);
-  },
-
-  delete: async (parameterId: number): Promise<ApiResponse<void>> => {
-    return apiClient.delete<void>(`/commodity/parameters/${parameterId}`);
-  },
-};
-
-// ============================================================================
 // MAIN SETTINGS API EXPORT
 // ============================================================================
 
@@ -384,7 +361,6 @@ export const settingsApi = {
   locations: locationsApi,
   cciTerms: cciTermsApi,
   commodities: commoditiesApi,
-  commodityParameters: commodityParametersApi,
 };
 
 export default settingsApi;
