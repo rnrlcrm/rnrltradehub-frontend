@@ -355,12 +355,33 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
     },
     {
       header: 'Trading Params',
-      accessor: (commodity: Commodity) => (
-        <div className="text-xs text-gray-600">
-          <div>{commodity.tradeTypes.length} Trade Types</div>
-          <div>{commodity.varieties.length} Varieties</div>
-        </div>
-      ),
+      accessor: (commodity: Commodity) => {
+        const totalParams = 
+          commodity.tradeTypes.length +
+          commodity.bargainTypes.length +
+          commodity.varieties.length +
+          commodity.weightmentTerms.length +
+          commodity.passingTerms.length +
+          commodity.deliveryTerms.length +
+          commodity.paymentTerms.length +
+          commodity.commissions.length;
+        
+        return (
+          <div className="text-xs">
+            <div className="font-semibold text-blue-600 mb-1">{totalParams} Total</div>
+            <div className="text-gray-600 space-y-0.5">
+              <div>{commodity.tradeTypes.length} Trade Type{commodity.tradeTypes.length !== 1 ? 's' : ''}</div>
+              <div>{commodity.bargainTypes.length} Bargain Type{commodity.bargainTypes.length !== 1 ? 's' : ''}</div>
+              <div>{commodity.varieties.length} Variet{commodity.varieties.length !== 1 ? 'ies' : 'y'}</div>
+              <div>{commodity.weightmentTerms.length} Weightment</div>
+              <div>{commodity.passingTerms.length} Passing</div>
+              <div>{commodity.deliveryTerms.length} Delivery</div>
+              <div>{commodity.paymentTerms.length} Payment</div>
+              <div>{commodity.commissions.length} Commission{commodity.commissions.length !== 1 ? 's' : ''}</div>
+            </div>
+          </div>
+        );
+      },
     },
     {
       header: 'Actions',
@@ -410,6 +431,59 @@ const CommodityManagement: React.FC<CommodityManagementProps> = ({ currentUser, 
           </div>
         }
       >
+        {/* Information Banner */}
+        <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4">
+          <div className="flex items-start">
+            <svg className="w-6 h-6 mr-3 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1">
+              <h4 className="font-bold text-green-900 mb-2">✨ Enhanced Commodity Parameters Management</h4>
+              <p className="text-sm text-green-800 mb-2">
+                All trading parameters are now managed <strong>inline within each commodity</strong>. 
+                When you click "Add New" or "Edit", you'll see a comprehensive form where you can:
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-green-700">
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Trade Types</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Bargain Types</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Varieties</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Weightment Terms</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Passing Terms</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Delivery Terms</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Payment Terms</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-1">•</span>
+                  <span>Add Commission Structures</span>
+                </div>
+              </div>
+              <p className="text-xs text-green-700 mt-2 font-semibold">
+                💡 The "Trading Params" column below shows the count of parameters configured for each commodity.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Search and Filter Section */}
         <div className="mb-6 space-y-4">
           <div className="flex flex-wrap gap-4">

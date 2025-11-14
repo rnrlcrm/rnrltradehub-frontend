@@ -444,6 +444,32 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Information Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg p-4 shadow-lg">
+        <div className="flex items-start">
+          <svg className="w-6 h-6 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <h4 className="font-bold text-lg mb-1">Commodity with Inline Parameters</h4>
+            <p className="text-sm text-blue-100 mb-2">
+              This form allows you to create/edit commodities with ALL trading parameters managed inline. 
+              No separate master data management needed - everything is defined here!
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Trade Types</div>
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Bargain Types</div>
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Varieties</div>
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Weightment Terms</div>
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Passing Terms</div>
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Delivery Terms</div>
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Payment Terms</div>
+              <div className="bg-blue-500 bg-opacity-40 rounded px-2 py-1">✓ Commissions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Business Rule Violations */}
       <BusinessRuleViolations
         errors={ruleViolations.errors}
@@ -664,10 +690,25 @@ const CommodityForm: React.FC<CommodityFormProps> = ({
       </div>
 
       {/* Trading Parameters - Inline Management */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
-          Trading Parameters (Add Multiple)
-        </h3>
+      <div className="space-y-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-purple-900 flex items-center">
+            <span className="bg-purple-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm mr-2">⚙</span>
+            Commodity Trading Parameters
+          </h3>
+          <span className="text-xs text-purple-700 bg-purple-100 px-3 py-1 rounded-full font-semibold">
+            Add Multiple Items Per Category
+          </span>
+        </div>
+        
+        <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3 mb-4">
+          <p className="text-xs text-yellow-900 font-semibold mb-1">💡 Quick Guide:</p>
+          <p className="text-xs text-yellow-800">
+            Define all trading parameters for this commodity. These parameters will be available when creating sales contracts. 
+            You can add multiple items in each category (e.g., multiple varieties, delivery terms, etc.). 
+            At least one item is required in each category marked with <span className="text-red-600">*</span>
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Trade Types */}
