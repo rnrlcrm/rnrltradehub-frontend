@@ -108,6 +108,49 @@ export const locationsApi = {
     return apiClient.get<Location[]>('/settings/locations');
   },
 
+  // Cascading location methods for hierarchical selection
+  getStates: async (country: string = 'India'): Promise<ApiResponse<string[]>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const states = Array.from(new Set(mockLocations.filter(loc => loc.country === country).map(loc => loc.state))).sort();
+      return { data: states, success: true };
+    }
+    return apiClient.get<string[]>(`/settings/locations/states?country=${country}`);
+  },
+
+  getRegions: async (state: string, country: string = 'India'): Promise<ApiResponse<string[]>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const regions = Array.from(
+        new Set(
+          mockLocations
+            .filter(loc => loc.country === country && loc.state === state)
+            .map(loc => loc.region)
+            .filter(Boolean) as string[]
+        )
+      ).sort();
+      return { data: regions, success: true };
+    }
+    return apiClient.get<string[]>(`/settings/locations/regions?country=${country}&state=${state}`);
+  },
+
+  getCities: async (state: string, region?: string, country: string = 'India'): Promise<ApiResponse<string[]>> => {
+    if (USE_MOCK_API) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      let filteredLocations = mockLocations.filter(loc => loc.country === country && loc.state === state);
+      if (region) {
+        filteredLocations = filteredLocations.filter(loc => loc.region === region);
+      }
+      const cities = Array.from(new Set(filteredLocations.map(loc => loc.city))).sort();
+      return { data: cities, success: true };
+    }
+    let url = `/settings/locations/cities?country=${country}&state=${state}`;
+    if (region) {
+      url += `&region=${region}`;
+    }
+    return apiClient.get<string[]>(url);
+  },
+
   create: async (data: Omit<Location, 'id'>): Promise<ApiResponse<Location>> => {
     if (USE_MOCK_API) {
       await new Promise(resolve => setTimeout(resolve, 300));

@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { locationApi } from '../api/locationApi';
+import { locationsApi } from '../api/settingsApi';
 import { Location } from '../types';
 
 export const useLocations = () => {
@@ -21,8 +21,8 @@ export const useLocations = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await locationApi.getAllLocations();
-      setLocations(data);
+      const response = await locationsApi.getAll();
+      setLocations(response.data);
     } catch (err: any) {
       // If API fails, use empty array and allow manual entry
       console.error('Failed to load locations:', err);

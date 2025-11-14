@@ -55,7 +55,7 @@ ADD COLUMN address_region VARCHAR(100);
 
 ### 2.1 Location Master Endpoints
 
-#### GET /api/locations
+#### GET /settings/locations
 Get all locations from master data
 
 **Response:**
@@ -78,7 +78,7 @@ Get all locations from master data
 ]
 ```
 
-#### GET /api/locations/states?country=India
+#### GET /settings/locations/states?country=India
 Get unique states for a country
 
 **Response:**
@@ -91,7 +91,7 @@ Get unique states for a country
 ]
 ```
 
-#### GET /api/locations/regions?country=India&state=Maharashtra
+#### GET /settings/locations/regions?country=India&state=Maharashtra
 Get unique regions for a state
 
 **Response:**
@@ -104,7 +104,7 @@ Get unique regions for a state
 ]
 ```
 
-#### GET /api/locations/cities?country=India&state=Maharashtra&region=Vidarbha
+#### GET /settings/locations/cities?country=India&state=Maharashtra&region=Vidarbha
 Get cities for a state (optionally filtered by region)
 
 **Response:**
@@ -117,7 +117,7 @@ Get cities for a state (optionally filtered by region)
 ]
 ```
 
-#### POST /api/locations
+#### POST /settings/locations
 Add new location
 
 **Request:**
@@ -142,7 +142,7 @@ Add new location
 }
 ```
 
-#### POST /api/locations/bulk
+#### POST /settings/locations/bulk
 Bulk upload locations from CSV
 
 **Request:**
@@ -177,7 +177,7 @@ Bulk upload locations from CSV
 }
 ```
 
-#### DELETE /api/locations/{id}
+#### DELETE /settings/locations/{id}
 Delete a location from master data
 
 ### 2.2 Business Partner Endpoints
