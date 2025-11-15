@@ -58,6 +58,32 @@ A complete design system with:
 - **Theme Support**: Light/dark mode ready
 - **Accessibility**: Screen reader friendly, keyboard navigation
 
+### Core Business Modules
+
+#### Quality Inspection & Inventory
+- **Quality Inspection**: Multi-parameter quality checks with approve/reject/resample workflows
+- **Inventory Management**: Multi-location warehouse tracking with quality grades
+- **Document Management**: Upload with OCR summary support for inspection reports
+- **Audit Trail**: Complete history of all quality actions
+
+📖 **[View Quality & Inventory Documentation](ERP_MODULES_DOCUMENTATION.md#quality-inspection--inventory)**
+
+#### Logistics & Delivery
+- **Delivery Order Management**: Create, assign, track, and manage deliveries
+- **Transport Tracking**: Vehicle, driver, and route management
+- **Status Workflow**: Pending → Assigned → In Transit → Delivered
+- **Document Upload**: Delivery challan, LR copy, e-way bills with OCR
+
+📖 **[View Logistics Documentation](ERP_MODULES_DOCUMENTATION.md#logistics--delivery)**
+
+#### Ledger & Reconciliation
+- **Ledger Management**: Account balances, party-wise transactions, debit/credit tracking
+- **Reconciliation**: Party, contract, and period reconciliation with discrepancy tracking
+- **Export Options**: PDF and Excel export for all financial reports
+- **Real-time Balances**: Live outstanding and overdue tracking
+
+📖 **[View Ledger & Reconciliation Documentation](ERP_MODULES_DOCUMENTATION.md#ledger--accounts)**
+
 ### CCI Setting Master
 A comprehensive configuration system for Cotton Corporation of India (CCI) trade operations:
 - **Zero Hardcoded Values**: All financial parameters are configurable
