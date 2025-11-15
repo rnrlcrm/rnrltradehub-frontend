@@ -562,3 +562,325 @@ export interface TemplateLibrary {
   categories: string[];
   mostUsed: ContractTemplate[];
 }
+
+// Quality Inspection & Inventory Types
+export type InspectionStatus = 'Pending' | 'In Progress' | 'Approved' | 'Rejected' | 'Resample Required';
+export type InspectionType = 'Pre-Delivery' | 'Post-Delivery' | 'Quality Check' | 'Final Inspection';
+
+export interface QualityInspection {
+  id: string;
+  contractId: string;
+  contractNo: string;
+  partyName: string;
+  partyOrg: string;
+  commodity: string;
+  variety: string;
+  quantity: number;
+  unit: string;
+  inspectionType: InspectionType;
+  status: InspectionStatus;
+  inspectionDate?: string;
+  inspectorName?: string;
+  inspectorOrg?: string;
+  
+  // Quality Parameters
+  qualityParams: {
+    parameter: string;
+    expectedValue: string;
+    actualValue?: string;
+    tolerance?: string;
+    status?: 'Pass' | 'Fail' | 'Warning';
+  }[];
+  
+  // Documents
+  documents: {
+    id: string;
+    name: string;
+    type: 'inspection_report' | 'sample_photo' | 'certificate' | 'other';
+    uploadDate: string;
+    uploadedBy: string;
+    url: string;
+    ocrSummary?: string;
+  }[];
+  
+  // Actions
+  remarks?: string;
+  rejectionReason?: string;
+  resampleReason?: string;
+  approvedBy?: string;
+  approvedDate?: string;
+  
+  // Audit Trail
+  auditTrail: {
+    action: string;
+    performedBy: string;
+    performedAt: string;
+    remarks?: string;
+  }[];
+  
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  contractId: string;
+  contractNo: string;
+  commodity: string;
+  variety: string;
+  quantity: number;
+  unit: string;
+  location: string;
+  warehouse: string;
+  lotNumber: string;
+  baleNumbers?: string[];
+  
+  // Quality Info
+  qualityGrade?: string;
+  inspectionId?: string;
+  inspectionStatus?: InspectionStatus;
+  
+  // Status
+  status: 'In Stock' | 'Reserved' | 'In Transit' | 'Delivered' | 'Damaged';
+  receivedDate: string;
+  expiryDate?: string;
+  
+  // Physical Details
+  weight: number;
+  packages: number;
+  storageLocation?: string;
+  rackNumber?: string;
+  
+  // Documents
+  documents: {
+    id: string;
+    name: string;
+    type: 'grn' | 'weighment' | 'quality_cert' | 'photo' | 'other';
+    uploadDate: string;
+    url: string;
+  }[];
+  
+  // Tracking
+  owner: string;
+  ownerOrg: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Logistics & Delivery Types
+export type DeliveryStatus = 'Pending' | 'Assigned' | 'In Transit' | 'Delivered' | 'Cancelled' | 'Partial';
+
+export interface DeliveryOrder {
+  id: string;
+  doNumber: string;
+  contractId: string;
+  contractNo: string;
+  partyName: string;
+  partyOrg: string;
+  
+  // Delivery Details
+  commodity: string;
+  variety: string;
+  quantity: number;
+  unit: string;
+  deliveredQuantity?: number;
+  pendingQuantity?: number;
+  
+  // Logistics
+  fromLocation: string;
+  toLocation: string;
+  transportMode: 'Road' | 'Rail' | 'Air' | 'Sea';
+  vehicleNumber?: string;
+  driverName?: string;
+  driverPhone?: string;
+  transporterName?: string;
+  
+  // Status & Tracking
+  status: DeliveryStatus;
+  dispatchDate?: string;
+  expectedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  
+  // Documents
+  documents: {
+    id: string;
+    name: string;
+    type: 'delivery_challan' | 'lr_copy' | 'invoice' | 'ewb' | 'weighment' | 'photo' | 'other';
+    uploadDate: string;
+    uploadedBy: string;
+    url: string;
+    ocrSummary?: string;
+  }[];
+  
+  // Financial
+  transportCost?: number;
+  otherCharges?: number;
+  
+  remarks?: string;
+  
+  // Audit Trail
+  auditTrail: {
+    action: string;
+    performedBy: string;
+    performedAt: string;
+    remarks?: string;
+  }[];
+  
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Ledger & Reconciliation Types
+export type LedgerEntryType = 'Debit' | 'Credit';
+export type TransactionType = 'Sale' | 'Purchase' | 'Payment' | 'Receipt' | 'Commission' | 'Expense' | 'Adjustment';
+
+export interface LedgerEntry {
+  id: string;
+  date: string;
+  financialYear: string;
+  
+  // Party Details
+  partyId: string;
+  partyName: string;
+  partyOrg: string;
+  partyType: 'Buyer' | 'Seller' | 'Broker' | 'Vendor' | 'Other';
+  
+  // Transaction Details
+  transactionType: TransactionType;
+  entryType: LedgerEntryType;
+  amount: number;
+  
+  // Reference
+  referenceType: 'Contract' | 'Invoice' | 'Payment' | 'Commission' | 'Delivery' | 'Other';
+  referenceId: string;
+  referenceNumber: string;
+  
+  // Description
+  description: string;
+  remarks?: string;
+  
+  // Running Balance
+  balance: number;
+  
+  // Reconciliation
+  isReconciled: boolean;
+  reconciledDate?: string;
+  reconciledBy?: string;
+  
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface AccountBalance {
+  partyId: string;
+  partyName: string;
+  partyOrg: string;
+  partyType: 'Buyer' | 'Seller' | 'Broker' | 'Vendor' | 'Other';
+  
+  // Balances
+  openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  closingBalance: number;
+  
+  // Outstanding
+  outstandingAmount: number;
+  overdueAmount: number;
+  
+  // Summary
+  totalContracts: number;
+  totalInvoices: number;
+  totalPayments: number;
+  
+  // Period
+  fromDate: string;
+  toDate: string;
+  financialYear: string;
+  
+  // Status
+  status: 'Active' | 'Inactive' | 'Blocked';
+  lastTransactionDate?: string;
+}
+
+export interface Reconciliation {
+  id: string;
+  date: string;
+  financialYear: string;
+  
+  // Reconciliation Details
+  type: 'Party' | 'Contract' | 'Period';
+  partyId?: string;
+  partyName?: string;
+  contractId?: string;
+  contractNo?: string;
+  fromDate: string;
+  toDate: string;
+  
+  // Balances
+  systemBalance: number;
+  statedBalance: number;
+  difference: number;
+  
+  // Items
+  items: {
+    id: string;
+    date: string;
+    description: string;
+    systemAmount: number;
+    statedAmount: number;
+    difference: number;
+    status: 'Matched' | 'Unmatched' | 'Disputed';
+    remarks?: string;
+  }[];
+  
+  // Status
+  status: 'Pending' | 'In Progress' | 'Completed' | 'Disputed';
+  completedBy?: string;
+  completedDate?: string;
+  
+  remarks?: string;
+  
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Notification Types
+export type NotificationType = 'Info' | 'Warning' | 'Error' | 'Success';
+export type NotificationCategory = 'Contract' | 'Payment' | 'Quality' | 'Delivery' | 'KYC' | 'Dispute' | 'System';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  category: NotificationCategory;
+  title: string;
+  message: string;
+  
+  // Reference
+  referenceType?: string;
+  referenceId?: string;
+  referenceLink?: string;
+  
+  // User
+  userId: string;
+  userRole: string;
+  userOrg: string;
+  
+  // Status
+  isRead: boolean;
+  readAt?: string;
+  isDismissed: boolean;
+  
+  // Priority
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  
+  // Email
+  emailSent: boolean;
+  emailSentAt?: string;
+  
+  createdAt: string;
+  expiresAt?: string;
+}
