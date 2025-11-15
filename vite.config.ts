@@ -5,5 +5,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     extensions: ['.tsx', '.ts', '.jsx', '.js']
+  },
+  build: {
+    sourcemap: true
   }
 });

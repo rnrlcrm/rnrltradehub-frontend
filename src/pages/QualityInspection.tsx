@@ -54,7 +54,7 @@ const mockInspections: QualityInspection[] = [
     status: 'Approved',
     inspectionDate: '2024-11-12T14:00:00Z',
     inspectorName: 'Inspector A',
-    inspectorOrg: currentUser.organization,
+    inspectorOrg: 'RNRL Trade Hub Pvt. Ltd.',
     qualityParams: [
       { parameter: 'Staple Length', expectedValue: '30-32 mm', actualValue: '31 mm', tolerance: '±2 mm', status: 'Pass' },
       { parameter: 'Micronaire', expectedValue: '3.5-4.0', actualValue: '3.8', tolerance: '±0.3', status: 'Pass' },
