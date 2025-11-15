@@ -28,6 +28,7 @@ import QualityInspection from './pages/QualityInspection';
 import Inventory from './pages/Inventory';
 import Logistics from './pages/Logistics';
 import Ledger from './pages/Ledger';
+import Reconciliation from './pages/Reconciliation';
 import Login from './pages/Login';
 import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
 import { User, AuditLog, MasterDataItem, SalesContract } from './types';
@@ -166,6 +167,7 @@ const App: React.FC = () => {
       case 'inventory': return <Inventory currentUser={currentUser} />;
       case 'logistics': return <Logistics currentUser={currentUser} />;
       case 'ledger': return <Ledger currentUser={currentUser} />;
+      case 'reconciliation': return <Reconciliation currentUser={currentUser} />;
       case 'business-partners': return <BusinessPartnerManagement currentUser={currentUser} />;
       case 'my-partner-profile': return <MyPartnerProfile userId={currentUser.id} partnerId={currentUser.partnerId || currentUser.id} />;
       case 'partner-registration': return <PartnerRegistration />;

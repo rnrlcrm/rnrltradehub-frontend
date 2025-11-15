@@ -52,6 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
     { name: 'Invoices', icon: InvoiceIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
     { name: 'Payments', icon: PaymentIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
     { name: 'Ledger', icon: LedgerIcon, roles: ['Admin', 'Accounts'] },
+    { name: 'Reconciliation', icon: LedgerIcon, roles: ['Admin', 'Accounts'] },
     { name: 'Commissions', icon: CommissionIcon, roles: ['Admin', 'Accounts'] },
     { name: 'Commission Accounting', icon: CommissionIcon, roles: ['Admin', 'Accounts'] },
     { name: 'Disputes', icon: DisputeIcon, roles: ['Admin', 'Dispute Manager', 'Sales'] },
