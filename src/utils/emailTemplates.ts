@@ -418,3 +418,106 @@ export const generateSalesConfirmationEmail = (data: SalesConfirmationEmailData)
 </html>
   `;
 };
+
+/**
+ * Email template for sales confirmation amendment
+ */
+export const generateSalesConfirmationAmendmentEmail = (data: SalesConfirmationEmailData & { amendmentReason: string; previousVersion: number }): string => {
+  const lineItemsHtml = data.lineItems.map((item, index) => `
+    <tr>
+      <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center;">${index + 1}</td>
+      <td style="padding: 12px; border: 1px solid #e2e8f0; font-weight: 600;">${item.commodity}</td>
+      <td style="padding: 12px; border: 1px solid #e2e8f0;">${item.variety}</td>
+      <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: right;">${item.quantity}</td>
+      <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: right;">${item.rate}</td>
+      <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: right; font-weight: 600;">${item.amount}</td>
+    </tr>
+  `).join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Confirmation Amendment - ${data.confirmationNo}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #334155; background-color: #f8fafc; margin: 0; padding: 20px;">
+  
+  <div style="max-width: 800px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    
+    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; padding: 30px; text-align: center;">
+      <h1 style="margin: 0; font-size: 28px;">🔄 Sales Confirmation Amendment</h1>
+      <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">RNRL TradeHub</p>
+    </div>
+
+    <div style="padding: 30px;">
+      
+      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+        <p style="margin: 0; color: #92400e; font-weight: 600;">⚠️ This is an amended version of the sales confirmation</p>
+      </div>
+
+      <div style="background-color: #fef2f2; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+        <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #991b1b;">Amendment Information</h2>
+        <table style="width: 100%; font-size: 14px;">
+          <tr>
+            <td style="padding: 5px 0; color: #991b1b; width: 40%;">Previous Version:</td>
+            <td style="padding: 5px 0; font-weight: 600;">Version ${data.previousVersion}</td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #991b1b;">New Version:</td>
+            <td style="padding: 5px 0; font-weight: 600;">Version ${data.previousVersion + 1}</td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #991b1b;">Amendment Date:</td>
+            <td style="padding: 5px 0; font-weight: 600;">${data.confirmationDate}</td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #991b1b; vertical-align: top;">Reason for Amendment:</td>
+            <td style="padding: 5px 0; font-weight: 600;">${data.amendmentReason}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="margin-bottom: 25px;">
+        <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #0f172a;">Updated Commodity Details</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background-color: #f1f5f9;">
+              <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: center;">#</th>
+              <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: left;">Commodity</th>
+              <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: left;">Variety</th>
+              <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: right;">Quantity</th>
+              <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: right;">Rate</th>
+              <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lineItemsHtml}
+          </tbody>
+          <tfoot>
+            <tr style="background-color: #f1f5f9;">
+              <td colspan="5" style="padding: 12px; border: 1px solid #e2e8f0; text-align: right; font-weight: 600;">Total Amount:</td>
+              <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: right; font-weight: 700; color: #2563eb;">${data.totalAmount}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://tradehub.rnrl.com/sales-confirmation" style="display: inline-block; background-color: #f59e0b; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+          View Updated Confirmation
+        </a>
+      </div>
+    </div>
+
+    <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+      <p style="margin: 0; font-size: 12px; color: #64748b;">
+        © ${new Date().getFullYear()} RNRL TradeHub Pvt. Ltd. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};
