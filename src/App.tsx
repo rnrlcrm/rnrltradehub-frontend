@@ -19,7 +19,6 @@ import Payments from './pages/Payments';
 import Disputes from './pages/Disputes';
 import Commissions from './pages/Commissions';
 import CommissionAccounting from './pages/CommissionAccounting';
-import Reports from './pages/Reports';
 import AuditTrail from './pages/AuditTrail';
 import GrievanceOfficer from './pages/GrievanceOfficer';
 import PrivacyPolicy from './pages/PrivacyPolicy';
