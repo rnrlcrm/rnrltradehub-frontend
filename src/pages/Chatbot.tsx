@@ -3,12 +3,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import { Button } from '../components/ui/Form';
 import { User } from '../types';
+import { getNotifications } from '../utils/notifications';
 
 interface Message {
   id: number;
-  sender: 'bot' | 'user';
+  sender: 'bot' | 'user' | 'system';
   text: string;
   timestamp: Date;
+  isNotification?: boolean;
 }
 
 interface ChatbotProps {
@@ -20,20 +22,70 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     {
       id: 1,
       sender: 'bot',
-      text: `Hello ${currentUser.name}! I'm your RNRL ERP Assistant. I can help you with:\n\n• Creating invoices from emails\n• Recording payments\n• Checking contract status\n• Tracking shipments\n• Answering questions about your transactions\n\nWhat would you like to do today?`,
+      text: `Hello ${currentUser.name}! I'm your RNRL ERP Assistant. I can help you with:\n\n• Creating invoices from emails\n• Recording payments\n• Checking contract status\n• Tracking shipments\n• Answering questions about your transactions\n• Viewing system notifications\n\nWhat would you like to do today?`,
       timestamp: new Date(),
     },
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [lastNotificationCheck, setLastNotificationCheck] = useState<Date>(new Date());
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Check for new notifications periodically
+  useEffect(() => {
+    const checkNotifications = () => {
+      const notifications = getNotifications();
+      const newNotifications = notifications.filter(n => 
+        new Date(n.timestamp) > lastNotificationCheck && !n.isRead
+      );
+
+      if (newNotifications.length > 0) {
+        newNotifications.forEach(notification => {
+          const notificationMessage: Message = {
+            id: messages.length + Math.random(),
+            sender: 'system',
+            text: `🔔 ${notification.title}\n\n${notification.message}`,
+            timestamp: notification.timestamp,
+            isNotification: true,
+          };
+          setMessages(prev => [...prev, notificationMessage]);
+        });
+        setLastNotificationCheck(new Date());
+      }
+    };
+
+    const interval = setInterval(checkNotifications, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [messages.length, lastNotificationCheck]);
+
   const simulateBotResponse = (userInput: string): string => {
     const input = userInput.toLowerCase();
+    
+    // Notification-related queries
+    if (input.includes('notification') || input.includes('alert') || input.includes('updates')) {
+      const notifications = getNotifications();
+      const unreadCount = notifications.filter(n => !n.isRead).length;
+      
+      if (notifications.length === 0) {
+        return '📬 You have no notifications at the moment.\n\nNotifications will appear here automatically when:\n• New sales confirmations are created\n• Confirmations are amended\n• Confirmations require approval\n• Other important system events occur';
+      }
+      
+      const recentNotifications = notifications.slice(0, 5);
+      const notifText = recentNotifications.map((n, i) => 
+        `${i + 1}. ${n.title}\n   ${n.message}\n   ${new Date(n.timestamp).toLocaleString()}`
+      ).join('\n\n');
+      
+      return `📬 You have ${unreadCount} unread notification(s)\n\nRecent notifications:\n\n${notifText}`;
+    }
+
+    // Sales Confirmation queries
+    if (input.includes('sales confirmation') || input.includes('confirmation')) {
+      return 'I can help you with Sales Confirmations!\n\n📋 Sales Confirmation features:\n• Create multi-commodity confirmations\n• Dynamic forms based on commodity types\n• Amendment tracking with full audit trail\n• Email notifications to buyers and sellers\n• Approval workflow\n\nGo to Sales Confirmation page to manage confirmations, or type "notifications" to see recent updates.';
+    }
     
     // Invoice-related queries
     if (input.includes('invoice') || input.includes('bill')) {
@@ -62,11 +114,11 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     
     // Help
     if (input.includes('help') || input.includes('what can') || input.includes('how')) {
-      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Shipment Tracking\n   - LR number updates\n   - Delivery status\n   - Documents\n\n4. 📊 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n\nJust tell me what you need!';
+      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Shipment Tracking\n   - LR number updates\n   - Delivery status\n   - Documents\n\n4. 📊 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n\n5. 📋 Sales Confirmations\n   - Multi-commodity support\n   - Amendment tracking\n   - Email notifications\n\n6. 🔔 Notifications\n   - Real-time system updates\n   - Action reminders\n   - Status changes\n\nJust tell me what you need!';
     }
     
     // Default response
-    return 'I understand you\'re asking about: "' + userInput + '"\n\nCould you provide more details? I can help you with:\n• Creating invoices\n• Recording payments\n• Checking contracts\n• Tracking shipments\n• Email integration\n\nType "help" to see all my capabilities!';
+    return 'I understand you\'re asking about: "' + userInput + '"\n\nCould you provide more details? I can help you with:\n• Creating invoices\n• Recording payments\n• Checking contracts\n• Tracking shipments\n• Email integration\n• Sales confirmations\n• Notifications\n\nType "help" to see all my capabilities!';
   };
 
   const handleSendMessage = () => {
@@ -136,13 +188,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
                   className={`max-w-[70%] rounded-lg p-3 ${
                     message.sender === 'user'
                       ? 'bg-blue-600 text-white'
+                      : message.sender === 'system'
+                      ? 'bg-yellow-50 border-2 border-yellow-300 text-yellow-900'
                       : 'bg-white border border-slate-200 text-slate-800'
                   }`}
                 >
                   <p className="text-sm whitespace-pre-line">{message.text}</p>
                   <p
                     className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-blue-100' : 'text-slate-400'
+                      message.sender === 'user' ? 'text-blue-100' : 
+                      message.sender === 'system' ? 'text-yellow-700' :
+                      'text-slate-400'
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString()}
