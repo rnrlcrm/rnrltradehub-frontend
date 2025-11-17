@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
-import SalesContracts from './pages/SalesContracts';
 import SalesConfirmation from './pages/SalesConfirmation';
 import PartnerRegistration from './pages/PartnerRegistration';
 import MyPartnerProfile from './pages/MyPartnerProfile';
@@ -31,8 +30,8 @@ import Logistics from './pages/Logistics';
 import Ledger from './pages/Ledger';
 import Reconciliation from './pages/Reconciliation';
 import Login from './pages/Login';
-import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
-import { User, AuditLog, MasterDataItem, SalesContract } from './types';
+import { mockUsers, mockAuditLogs, mockOrganizations, mockMasterData } from './data/mockData';
+import { User, AuditLog, MasterDataItem } from './types';
 import { DialogProvider } from './components/dialogs/CustomDialogs';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -44,7 +43,6 @@ const App: React.FC = () => {
   const [financialYears] = useState<MasterDataItem[]>(mockMasterData.financialYears);
   const [currentOrganization, setCurrentOrganization] = useState<string>(organizations[0].name);
   const [currentFinancialYear, setCurrentFinancialYear] = useState<string>(financialYears[financialYears.length - 1].name);
-  const [contracts, setContracts] = useState<SalesContract[]>(mockSalesContracts);
 
   const handleNavigation = (page: string) => {
     const hash = page.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
@@ -79,48 +77,8 @@ const App: React.FC = () => {
   };
 
   const handleCarryForward = () => {
-    const currentFYIndex = financialYears.findIndex(fy => fy.name === currentFinancialYear);
-    if (currentFYIndex < 1) {
-        alert("Cannot carry forward. No previous financial year found.");
-        return;
-    }
-    const previousFY = financialYears[currentFYIndex - 1].name;
-
-    const contractsToCarryForward = contracts.filter(c => 
-        c.financialYear === previousFY && (c.status === 'Active' || c.status === 'Disputed')
-    );
-
-    if (contractsToCarryForward.length === 0) {
-        alert(`No active or disputed contracts found in the previous financial year (${previousFY}) to carry forward.`);
-        return;
-    }
-
-    const newContracts: SalesContract[] = contractsToCarryForward.map((c, index) => ({
-        ...c,
-        id: `sc_cf_${Date.now() + index}`,
-        scNo: `CF-${c.scNo}`,
-        financialYear: currentFinancialYear,
-        manualTerms: `Carried forward from ${c.scNo} (FY ${previousFY}). ${c.manualTerms || ''}`,
-        status: 'Active',
-    }));
-
-    const updatedOldContracts = contracts.map(c => {
-        if (contractsToCarryForward.some(cf => cf.id === c.id)) {
-            return { ...c, status: 'Carried Forward' };
-        }
-        return c;
-    });
-    
-    setContracts([...updatedOldContracts, ...newContracts]);
-    addAuditLog({
-        user: currentUser!.name,
-        role: currentUser!.role,
-        action: 'Carry Forward',
-        module: 'Year-End',
-        details: `Carried forward ${newContracts.length} contracts from FY ${previousFY} to FY ${currentFinancialYear}.`,
-        reason: 'Year-end process initiated by user.'
-    });
-    alert(`Successfully carried forward ${newContracts.length} contracts to the current financial year.`);
+    // This function is kept for Dashboard compatibility but no longer used for contracts
+    alert("Carry forward functionality is not applicable for Sales Confirmations.");
   };
 
   const handleLogin = (user: User) => {
@@ -158,7 +116,6 @@ const App: React.FC = () => {
       case 'dashboard': return <Dashboard currentUser={currentUser} onCarryForward={handleCarryForward} />;
       case 'trade-desk': return <TradeDesk currentUser={currentUser} />;
       case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
-      case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
       case 'sales-confirmation': return <SalesConfirmation currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} addAuditLog={addAuditLog} />;
       case 'invoices': return <Invoices currentUser={currentUser} />;
       case 'payments': return <Payments currentUser={currentUser} />;
