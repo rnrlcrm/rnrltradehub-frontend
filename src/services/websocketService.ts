@@ -17,7 +17,12 @@ import {
   TradeUpdatedEvent,
   NotificationEvent,
   DashboardStatsEvent,
-  DashboardAlertEvent
+  DashboardAlertEvent,
+  ControllerMilestoneEvent,
+  TransportMilestoneEvent,
+  PaymentEvent,
+  DisputeEvent,
+  InventoryEvent,
 } from '../types/tradedesk.types';
 
 // WebSocket server URL from environment or default
@@ -429,4 +434,161 @@ export function unsubscribeFromUserChannel(userId: number): void {
 
 export function unsubscribeFromDashboardChannel(orgId: number): void {
   wsService.unsubscribe(`dashboard/${orgId}`);
+}
+
+// ============================================================================
+// ADDITIONAL CHANNEL SUBSCRIPTIONS
+// ============================================================================
+
+export function subscribeToControllerChannel(
+  userId: number,
+  callbacks: {
+    onCheckIn?: (data: ControllerMilestoneEvent) => void;
+    onSampling?: (data: ControllerMilestoneEvent) => void;
+    onWeighment?: (data: ControllerMilestoneEvent) => void;
+    onLoading?: (data: ControllerMilestoneEvent) => void;
+    onDispatch?: (data: ControllerMilestoneEvent) => void;
+  }
+): void {
+  const channel = `controller/${userId}`;
+  
+  if (callbacks.onCheckIn) {
+    wsService.subscribe(channel, WebSocketEventType.CONTROLLER_CHECKIN, callbacks.onCheckIn);
+  }
+  if (callbacks.onSampling) {
+    wsService.subscribe(channel, WebSocketEventType.CONTROLLER_SAMPLING, callbacks.onSampling);
+  }
+  if (callbacks.onWeighment) {
+    wsService.subscribe(channel, WebSocketEventType.CONTROLLER_WEIGHMENT, callbacks.onWeighment);
+  }
+  if (callbacks.onLoading) {
+    wsService.subscribe(channel, WebSocketEventType.CONTROLLER_LOADING, callbacks.onLoading);
+  }
+  if (callbacks.onDispatch) {
+    wsService.subscribe(channel, WebSocketEventType.CONTROLLER_DISPATCH, callbacks.onDispatch);
+  }
+}
+
+export function subscribeToTransportChannel(
+  userId: number,
+  callbacks: {
+    onAssigned?: (data: TransportMilestoneEvent) => void;
+    onTruckReached?: (data: TransportMilestoneEvent) => void;
+    onLoadingStarted?: (data: TransportMilestoneEvent) => void;
+    onLoadingFinished?: (data: TransportMilestoneEvent) => void;
+    onDispatched?: (data: TransportMilestoneEvent) => void;
+    onEnRoute?: (data: TransportMilestoneEvent) => void;
+    onArrived?: (data: TransportMilestoneEvent) => void;
+    onDelivered?: (data: TransportMilestoneEvent) => void;
+    onLocationUpdate?: (data: TransportMilestoneEvent) => void;
+  }
+): void {
+  const channel = `transport/${userId}`;
+  
+  if (callbacks.onAssigned) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_ASSIGNED, callbacks.onAssigned);
+  }
+  if (callbacks.onTruckReached) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_TRUCK_REACHED, callbacks.onTruckReached);
+  }
+  if (callbacks.onLoadingStarted) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_LOADING_STARTED, callbacks.onLoadingStarted);
+  }
+  if (callbacks.onLoadingFinished) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_LOADING_FINISHED, callbacks.onLoadingFinished);
+  }
+  if (callbacks.onDispatched) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_DISPATCHED, callbacks.onDispatched);
+  }
+  if (callbacks.onEnRoute) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_EN_ROUTE, callbacks.onEnRoute);
+  }
+  if (callbacks.onArrived) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_ARRIVED, callbacks.onArrived);
+  }
+  if (callbacks.onDelivered) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_DELIVERED, callbacks.onDelivered);
+  }
+  if (callbacks.onLocationUpdate) {
+    wsService.subscribe(channel, WebSocketEventType.TRANSPORT_LOCATION_UPDATE, callbacks.onLocationUpdate);
+  }
+}
+
+export function subscribeToPaymentChannel(
+  userId: number,
+  callbacks: {
+    onPaymentUploaded?: (data: PaymentEvent) => void;
+    onPaymentConfirmed?: (data: PaymentEvent) => void;
+    onPaymentRejected?: (data: PaymentEvent) => void;
+  }
+): void {
+  const channel = `payment/${userId}`;
+  
+  if (callbacks.onPaymentUploaded) {
+    wsService.subscribe(channel, WebSocketEventType.PAYMENT_UPLOADED, callbacks.onPaymentUploaded);
+  }
+  if (callbacks.onPaymentConfirmed) {
+    wsService.subscribe(channel, WebSocketEventType.PAYMENT_CONFIRMED, callbacks.onPaymentConfirmed);
+  }
+  if (callbacks.onPaymentRejected) {
+    wsService.subscribe(channel, WebSocketEventType.PAYMENT_REJECTED, callbacks.onPaymentRejected);
+  }
+}
+
+export function subscribeToDisputeChannel(
+  userId: number,
+  callbacks: {
+    onDisputeRaised?: (data: DisputeEvent) => void;
+    onDisputeUpdated?: (data: DisputeEvent) => void;
+    onDisputeResolved?: (data: DisputeEvent) => void;
+  }
+): void {
+  const channel = `dispute/${userId}`;
+  
+  if (callbacks.onDisputeRaised) {
+    wsService.subscribe(channel, WebSocketEventType.DISPUTE_RAISED, callbacks.onDisputeRaised);
+  }
+  if (callbacks.onDisputeUpdated) {
+    wsService.subscribe(channel, WebSocketEventType.DISPUTE_UPDATED, callbacks.onDisputeUpdated);
+  }
+  if (callbacks.onDisputeResolved) {
+    wsService.subscribe(channel, WebSocketEventType.DISPUTE_RESOLVED, callbacks.onDisputeResolved);
+  }
+}
+
+export function subscribeToInventoryChannel(
+  warehouseId: number,
+  callbacks: {
+    onInventoryUpdated?: (data: InventoryEvent) => void;
+    onLowStock?: (data: InventoryEvent) => void;
+  }
+): void {
+  const channel = `inventory/${warehouseId}`;
+  
+  if (callbacks.onInventoryUpdated) {
+    wsService.subscribe(channel, WebSocketEventType.INVENTORY_UPDATED, callbacks.onInventoryUpdated);
+  }
+  if (callbacks.onLowStock) {
+    wsService.subscribe(channel, WebSocketEventType.INVENTORY_LOW_STOCK, callbacks.onLowStock);
+  }
+}
+
+export function unsubscribeFromControllerChannel(userId: number): void {
+  wsService.unsubscribe(`controller/${userId}`);
+}
+
+export function unsubscribeFromTransportChannel(userId: number): void {
+  wsService.unsubscribe(`transport/${userId}`);
+}
+
+export function unsubscribeFromPaymentChannel(userId: number): void {
+  wsService.unsubscribe(`payment/${userId}`);
+}
+
+export function unsubscribeFromDisputeChannel(userId: number): void {
+  wsService.unsubscribe(`dispute/${userId}`);
+}
+
+export function unsubscribeFromInventoryChannel(warehouseId: number): void {
+  wsService.unsubscribe(`inventory/${warehouseId}`);
 }
