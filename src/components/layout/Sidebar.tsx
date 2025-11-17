@@ -43,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
   const [collapsed, setCollapsed] = useState(false);
   const navItems = [
     { name: 'Dashboard', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
+    { name: 'Command Center', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Trade Desk', icon: TradeDeskIcon, roles: ['Admin', 'Sales', 'Business Partner'] },
     { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
     { name: 'Sales Contracts', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },

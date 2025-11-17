@@ -156,6 +156,7 @@ const App: React.FC = () => {
     const pageKey = activePage.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
     switch (pageKey) {
       case 'dashboard': return <Dashboard currentUser={currentUser} onCarryForward={handleCarryForward} />;
+      case 'command-center': return <CommandCenter currentUser={currentUser} />;
       case 'trade-desk': return <TradeDesk currentUser={currentUser} />;
       case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
       case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
@@ -173,7 +174,7 @@ const App: React.FC = () => {
       case 'business-partners': return <BusinessPartnerManagement currentUser={currentUser} />;
       case 'my-partner-profile': return <MyPartnerProfile userId={currentUser.id} partnerId={currentUser.partnerId || currentUser.id} />;
       case 'partner-registration': return <PartnerRegistration />;
-      case 'reports': return <Reports currentUser={currentUser} />;
+      case 'reports': return <AdvancedReporting currentUser={currentUser} />;
       case 'audit-trail': return <AuditTrail currentUser={currentUser} auditLogs={auditLogs} />;
       case 'user-management': return <UserManagement currentUser={currentUser} />;
       case 'profile-update-approvals': return <ProfileUpdateApprovals />;
