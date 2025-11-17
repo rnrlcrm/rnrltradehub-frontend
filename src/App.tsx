@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
+import CommandCenter from './pages/CommandCenter';
+import AdvancedReporting from './pages/AdvancedReporting';
+import TradeDesk from './pages/TradeDesk/TradeDesk';
 import SalesContracts from './pages/SalesContracts';
 import PartnerRegistration from './pages/PartnerRegistration';
 import MyPartnerProfile from './pages/MyPartnerProfile';
@@ -34,6 +37,7 @@ import FinanceModule from './pages/FinanceModule';
 import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
 import { User, AuditLog, MasterDataItem, SalesContract } from './types';
 import { DialogProvider } from './components/dialogs/CustomDialogs';
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const App: React.FC = () => {
@@ -189,27 +193,29 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <DialogProvider>
-        <div className="flex h-screen bg-neutral-50 dark:bg-neutral-900 font-sans">
-          <Sidebar onNavigate={handleNavigation} activePage={activePage} currentUser={currentUser} />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Header 
-              currentUser={currentUser} 
-              onUserChange={setCurrentUser}
-              onLogout={handleLogout}
-              organizations={organizations}
-              currentOrganization={currentOrganization}
-              onOrganizationChange={setCurrentOrganization}
-              financialYears={financialYears}
-              currentFinancialYear={currentFinancialYear}
-              onFinancialYearChange={setCurrentFinancialYear}
-            />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-50 dark:bg-neutral-900 p-8">
-              {renderPage()}
-            </main>
-          </div>
+      <WebSocketProvider enabled={!!currentUser}>
+        <DialogProvider>
+          <div className="flex h-screen bg-neutral-50 dark:bg-neutral-900 font-sans">
+            <Sidebar onNavigate={handleNavigation} activePage={activePage} currentUser={currentUser} />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Header 
+                currentUser={currentUser} 
+                onUserChange={setCurrentUser}
+                onLogout={handleLogout}
+                organizations={organizations}
+                currentOrganization={currentOrganization}
+                onOrganizationChange={setCurrentOrganization}
+                financialYears={financialYears}
+                currentFinancialYear={currentFinancialYear}
+                onFinancialYearChange={setCurrentFinancialYear}
+              />
+              <main className="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-50 dark:bg-neutral-900 p-8">
+                {renderPage()}
+              </main>
+            </div>
         </div>
       </DialogProvider>
+      </WebSocketProvider>
     </ErrorBoundary>
   );
 };

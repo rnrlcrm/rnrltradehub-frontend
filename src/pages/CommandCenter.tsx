@@ -7,11 +7,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../components/ui/Card';
 import { User } from '../types';
+import { useWebSocket } from '../contexts/WebSocketContext';
+import { WebSocketEventType } from '../types/tradedesk.types';
 import {
   TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, 
   DollarSign, Users, FileText, Activity, Bell, Download, Filter,
   Calendar, BarChart3, PieChart, LineChart, Settings, Search,
-  ArrowUpRight, ArrowDownRight, Zap, Target, Award
+  ArrowUpRight, ArrowDownRight, Zap, Target, Award, Wifi, WifiOff
 } from 'lucide-react';
 
 interface CommandCenterProps {
@@ -63,10 +65,50 @@ const CommandCenter: React.FC<CommandCenterProps> = ({ currentUser }) => {
   const [predictiveAlerts, setPredictiveAlerts] = useState<PredictiveAlert[]>([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState<'today' | 'week' | 'month' | 'quarter' | 'year'>('month');
   const [autoRefresh, setAutoRefresh] = useState(true);
+  
+  // WebSocket for real-time updates
+  const { isConnected, subscribe } = useWebSocket();
 
-  // Real-time data fetching (every 5 seconds)
+  // Subscribe to real-time events
   useEffect(() => {
-    if (autoRefresh) {
+    // Subscribe to dashboard stats updates
+    const unsubscribeStats = subscribe('dashboard', WebSocketEventType.DASHBOARD_STATS, (data) => {
+      console.log('[CommandCenter] Received stats update:', data);
+      setLiveData(data);
+    });
+
+    // Subscribe to dashboard alerts
+    const unsubscribeAlerts = subscribe('dashboard', WebSocketEventType.DASHBOARD_ALERT, (data) => {
+      console.log('[CommandCenter] Received alert:', data);
+      setPredictiveAlerts(prev => [data, ...prev].slice(0, 10));
+    });
+
+    // Subscribe to activity feed updates
+    const unsubscribeActivity = subscribe('dashboard', WebSocketEventType.NOTIFICATION, (data) => {
+      console.log('[CommandCenter] Received notification:', data);
+      const newActivity: ActivityFeedItem = {
+        id: Date.now().toString(),
+        type: data.type || 'system',
+        title: data.title,
+        description: data.message,
+        timestamp: new Date(),
+        priority: data.priority || 'medium',
+        actor: data.actor,
+        amount: data.amount,
+      };
+      setActivityFeed(prev => [newActivity, ...prev].slice(0, 50));
+    });
+
+    return () => {
+      unsubscribeStats();
+      unsubscribeAlerts();
+      unsubscribeActivity();
+    };
+  }, [subscribe]);
+
+  // Real-time data fetching (every 5 seconds) - Fallback if WebSocket not connected
+  useEffect(() => {
+    if (autoRefresh && !isConnected) {
       const interval = setInterval(() => {
         fetchLiveData();
         fetchActivityFeed();
@@ -239,13 +281,14 @@ const CommandCenter: React.FC<CommandCenterProps> = ({ currentUser }) => {
           <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
             <Activity className="w-8 h-8 text-blue-600" />
             Command Center
-            {autoRefresh && (
+            {(autoRefresh || isConnected) && (
               <span className="flex items-center gap-2 text-sm font-normal text-green-600">
+                {isConnected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4 text-gray-400" />}
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </span>
-                LIVE
+                {isConnected ? 'LIVE (WebSocket)' : 'LIVE (Polling)'}
               </span>
             )}
           </h1>
