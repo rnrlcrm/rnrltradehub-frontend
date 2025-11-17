@@ -4,10 +4,10 @@ import { Invoice, SalesContract, BusinessPartner } from '../../types';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
 import { mockSalesContracts, mockBusinessPartners } from '../../data/mockData';
 import { calculateGST, GST_RATES } from '../../utils/gstCalculations';
-import { ocrService } from '../../services/ocrService';
-import { validationService } from '../../services/validationService';
-import { notificationService } from '../../services/notificationService';
-import { autoPostingService } from '../../services/autoPostingService';
+import OCRService from '../../services/ocrService';
+import ValidationService from '../../services/validationService';
+import NotificationService from '../../services/notificationService';
+import AutoPostingService from '../../services/autoPostingService';
 
 interface ComprehensiveInvoiceFormProps {
   invoice?: Invoice | null;
@@ -198,7 +198,7 @@ const ComprehensiveInvoiceForm: React.FC<ComprehensiveInvoiceFormProps> = ({
     // Process OCR
     setIsProcessingOCR(true);
     try {
-      const extractedData = await ocrService.extractInvoiceData(file);
+      const extractedData = await OCRService.extractInvoiceData(file);
       setOcrResult(extractedData);
       
       // Validate extracted data
@@ -285,7 +285,7 @@ const ComprehensiveInvoiceForm: React.FC<ComprehensiveInvoiceFormProps> = ({
         
         // Send email notification
         if (emailTo) {
-          await notificationService.sendInvoiceEmail({
+          await NotificationService.sendInvoiceEmail({
             to: emailTo,
             cc: emailCC,
             invoice: completeInvoice,

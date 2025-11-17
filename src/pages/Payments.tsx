@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
 import Modal from '../components/ui/Modal';
-import PaymentForm from '../components/forms/PaymentForm';
+import ComprehensivePaymentForm from '../components/forms/ComprehensivePaymentForm';
 import { mockPayments } from '../data/mockData';
 import { Payment, User } from '../types';
 import { hasPermission } from '../lib/permissions';
@@ -259,7 +259,7 @@ const Payments: React.FC<PaymentsProps> = ({ currentUser }) => {
       </Card>
       
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={getModalTitle()}>
-        <PaymentForm
+        <ComprehensivePaymentForm
           payment={selectedItem}
           readOnly={modalMode === 'view'}
           onSave={handleSave}
