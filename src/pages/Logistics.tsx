@@ -228,6 +228,13 @@ const LogisticsPage: React.FC<LogisticsProps> = ({ currentUser }) => {
           <h1 className="text-2xl font-semibold text-slate-800">Logistics & Delivery Management</h1>
           <p className="text-slate-600 mt-1">Track and manage delivery orders and logistics</p>
         </div>
+        <Button
+          onClick={() => setIsTransporterBillModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Add Transporter Bill
+        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -641,6 +648,29 @@ const LogisticsPage: React.FC<LogisticsProps> = ({ currentUser }) => {
           </div>
         </div>
       )}
+
+      {/* Transporter Bill Modal */}
+      <Modal
+        isOpen={isTransporterBillModalOpen}
+        onClose={() => {
+          setIsTransporterBillModalOpen(false);
+          setSelectedBill(null);
+        }}
+        title={selectedBill ? 'View Transporter Bill' : 'Add Transporter Bill'}
+      >
+        <TransporterBillForm
+          bill={selectedBill}
+          onSave={(data) => {
+            console.log('Transporter bill saved:', data);
+            setIsTransporterBillModalOpen(false);
+            setSelectedBill(null);
+          }}
+          onCancel={() => {
+            setIsTransporterBillModalOpen(false);
+            setSelectedBill(null);
+          }}
+        />
+      </Modal>
     </div>
   );
 };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Truck, Upload, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
-import { ocrService } from '../../services/ocrService';
-import { autoPostingService } from '../../services/autoPostingService';
-import { notificationService } from '../../services/notificationService';
+import OCRService from '../../services/ocrService';
+import AutoPostingService from '../../services/autoPostingService';
+import NotificationService from '../../services/notificationService';
 
 interface TransporterBillFormProps {
   bill?: any;
@@ -141,7 +141,7 @@ const TransporterBillForm: React.FC<TransporterBillFormProps> = ({
     
     setIsProcessingOCR(true);
     try {
-      const extractedData = await ocrService.extractTransportBillData(file);
+      const extractedData = await OCRService.extractTransportBillData(file);
       
       setFormData(prev => ({
         ...prev,
@@ -186,10 +186,10 @@ const TransporterBillForm: React.FC<TransporterBillFormProps> = ({
     setValidationErrors([]);
     
     try {
-      await autoPostingService.postTransporterBillToLedger(formData);
+      await AutoPostingService.postTransporterBillToLedger(formData);
       
       if (autoEmail && emailTo) {
-        await notificationService.sendTransporterBillEmail({
+        await NotificationService.sendTransporterBillEmail({
           to: emailTo,
           bill: formData,
           attachment: billFile,

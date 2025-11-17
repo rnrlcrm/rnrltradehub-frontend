@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { User, QualityInspection, InspectionStatus, InspectionType } from '../types';
 import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
+import { Button } from '../components/ui/Form';
+import ControllerBillForm from '../components/forms/ControllerBillForm';
 import { AlertCircle, CheckCircle, Clock, FileText, Upload, Download, Eye } from 'lucide-react';
 
 interface QualityInspectionProps {
@@ -104,6 +107,8 @@ const QualityInspectionPage: React.FC<QualityInspectionProps> = ({ currentUser }
   const [inspections, setInspections] = useState<QualityInspection[]>(mockInspections);
   const [selectedTab, setSelectedTab] = useState<'pending' | 'all' | 'my-org'>('pending');
   const [selectedInspection, setSelectedInspection] = useState<QualityInspection | null>(null);
+  const [isControllerBillModalOpen, setIsControllerBillModalOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState<any>(null);
   const [filter, setFilter] = useState<{
     status?: InspectionStatus;
     type?: InspectionType;
@@ -219,6 +224,13 @@ const QualityInspectionPage: React.FC<QualityInspectionProps> = ({ currentUser }
           <h1 className="text-2xl font-semibold text-slate-800">Quality Inspection & Inventory</h1>
           <p className="text-slate-600 mt-1">Manage quality inspections and approvals</p>
         </div>
+        <Button
+          onClick={() => setIsControllerBillModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Add Controller Bill
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -513,6 +525,29 @@ const QualityInspectionPage: React.FC<QualityInspectionProps> = ({ currentUser }
           </div>
         </div>
       )}
+
+      {/* Controller Bill Modal */}
+      <Modal
+        isOpen={isControllerBillModalOpen}
+        onClose={() => {
+          setIsControllerBillModalOpen(false);
+          setSelectedBill(null);
+        }}
+        title={selectedBill ? 'View Controller Bill' : 'Add Controller Bill'}
+      >
+        <ControllerBillForm
+          bill={selectedBill}
+          onSave={(data) => {
+            console.log('Controller bill saved:', data);
+            setIsControllerBillModalOpen(false);
+            setSelectedBill(null);
+          }}
+          onCancel={() => {
+            setIsControllerBillModalOpen(false);
+            setSelectedBill(null);
+          }}
+        />
+      </Modal>
     </div>
   );
 };
