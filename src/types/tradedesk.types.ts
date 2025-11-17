@@ -594,7 +594,34 @@ export enum WebSocketEventType {
   TRADE_UPDATED = 'trade.updated',
   NOTIFICATION = 'notification',
   DASHBOARD_STATS = 'dashboard.stats',
-  DASHBOARD_ALERT = 'dashboard.alert'
+  DASHBOARD_ALERT = 'dashboard.alert',
+  // Controller milestone events
+  CONTROLLER_CHECKIN = 'controller.checkin',
+  CONTROLLER_SAMPLING = 'controller.sampling',
+  CONTROLLER_WEIGHMENT = 'controller.weighment',
+  CONTROLLER_LOADING = 'controller.loading',
+  CONTROLLER_DISPATCH = 'controller.dispatch',
+  // Transport milestone events
+  TRANSPORT_ASSIGNED = 'transport.assigned',
+  TRANSPORT_TRUCK_REACHED = 'transport.truck_reached',
+  TRANSPORT_LOADING_STARTED = 'transport.loading_started',
+  TRANSPORT_LOADING_FINISHED = 'transport.loading_finished',
+  TRANSPORT_DISPATCHED = 'transport.dispatched',
+  TRANSPORT_EN_ROUTE = 'transport.en_route',
+  TRANSPORT_ARRIVED = 'transport.arrived',
+  TRANSPORT_DELIVERED = 'transport.delivered',
+  TRANSPORT_LOCATION_UPDATE = 'transport.location_update',
+  // Payment events
+  PAYMENT_UPLOADED = 'payment.uploaded',
+  PAYMENT_CONFIRMED = 'payment.confirmed',
+  PAYMENT_REJECTED = 'payment.rejected',
+  // Dispute events
+  DISPUTE_RAISED = 'dispute.raised',
+  DISPUTE_UPDATED = 'dispute.updated',
+  DISPUTE_RESOLVED = 'dispute.resolved',
+  // Inventory events
+  INVENTORY_UPDATED = 'inventory.updated',
+  INVENTORY_LOW_STOCK = 'inventory.low_stock',
 }
 
 export interface WebSocketMessage<T = any> {
@@ -861,4 +888,53 @@ export function canAcceptOffer(status: OfferStatus): boolean {
 
 export function canRejectOffer(status: OfferStatus): boolean {
   return status === OfferStatus.PENDING || status === OfferStatus.COUNTERED;
+}
+
+// ============================================================================
+// ADDITIONAL EVENT TYPES FOR WEBSOCKET
+// ============================================================================
+
+export interface ControllerMilestoneEvent {
+  taskId: string;
+  contractNo: string;
+  milestone: string;
+  location?: { lat: number; lng: number };
+  timestamp: string;
+  data?: any;
+}
+
+export interface TransportMilestoneEvent {
+  orderId: string;
+  toNumber: string;
+  milestone: string;
+  location?: { lat: number; lng: number; address: string };
+  timestamp: string;
+  vehicleNo?: string;
+  driverName?: string;
+}
+
+export interface PaymentEvent {
+  paymentId: string;
+  contractNo: string;
+  amount: number;
+  status: 'uploaded' | 'confirmed' | 'rejected';
+  timestamp: string;
+  remarks?: string;
+}
+
+export interface DisputeEvent {
+  disputeId: string;
+  contractNo: string;
+  status: 'raised' | 'updated' | 'resolved';
+  raisedBy: string;
+  timestamp: string;
+  description?: string;
+}
+
+export interface InventoryEvent {
+  warehouseId: string;
+  commodity: string;
+  quantity: number;
+  action: 'inward' | 'outward' | 'adjustment';
+  timestamp: string;
 }

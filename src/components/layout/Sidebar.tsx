@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { DashboardIcon, ContractIcon, UsersIcon, SettingsIcon, InvoiceIcon, PaymentIcon, DisputeIcon, CommissionIcon, ReportIcon, AuditIcon, ChatIcon, TradeDeskIcon, QualityIcon, InventoryIcon, LogisticsIcon, LedgerIcon } from '../ui/icons';
+import { DashboardIcon, ContractIcon, UsersIcon, SettingsIcon, InvoiceIcon, PaymentIcon, DisputeIcon, CommissionIcon, ReportIcon, AuditIcon, ChatIcon, TradeDeskIcon, QualityIcon, ControllerIcon, InventoryIcon, LogisticsIcon, TransportIcon, LedgerIcon } from '../ui/icons';
 import { User } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -48,7 +48,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
     { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
     { name: 'Sales Confirmation', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Quality Inspection', icon: QualityIcon, roles: ['Admin', 'Sales', 'Accounts'] },
+    { name: 'Controller', icon: ControllerIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Inventory', icon: InventoryIcon, roles: ['Admin', 'Sales', 'Accounts'] },
+    { name: 'Transport', icon: TransportIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Logistics', icon: LogisticsIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Finance', icon: LedgerIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
     { name: 'Commissions', icon: CommissionIcon, roles: ['Admin', 'Accounts'] },
