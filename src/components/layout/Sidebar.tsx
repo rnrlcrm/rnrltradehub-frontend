@@ -43,16 +43,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
   const [collapsed, setCollapsed] = useState(false);
   const navItems = [
     { name: 'Dashboard', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
+    { name: 'Command Center', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Trade Desk', icon: TradeDeskIcon, roles: ['Admin', 'Sales', 'Business Partner'] },
     { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
     { name: 'Sales Confirmation', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Quality Inspection', icon: QualityIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Inventory', icon: InventoryIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Logistics', icon: LogisticsIcon, roles: ['Admin', 'Sales', 'Accounts'] },
-    { name: 'Invoices', icon: InvoiceIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
-    { name: 'Payments', icon: PaymentIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
-    { name: 'Ledger', icon: LedgerIcon, roles: ['Admin', 'Accounts'] },
-    { name: 'Reconciliation', icon: LedgerIcon, roles: ['Admin', 'Accounts'] },
+    { name: 'Finance', icon: LedgerIcon, roles: ['Admin', 'Accounts', 'Business Partner'] },
     { name: 'Commissions', icon: CommissionIcon, roles: ['Admin', 'Accounts'] },
     { name: 'Commission Accounting', icon: CommissionIcon, roles: ['Admin', 'Accounts'] },
     { name: 'Disputes', icon: DisputeIcon, roles: ['Admin', 'Dispute Manager', 'Sales'] },

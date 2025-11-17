@@ -3,10 +3,10 @@ import { Upload, FileText, CheckCircle, AlertCircle, Receipt, Send } from 'lucid
 import { Payment, Invoice } from '../../types';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
 import { mockInvoices } from '../../data/mockData';
-import { ocrService } from '../../services/ocrService';
-import { validationService } from '../../services/validationService';
-import { autoPostingService } from '../../services/autoPostingService';
-import { notificationService } from '../../services/notificationService';
+import OCRService from '../../services/ocrService';
+import ValidationService from '../../services/validationService';
+import AutoPostingService from '../../services/autoPostingService';
+import NotificationService from '../../services/notificationService';
 
 interface ComprehensivePaymentFormProps {
   payment?: Payment | null;
@@ -175,7 +175,7 @@ const ComprehensivePaymentForm: React.FC<ComprehensivePaymentFormProps> = ({
       setOcrResult(extractedData);
       
       // Validate extracted data
-      const validation = await validationService.validatePayment(extractedData);
+      const validation = await ValidationService.validatePayment(extractedData);
       
       if (validation.isValid) {
         // Auto-populate form with OCR data
@@ -294,7 +294,7 @@ const ComprehensivePaymentForm: React.FC<ComprehensivePaymentFormProps> = ({
       
       // Send notification
       if (autoNotify && notifyEmail) {
-        await notificationService.sendPaymentConfirmation({
+        await NotificationService.sendPaymentConfirmation({
           to: notifyEmail,
           payment: completePayment,
           invoice: selectedInvoice,

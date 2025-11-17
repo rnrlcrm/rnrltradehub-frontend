@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { User, DeliveryOrder, DeliveryStatus } from '../types';
 import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
+import { Button } from '../components/ui/Form';
+import TransporterBillForm from '../components/forms/TransporterBillForm';
 import { Truck, MapPin, Calendar, FileText, Download, Eye, Edit, X } from 'lucide-react';
 
 interface LogisticsProps {
@@ -119,6 +122,8 @@ const mockDeliveryOrders: DeliveryOrder[] = [
 const LogisticsPage: React.FC<LogisticsProps> = ({ currentUser }) => {
   const [deliveryOrders, setDeliveryOrders] = useState<DeliveryOrder[]>(mockDeliveryOrders);
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
+  const [isTransporterBillModalOpen, setIsTransporterBillModalOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState<any>(null);
   const [filter, setFilter] = useState<{
     status?: DeliveryStatus;
     transportMode?: string;
@@ -223,6 +228,13 @@ const LogisticsPage: React.FC<LogisticsProps> = ({ currentUser }) => {
           <h1 className="text-2xl font-semibold text-slate-800">Logistics & Delivery Management</h1>
           <p className="text-slate-600 mt-1">Track and manage delivery orders and logistics</p>
         </div>
+        <Button
+          onClick={() => setIsTransporterBillModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Add Transporter Bill
+        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -636,6 +648,29 @@ const LogisticsPage: React.FC<LogisticsProps> = ({ currentUser }) => {
           </div>
         </div>
       )}
+
+      {/* Transporter Bill Modal */}
+      <Modal
+        isOpen={isTransporterBillModalOpen}
+        onClose={() => {
+          setIsTransporterBillModalOpen(false);
+          setSelectedBill(null);
+        }}
+        title={selectedBill ? 'View Transporter Bill' : 'Add Transporter Bill'}
+      >
+        <TransporterBillForm
+          bill={selectedBill}
+          onSave={(data) => {
+            console.log('Transporter bill saved:', data);
+            setIsTransporterBillModalOpen(false);
+            setSelectedBill(null);
+          }}
+          onCancel={() => {
+            setIsTransporterBillModalOpen(false);
+            setSelectedBill(null);
+          }}
+        />
+      </Modal>
     </div>
   );
 };

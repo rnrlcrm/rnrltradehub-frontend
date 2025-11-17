@@ -3,7 +3,10 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
-import SalesConfirmation from './pages/SalesConfirmation';
+import CommandCenter from './pages/CommandCenter';
+import AdvancedReporting from './pages/AdvancedReporting';
+import TradeDesk from './pages/TradeDesk/TradeDesk';
+import SalesContracts from './pages/SalesContracts';
 import PartnerRegistration from './pages/PartnerRegistration';
 import MyPartnerProfile from './pages/MyPartnerProfile';
 import BusinessPartnerManagement from './pages/BusinessPartnerManagement';
@@ -30,9 +33,11 @@ import Logistics from './pages/Logistics';
 import Ledger from './pages/Ledger';
 import Reconciliation from './pages/Reconciliation';
 import Login from './pages/Login';
-import { mockUsers, mockAuditLogs, mockOrganizations, mockMasterData } from './data/mockData';
-import { User, AuditLog, MasterDataItem } from './types';
+import FinanceModule from './pages/FinanceModule';
+import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
+import { User, AuditLog, MasterDataItem, SalesContract } from './types';
 import { DialogProvider } from './components/dialogs/CustomDialogs';
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const App: React.FC = () => {
@@ -114,9 +119,11 @@ const App: React.FC = () => {
     const pageKey = activePage.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
     switch (pageKey) {
       case 'dashboard': return <Dashboard currentUser={currentUser} onCarryForward={handleCarryForward} />;
+      case 'command-center': return <CommandCenter currentUser={currentUser} />;
       case 'trade-desk': return <TradeDesk currentUser={currentUser} />;
       case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
-      case 'sales-confirmation': return <SalesConfirmation currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} addAuditLog={addAuditLog} />;
+      case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
+      case 'finance': return <FinanceModule currentUser={currentUser} />;
       case 'invoices': return <Invoices currentUser={currentUser} />;
       case 'payments': return <Payments currentUser={currentUser} />;
       case 'commissions': return <Commissions currentUser={currentUser} />;
@@ -130,7 +137,7 @@ const App: React.FC = () => {
       case 'business-partners': return <BusinessPartnerManagement currentUser={currentUser} />;
       case 'my-partner-profile': return <MyPartnerProfile userId={currentUser.id} partnerId={currentUser.partnerId || currentUser.id} />;
       case 'partner-registration': return <PartnerRegistration />;
-      case 'reports': return <Reports currentUser={currentUser} />;
+      case 'reports': return <AdvancedReporting currentUser={currentUser} />;
       case 'audit-trail': return <AuditTrail currentUser={currentUser} auditLogs={auditLogs} />;
       case 'user-management': return <UserManagement currentUser={currentUser} />;
       case 'profile-update-approvals': return <ProfileUpdateApprovals />;
@@ -145,27 +152,29 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <DialogProvider>
-        <div className="flex h-screen bg-neutral-50 dark:bg-neutral-900 font-sans">
-          <Sidebar onNavigate={handleNavigation} activePage={activePage} currentUser={currentUser} />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Header 
-              currentUser={currentUser} 
-              onUserChange={setCurrentUser}
-              onLogout={handleLogout}
-              organizations={organizations}
-              currentOrganization={currentOrganization}
-              onOrganizationChange={setCurrentOrganization}
-              financialYears={financialYears}
-              currentFinancialYear={currentFinancialYear}
-              onFinancialYearChange={setCurrentFinancialYear}
-            />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-50 dark:bg-neutral-900 p-8">
-              {renderPage()}
-            </main>
-          </div>
+      <WebSocketProvider enabled={!!currentUser}>
+        <DialogProvider>
+          <div className="flex h-screen bg-neutral-50 dark:bg-neutral-900 font-sans">
+            <Sidebar onNavigate={handleNavigation} activePage={activePage} currentUser={currentUser} />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Header 
+                currentUser={currentUser} 
+                onUserChange={setCurrentUser}
+                onLogout={handleLogout}
+                organizations={organizations}
+                currentOrganization={currentOrganization}
+                onOrganizationChange={setCurrentOrganization}
+                financialYears={financialYears}
+                currentFinancialYear={currentFinancialYear}
+                onFinancialYearChange={setCurrentFinancialYear}
+              />
+              <main className="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-50 dark:bg-neutral-900 p-8">
+                {renderPage()}
+              </main>
+            </div>
         </div>
       </DialogProvider>
+      </WebSocketProvider>
     </ErrorBoundary>
   );
 };

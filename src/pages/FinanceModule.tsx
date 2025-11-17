@@ -19,6 +19,8 @@ import ValidationService from '../services/validationService';
 import NotificationService from '../services/notificationService';
 import AutoPostingService from '../services/autoPostingService';
 import AutoReconciliationService from '../services/autoReconciliationService';
+import UnifiedPaymentReceiptForm from '../components/forms/UnifiedPaymentReceiptForm';
+import ComprehensiveInvoiceForm from '../components/forms/ComprehensiveInvoiceForm';
 
 interface FinanceModuleProps {
   currentUser: User;
@@ -36,6 +38,12 @@ const FinanceModule: React.FC<FinanceModuleProps> = ({ currentUser }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Modal states
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
   
   // Common filters (used across all views)
   const [filters, setFilters] = useState({
@@ -478,7 +486,11 @@ const FinanceModule: React.FC<FinanceModuleProps> = ({ currentUser }) => {
       )}
 
       {viewMode === 'invoices' && (
-        <Card title="All Invoices">
+        <Card title="All Invoices" actions={
+          <Button onClick={() => setIsInvoiceModalOpen(true)} className="text-sm bg-blue-600 hover:bg-blue-700">
+            Raise Invoice
+          </Button>
+        }>
           <Table
             data={mockData.invoices}
             columns={[
@@ -502,7 +514,17 @@ const FinanceModule: React.FC<FinanceModuleProps> = ({ currentUser }) => {
               },
               {
                 header: 'Actions',
-                accessor: () => <Button className="text-xs">View</Button>
+                accessor: (item) => (
+                  <Button 
+                    onClick={() => {
+                      setSelectedInvoice(item);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                    className="text-xs"
+                  >
+                    View
+                  </Button>
+                )
               },
             ]}
           />
@@ -510,7 +532,11 @@ const FinanceModule: React.FC<FinanceModuleProps> = ({ currentUser }) => {
       )}
 
       {viewMode === 'payments' && (
-        <Card title="All Payments">
+        <Card title="All Payments" actions={
+          <Button onClick={() => setIsPaymentModalOpen(true)} className="text-sm bg-green-600 hover:bg-green-700">
+            Record Payment
+          </Button>
+        }>
           <Table
             data={mockData.payments}
             columns={[
@@ -603,6 +629,54 @@ const FinanceModule: React.FC<FinanceModuleProps> = ({ currentUser }) => {
           </Card>
         </div>
       )}
+
+      {/* Invoice Modal */}
+      <Modal 
+        isOpen={isInvoiceModalOpen} 
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedInvoice(null);
+        }} 
+        title={selectedInvoice ? `View Invoice: ${selectedInvoice.invoiceNo}` : 'Raise New Invoice'}
+      >
+        <ComprehensiveInvoiceForm
+          invoice={selectedInvoice}
+          readOnly={!!selectedInvoice}
+          onSave={(data) => {
+            console.log('Invoice saved:', data);
+            setIsInvoiceModalOpen(false);
+            setSelectedInvoice(null);
+          }}
+          onCancel={() => {
+            setIsInvoiceModalOpen(false);
+            setSelectedInvoice(null);
+          }}
+        />
+      </Modal>
+
+      {/* Payment Modal */}
+      <Modal 
+        isOpen={isPaymentModalOpen} 
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setSelectedPayment(null);
+        }} 
+        title={selectedPayment ? `View Payment: ${selectedPayment.paymentId}` : 'Record New Payment'}
+      >
+        <UnifiedPaymentReceiptForm
+          entry={selectedPayment}
+          readOnly={!!selectedPayment}
+          onSave={(data) => {
+            console.log('Payment saved:', data);
+            setIsPaymentModalOpen(false);
+            setSelectedPayment(null);
+          }}
+          onCancel={() => {
+            setIsPaymentModalOpen(false);
+            setSelectedPayment(null);
+          }}
+        />
+      </Modal>
     </div>
   );
 };

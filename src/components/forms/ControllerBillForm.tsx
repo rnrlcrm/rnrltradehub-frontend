@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Upload, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
-import { ocrService } from '../../services/ocrService';
-import { autoPostingService } from '../../services/autoPostingService';
-import { notificationService } from '../../services/notificationService';
+import OCRService from '../../services/ocrService';
+import AutoPostingService from '../../services/autoPostingService';
+import NotificationService from '../../services/notificationService';
 import { calculateGST, GST_RATES } from '../../utils/gstCalculations';
 
 interface ControllerBillFormProps {
@@ -145,7 +145,7 @@ const ControllerBillForm: React.FC<ControllerBillFormProps> = ({
     
     setIsProcessingOCR(true);
     try {
-      const extractedData = await ocrService.extractControllerBillData(file);
+      const extractedData = await OCRService.extractControllerBillData(file);
       
       setFormData(prev => ({
         ...prev,
@@ -188,10 +188,10 @@ const ControllerBillForm: React.FC<ControllerBillFormProps> = ({
     setValidationErrors([]);
     
     try {
-      await autoPostingService.postControllerBillToLedger(formData);
+      await AutoPostingService.postControllerBillToLedger(formData);
       
       if (autoEmail && emailTo) {
-        await notificationService.sendControllerBillEmail({
+        await NotificationService.sendControllerBillEmail({
           to: emailTo,
           bill: formData,
           attachment: billFile,

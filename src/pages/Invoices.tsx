@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
 import Modal from '../components/ui/Modal';
-import InvoiceForm from '../components/forms/InvoiceForm';
+import ComprehensiveInvoiceForm from '../components/forms/ComprehensiveInvoiceForm';
 import { mockInvoices } from '../data/mockData';
 import { Invoice, User } from '../types';
 import { hasPermission } from '../lib/permissions';
@@ -407,7 +407,7 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
       </Card>
       
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={getModalTitle()}>
-        <InvoiceForm
+        <ComprehensiveInvoiceForm
           invoice={selectedItem}
           readOnly={modalMode === 'view'}
           onSave={handleSave}

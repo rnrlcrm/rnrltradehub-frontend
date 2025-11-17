@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Receipt, Upload, CheckCircle, AlertCircle, Send, FileText } from 'lucide-react';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
-import { ocrService } from '../../services/ocrService';
-import { validationService } from '../../services/validationService';
-import { autoPostingService } from '../../services/autoPostingService';
-import { notificationService } from '../../services/notificationService';
+import OCRService from '../../services/ocrService';
+import ValidationService from '../../services/validationService';
+import AutoPostingService from '../../services/autoPostingService';
+import NotificationService from '../../services/notificationService';
 import { calculateGST, GST_RATES } from '../../utils/gstCalculations';
 
 interface UnifiedPaymentReceiptFormProps {
@@ -207,9 +207,9 @@ const UnifiedPaymentReceiptForm: React.FC<UnifiedPaymentReceiptFormProps> = ({
     try {
       let extractedData;
       if (formData.transactionType === 'payment') {
-        extractedData = await ocrService.extractPaymentData(uploadedFile);
+        extractedData = await OCRService.extractPaymentData(uploadedFile);
       } else {
-        extractedData = await ocrService.extractInvoiceData(uploadedFile);
+        extractedData = await OCRService.extractInvoiceData(uploadedFile);
       }
       
       const validation = await validationService.validatePayment(extractedData);
@@ -309,7 +309,7 @@ const UnifiedPaymentReceiptForm: React.FC<UnifiedPaymentReceiptFormProps> = ({
       await autoPostingService.postToLedger(formData);
       
       if (autoNotify && notifyEmail) {
-        await notificationService.sendNotification({
+        await NotificationService.sendNotification({
           to: notifyEmail,
           type: formData.transactionType,
           data: formData,
