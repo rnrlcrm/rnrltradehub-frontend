@@ -224,11 +224,11 @@ const SalesConfirmationPage: React.FC<SalesConfirmationProps> = ({
         role: currentUser.role,
         action: 'Create',
         module: 'Sales Confirmation',
-        details: `Created confirmation ${newConfirmation.confirmationNo} with ${newConfirmation.lineItems.length} commodity items`,
+        details: `Created confirmation ${newConfirmation.confirmationNo} for ${newConfirmation.lineItems[0].commodityName}`,
         reason: 'New confirmation entry',
       });
 
-      alert(`Sales Confirmation ${newConfirmation.confirmationNo} created successfully!`);
+      alert(`Sales Confirmation ${newConfirmation.confirmationNo} created successfully for ${newConfirmation.lineItems[0].commodityName}!`);
     } else if (modalMode === 'amend' && selectedConfirmation && amendmentReason) {
       const amendedConfirmation: SalesConfirmation = {
         ...confirmationData,
@@ -388,7 +388,7 @@ const SalesConfirmationPage: React.FC<SalesConfirmationProps> = ({
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800">Sales Confirmation</h1>
-          <p className="text-slate-600 mt-1">Manage sales confirmations for multiple commodities</p>
+          <p className="text-slate-600 mt-1">Manage sales confirmations - one commodity per confirmation</p>
         </div>
         {canCreate && (
           <Button onClick={() => handleOpenModal('create')} variant="primary">
@@ -483,10 +483,24 @@ const SalesConfirmationPage: React.FC<SalesConfirmationProps> = ({
                 accessor: 'sellerName',
               },
               {
-                header: 'Items',
+                header: 'Commodity',
                 accessor: (confirmation) => (
-                  <div className="text-center">{confirmation.lineItems.length}</div>
+                  <div>
+                    {confirmation.lineItems[0]?.commodityName || 'N/A'}
+                    {confirmation.lineItems[0]?.variety && (
+                      <span className="text-xs text-slate-500 block">({confirmation.lineItems[0].variety})</span>
+                    )}
+                  </div>
                 ),
+              },
+              {
+                header: 'Quantity',
+                accessor: (confirmation) => {
+                  const item = confirmation.lineItems[0];
+                  if (!item) return 'N/A';
+                  const commodity = commodities.find(c => c.id === item.commodityId);
+                  return `${item.quantity} ${commodity?.unit || ''}`;
+                },
               },
               {
                 header: 'Total Amount',

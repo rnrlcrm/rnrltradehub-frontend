@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SalesConfirmation, CommodityLineItem, BusinessPartner, Commodity, User } from '../../types';
 import { FormRow, FormLabel, FormInput, FormActions, Button } from '../ui/Form';
-import { Plus, Trash2, AlertCircle } from 'lucide-react';
-import { mockMasterData } from '../../data/mockData';
+import { AlertCircle } from 'lucide-react';
 
 interface SalesConfirmationFormProps {
   confirmation?: SalesConfirmation | null;
@@ -45,6 +44,8 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
   const readOnly = mode === 'view';
   const isAmendment = mode === 'amend';
 
+  // CRITICAL: Each confirmation should have exactly ONE commodity
+  // Multiple commodities require separate confirmations
   const [formData, setFormData] = useState<Omit<SalesConfirmation, 'id'>>({
     confirmationNo: '',
     version: 1,
@@ -111,7 +112,7 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
     const newLineItems = [...formData.lineItems];
     const item = { ...newLineItems[index], [field]: value };
 
-    // If commodity changed, update related fields
+    // If commodity changed, update related fields and reset form fields
     if (field === 'commodityId') {
       const commodity = commodities.find(c => c.id === parseInt(value));
       if (commodity) {
@@ -123,6 +124,14 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
         item.amount = 0;
         item.dynamicFields = {};
         item.qualitySpecs = {};
+        
+        // Reset delivery and payment terms when commodity changes
+        // to allow selection from new commodity's terms
+        setFormData(prev => ({
+          ...prev,
+          deliveryTerms: '',
+          paymentTerms: '',
+        }));
       }
     }
 
@@ -159,16 +168,9 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
     handleChange('lineItems', newLineItems);
   };
 
-  const addLineItem = () => {
-    handleChange('lineItems', [...formData.lineItems, getInitialLineItem()]);
-  };
-
-  const removeLineItem = (index: number) => {
-    if (formData.lineItems.length > 1) {
-      const newLineItems = formData.lineItems.filter((_, i) => i !== index);
-      handleChange('lineItems', newLineItems);
-    }
-  };
+  // CRITICAL: Removed addLineItem and removeLineItem functions
+  // Each confirmation should have exactly ONE commodity
+  // For multiple commodities, create multiple confirmations
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -179,12 +181,29 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
     if (!formData.deliveryTerms) newErrors.deliveryTerms = 'Delivery terms are required';
     if (!formData.paymentTerms) newErrors.paymentTerms = 'Payment terms are required';
 
-    formData.lineItems.forEach((item, index) => {
-      if (!item.commodityId) newErrors[`lineItem_${index}_commodity`] = `Commodity is required for item ${index + 1}`;
-      if (!item.variety) newErrors[`lineItem_${index}_variety`] = `Variety is required for item ${index + 1}`;
-      if (item.quantity <= 0) newErrors[`lineItem_${index}_quantity`] = `Valid quantity is required for item ${index + 1}`;
-      if (item.rate <= 0) newErrors[`lineItem_${index}_rate`] = `Valid rate is required for item ${index + 1}`;
-    });
+    // Validate the single line item (index 0)
+    const item = formData.lineItems[0];
+    if (!item.commodityId) newErrors.lineItem_0_commodity = 'Commodity is required';
+    if (!item.variety) newErrors.lineItem_0_variety = 'Variety is required';
+    if (item.quantity <= 0) newErrors.lineItem_0_quantity = 'Valid quantity is required';
+    if (item.rate <= 0) newErrors.lineItem_0_rate = 'Valid rate is required';
+    
+    // Validate commodity-specific fields
+    const selectedCommodity = commodities.find(c => c.id === item.commodityId);
+    if (selectedCommodity) {
+      if (selectedCommodity.tradeTypes.length > 0 && !item.dynamicFields.tradeType) {
+        newErrors.lineItem_0_tradeType = 'Trade type is required';
+      }
+      if (selectedCommodity.bargainTypes.length > 0 && !item.dynamicFields.bargainType) {
+        newErrors.lineItem_0_bargainType = 'Bargain type is required';
+      }
+      if (selectedCommodity.weightmentTerms && selectedCommodity.weightmentTerms.length > 0 && !item.dynamicFields.weightmentTerm) {
+        newErrors.lineItem_0_weightmentTerm = 'Weightment term is required';
+      }
+      if (selectedCommodity.passingTerms && selectedCommodity.passingTerms.length > 0 && !item.dynamicFields.passingTerm) {
+        newErrors.lineItem_0_passingTerm = 'Passing term is required';
+      }
+    }
 
     if (isAmendment && !amendmentReason) {
       newErrors.amendmentReason = 'Amendment reason is required';
@@ -312,21 +331,13 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
         </FormRow>
       </div>
 
-      {/* Commodity Line Items */}
+      {/* Commodity Details - CRITICAL: ONE commodity per confirmation */}
       <div className="bg-white border border-slate-200 rounded-md p-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="mb-4">
           <h3 className="text-lg font-semibold text-slate-800">Commodity Details</h3>
-          {!readOnly && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={addLineItem}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Item
-            </Button>
-          )}
+          <p className="text-sm text-slate-600 mt-1">
+            Note: Each sales confirmation is for ONE commodity only. For multiple commodities, create separate confirmations.
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -335,19 +346,6 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
             
             return (
               <div key={item.id} className="border border-slate-200 rounded-md p-4 bg-slate-50">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-semibold text-slate-700">Item #{index + 1}</h4>
-                  {!readOnly && formData.lineItems.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeLineItem(index)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
                 <FormRow>
                   <div className="flex-1">
                     <FormLabel htmlFor={`commodity_${index}`}>Commodity *</FormLabel>
@@ -369,7 +367,10 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
                       ))}
                     </select>
                     {errors[`lineItem_${index}_commodity`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`lineItem_${index}_commodity`]}</p>
+                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors[`lineItem_${index}_commodity`]}
+                      </p>
                     )}
                   </div>
 
@@ -394,7 +395,10 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
                         ))}
                       </select>
                       {errors[`lineItem_${index}_variety`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`lineItem_${index}_variety`]}</p>
+                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {errors[`lineItem_${index}_variety`]}
+                        </p>
                       )}
                     </div>
                   )}
@@ -418,7 +422,10 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
                         className={errors[`lineItem_${index}_quantity`] ? 'border-red-500' : ''}
                       />
                       {errors[`lineItem_${index}_quantity`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`lineItem_${index}_quantity`]}</p>
+                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {errors[`lineItem_${index}_quantity`]}
+                        </p>
                       )}
                     </div>
 
@@ -438,7 +445,10 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
                         className={errors[`lineItem_${index}_rate`] ? 'border-red-500' : ''}
                       />
                       {errors[`lineItem_${index}_rate`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`lineItem_${index}_rate`]}</p>
+                        <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {errors[`lineItem_${index}_rate`]}
+                        </p>
                       )}
                     </div>
 
@@ -454,50 +464,129 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
                   </FormRow>
                 )}
 
-                {/* Dynamic Fields based on Commodity */}
-                {selectedCommodity && selectedCommodity.tradeTypes.length > 0 && (
-                  <FormRow>
-                    <div className="flex-1">
-                      <FormLabel htmlFor={`tradeType_${index}`}>Trade Type</FormLabel>
-                      <select
-                        id={`tradeType_${index}`}
-                        value={item.dynamicFields.tradeType || ''}
-                        onChange={(e) => handleDynamicFieldChange(index, 'tradeType', e.target.value)}
-                        disabled={readOnly}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100"
-                      >
-                        <option value="">Select Trade Type</option>
-                        {selectedCommodity.tradeTypes.map(type => (
-                          <option key={type.id} value={type.name}>{type.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                {/* Trade Details from Commodity Master */}
+                {selectedCommodity && (
+                  <>
+                    <FormRow>
+                      {selectedCommodity.tradeTypes.length > 0 && (
+                        <div className="flex-1">
+                          <FormLabel htmlFor={`tradeType_${index}`}>Trade Type *</FormLabel>
+                          <select
+                            id={`tradeType_${index}`}
+                            value={item.dynamicFields.tradeType || ''}
+                            onChange={(e) => handleDynamicFieldChange(index, 'tradeType', e.target.value)}
+                            disabled={readOnly}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 ${
+                              errors[`lineItem_${index}_tradeType`] ? 'border-red-500' : 'border-slate-300'
+                            }`}
+                            required
+                          >
+                            <option value="">Select Trade Type</option>
+                            {selectedCommodity.tradeTypes.map(type => (
+                              <option key={type.id} value={type.name}>{type.name}</option>
+                            ))}
+                          </select>
+                          {errors[`lineItem_${index}_tradeType`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors[`lineItem_${index}_tradeType`]}
+                            </p>
+                          )}
+                        </div>
+                      )}
 
-                    {selectedCommodity.bargainTypes.length > 0 && (
-                      <div className="flex-1">
-                        <FormLabel htmlFor={`bargainType_${index}`}>Bargain Type</FormLabel>
-                        <select
-                          id={`bargainType_${index}`}
-                          value={item.dynamicFields.bargainType || ''}
-                          onChange={(e) => handleDynamicFieldChange(index, 'bargainType', e.target.value)}
-                          disabled={readOnly}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100"
-                        >
-                          <option value="">Select Bargain Type</option>
-                          {selectedCommodity.bargainTypes.map(type => (
-                            <option key={type.id} value={type.name}>{type.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </FormRow>
+                      {selectedCommodity.bargainTypes.length > 0 && (
+                        <div className="flex-1">
+                          <FormLabel htmlFor={`bargainType_${index}`}>Bargain Type *</FormLabel>
+                          <select
+                            id={`bargainType_${index}`}
+                            value={item.dynamicFields.bargainType || ''}
+                            onChange={(e) => handleDynamicFieldChange(index, 'bargainType', e.target.value)}
+                            disabled={readOnly}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 ${
+                              errors[`lineItem_${index}_bargainType`] ? 'border-red-500' : 'border-slate-300'
+                            }`}
+                            required
+                          >
+                            <option value="">Select Bargain Type</option>
+                            {selectedCommodity.bargainTypes.map(type => (
+                              <option key={type.id} value={type.name}>{type.name}</option>
+                            ))}
+                          </select>
+                          {errors[`lineItem_${index}_bargainType`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors[`lineItem_${index}_bargainType`]}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </FormRow>
+
+                    {/* Weightment and Passing Terms from Commodity Master */}
+                    <FormRow>
+                      {selectedCommodity.weightmentTerms && selectedCommodity.weightmentTerms.length > 0 && (
+                        <div className="flex-1">
+                          <FormLabel htmlFor={`weightmentTerm_${index}`}>Weightment Term *</FormLabel>
+                          <select
+                            id={`weightmentTerm_${index}`}
+                            value={item.dynamicFields.weightmentTerm || ''}
+                            onChange={(e) => handleDynamicFieldChange(index, 'weightmentTerm', e.target.value)}
+                            disabled={readOnly}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 ${
+                              errors[`lineItem_${index}_weightmentTerm`] ? 'border-red-500' : 'border-slate-300'
+                            }`}
+                            required
+                          >
+                            <option value="">Select Weightment Term</option>
+                            {selectedCommodity.weightmentTerms.map(term => (
+                              <option key={term.id} value={term.name}>{term.name}</option>
+                            ))}
+                          </select>
+                          {errors[`lineItem_${index}_weightmentTerm`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors[`lineItem_${index}_weightmentTerm`]}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedCommodity.passingTerms && selectedCommodity.passingTerms.length > 0 && (
+                        <div className="flex-1">
+                          <FormLabel htmlFor={`passingTerm_${index}`}>Passing Term *</FormLabel>
+                          <select
+                            id={`passingTerm_${index}`}
+                            value={item.dynamicFields.passingTerm || ''}
+                            onChange={(e) => handleDynamicFieldChange(index, 'passingTerm', e.target.value)}
+                            disabled={readOnly}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 ${
+                              errors[`lineItem_${index}_passingTerm`] ? 'border-red-500' : 'border-slate-300'
+                            }`}
+                            required
+                          >
+                            <option value="">Select Passing Term</option>
+                            {selectedCommodity.passingTerms.map(term => (
+                              <option key={term.id} value={term.name}>{term.name}</option>
+                            ))}
+                          </select>
+                          {errors[`lineItem_${index}_passingTerm`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-4 h-4" />
+                              {errors[`lineItem_${index}_passingTerm`]}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </FormRow>
+                  </>
                 )}
 
                 {/* Quality Specifications (if applicable for the commodity) */}
                 {selectedCommodity && selectedCommodity.name.toLowerCase() === 'cotton' && (
                   <div className="mt-3">
                     <h5 className="font-semibold text-slate-700 mb-2">Quality Specifications</h5>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       {['length', 'mic', 'rd', 'trash', 'moisture', 'strength'].map(spec => (
                         <div key={spec}>
                           <FormLabel htmlFor={`${spec}_${index}`} className="capitalize">{spec}</FormLabel>
@@ -534,7 +623,7 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
         </div>
       </div>
 
-      {/* Terms & Conditions */}
+      {/* Terms & Conditions - Mapped from Commodity Master */}
       <div className="bg-white border border-slate-200 rounded-md p-6">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Terms & Conditions</h3>
         
@@ -548,10 +637,14 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
               onChange={(e) => handleChange('deliveryLocation', e.target.value)}
               readOnly={readOnly}
               required
+              placeholder="Enter delivery location"
               className={errors.deliveryLocation ? 'border-red-500' : ''}
             />
             {errors.deliveryLocation && (
-              <p className="text-red-500 text-sm mt-1">{errors.deliveryLocation}</p>
+              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.deliveryLocation}
+              </p>
             )}
           </div>
         </FormRow>
@@ -559,33 +652,115 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
         <FormRow>
           <div className="flex-1">
             <FormLabel htmlFor="deliveryTerms">Delivery Terms *</FormLabel>
-            <FormInput
-              type="text"
-              id="deliveryTerms"
-              value={formData.deliveryTerms}
-              onChange={(e) => handleChange('deliveryTerms', e.target.value)}
-              readOnly={readOnly}
-              required
-              className={errors.deliveryTerms ? 'border-red-500' : ''}
-            />
+            {formData.lineItems[0].commodityId ? (
+              (() => {
+                const selectedCommodity = commodities.find(c => c.id === formData.lineItems[0].commodityId);
+                return selectedCommodity && selectedCommodity.deliveryTerms.length > 0 ? (
+                  <select
+                    id="deliveryTerms"
+                    value={formData.deliveryTerms}
+                    onChange={(e) => handleChange('deliveryTerms', e.target.value)}
+                    disabled={readOnly}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 ${
+                      errors.deliveryTerms ? 'border-red-500' : 'border-slate-300'
+                    }`}
+                    required
+                  >
+                    <option value="">Select Delivery Terms</option>
+                    {selectedCommodity.deliveryTerms.map(term => (
+                      <option key={term.id} value={term.name}>
+                        {term.name} {term.days > 0 ? `(${term.days} days)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <FormInput
+                    type="text"
+                    id="deliveryTerms"
+                    value={formData.deliveryTerms}
+                    onChange={(e) => handleChange('deliveryTerms', e.target.value)}
+                    readOnly={readOnly}
+                    required
+                    placeholder="Enter delivery terms"
+                    className={errors.deliveryTerms ? 'border-red-500' : ''}
+                  />
+                );
+              })()
+            ) : (
+              <FormInput
+                type="text"
+                id="deliveryTerms"
+                value={formData.deliveryTerms}
+                onChange={(e) => handleChange('deliveryTerms', e.target.value)}
+                readOnly={readOnly}
+                required
+                placeholder="Select commodity first"
+                disabled
+                className="bg-slate-100"
+              />
+            )}
             {errors.deliveryTerms && (
-              <p className="text-red-500 text-sm mt-1">{errors.deliveryTerms}</p>
+              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.deliveryTerms}
+              </p>
             )}
           </div>
 
           <div className="flex-1">
             <FormLabel htmlFor="paymentTerms">Payment Terms *</FormLabel>
-            <FormInput
-              type="text"
-              id="paymentTerms"
-              value={formData.paymentTerms}
-              onChange={(e) => handleChange('paymentTerms', e.target.value)}
-              readOnly={readOnly}
-              required
-              className={errors.paymentTerms ? 'border-red-500' : ''}
-            />
+            {formData.lineItems[0].commodityId ? (
+              (() => {
+                const selectedCommodity = commodities.find(c => c.id === formData.lineItems[0].commodityId);
+                return selectedCommodity && selectedCommodity.paymentTerms.length > 0 ? (
+                  <select
+                    id="paymentTerms"
+                    value={formData.paymentTerms}
+                    onChange={(e) => handleChange('paymentTerms', e.target.value)}
+                    disabled={readOnly}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 ${
+                      errors.paymentTerms ? 'border-red-500' : 'border-slate-300'
+                    }`}
+                    required
+                  >
+                    <option value="">Select Payment Terms</option>
+                    {selectedCommodity.paymentTerms.map(term => (
+                      <option key={term.id} value={term.name}>
+                        {term.name} {term.days > 0 ? `(${term.days} days)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <FormInput
+                    type="text"
+                    id="paymentTerms"
+                    value={formData.paymentTerms}
+                    onChange={(e) => handleChange('paymentTerms', e.target.value)}
+                    readOnly={readOnly}
+                    required
+                    placeholder="Enter payment terms"
+                    className={errors.paymentTerms ? 'border-red-500' : ''}
+                  />
+                );
+              })()
+            ) : (
+              <FormInput
+                type="text"
+                id="paymentTerms"
+                value={formData.paymentTerms}
+                onChange={(e) => handleChange('paymentTerms', e.target.value)}
+                readOnly={readOnly}
+                required
+                placeholder="Select commodity first"
+                disabled
+                className="bg-slate-100"
+              />
+            )}
             {errors.paymentTerms && (
-              <p className="text-red-500 text-sm mt-1">{errors.paymentTerms}</p>
+              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.paymentTerms}
+              </p>
             )}
           </div>
         </FormRow>
@@ -600,6 +775,7 @@ const SalesConfirmationForm: React.FC<SalesConfirmationFormProps> = ({
               readOnly={readOnly}
               rows={3}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100"
+              placeholder="Enter any additional remarks or notes"
             />
           </div>
         </FormRow>
