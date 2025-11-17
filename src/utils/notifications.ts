@@ -142,3 +142,85 @@ export const markAllAsRead = (): void => {
 export const clearNotifications = (): void => {
   notificationStore = [];
 };
+
+/**
+ * Create a notification for sales confirmation created
+ */
+export const createSalesConfirmationNotification = (
+  confirmationNo: string,
+  buyerName: string,
+  sellerName: string,
+  commodityCount: number
+): Notification => {
+  return {
+    id: `sales-confirmation-${confirmationNo}-${Date.now()}`,
+    type: 'milestone',
+    title: `Sales Confirmation ${confirmationNo} Created`,
+    message: `New sales confirmation created with ${commodityCount} commodity item(s) between ${buyerName} and ${sellerName}`,
+    timestamp: new Date(),
+    isRead: false,
+    actionUrl: '#/sales-confirmation',
+    actionLabel: 'View Confirmation',
+    priority: 'high',
+  };
+};
+
+/**
+ * Create a notification for sales confirmation amendment
+ */
+export const createSalesConfirmationAmendmentNotification = (
+  confirmationNo: string,
+  amendmentReason: string
+): Notification => {
+  return {
+    id: `sales-confirmation-amendment-${confirmationNo}-${Date.now()}`,
+    type: 'alert',
+    title: `Sales Confirmation ${confirmationNo} Amended`,
+    message: `Confirmation has been amended. Reason: ${amendmentReason}`,
+    timestamp: new Date(),
+    isRead: false,
+    actionUrl: '#/sales-confirmation',
+    actionLabel: 'View Amendment',
+    priority: 'high',
+  };
+};
+
+/**
+ * Create a notification for sales confirmation approval
+ */
+export const createSalesConfirmationApprovalNotification = (
+  confirmationNo: string,
+  approvedBy: string
+): Notification => {
+  return {
+    id: `sales-confirmation-approval-${confirmationNo}-${Date.now()}`,
+    type: 'milestone',
+    title: `Sales Confirmation ${confirmationNo} Approved`,
+    message: `Confirmation has been approved by ${approvedBy}`,
+    timestamp: new Date(),
+    isRead: false,
+    actionUrl: '#/sales-confirmation',
+    actionLabel: 'View Confirmation',
+    priority: 'medium',
+  };
+};
+
+/**
+ * Create a notification for sales confirmation pending approval
+ */
+export const createSalesConfirmationPendingNotification = (
+  confirmationNo: string,
+  createdBy: string
+): Notification => {
+  return {
+    id: `sales-confirmation-pending-${confirmationNo}-${Date.now()}`,
+    type: 'reminder',
+    title: `Sales Confirmation ${confirmationNo} Pending Approval`,
+    message: `New confirmation created by ${createdBy} requires your approval`,
+    timestamp: new Date(),
+    isRead: false,
+    actionUrl: '#/sales-confirmation',
+    actionLabel: 'Review & Approve',
+    priority: 'high',
+  };
+};
