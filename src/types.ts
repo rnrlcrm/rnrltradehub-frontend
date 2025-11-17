@@ -338,6 +338,97 @@ export interface SalesContract {
   isCarriedForward?: boolean;
 }
 
+/**
+ * Sales Confirmation - Back Office Module
+ * Created by Back Office staff (not from Trade Desk)
+ * Supports multiple commodities with dynamic fields based on commodity master
+ */
+export interface CommodityLineItem {
+  id: string;
+  commodityId: number;
+  commodityName: string;
+  commoditySymbol: string;
+  variety: string;
+  quantity: number; // In commodity's primary unit
+  rate: number; // Per commodity's rate unit
+  amount: number; // Calculated: quantity * rate
+  // Dynamic fields based on commodity configuration
+  dynamicFields: Record<string, any>;
+  // Quality specifications (if applicable)
+  qualitySpecs?: Record<string, string>;
+}
+
+export interface SalesConfirmation {
+  id: string;
+  confirmationNo: string;
+  version: number;
+  amendmentReason?: string;
+  date: string;
+  organization: string;
+  financialYear: string;
+  
+  // Parties
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  sellerName: string;
+  agentId?: string;
+  agentName?: string;
+  
+  // Multi-commodity support
+  lineItems: CommodityLineItem[];
+  
+  // Common terms
+  deliveryLocation: string;
+  deliveryTerms: string;
+  paymentTerms: string;
+  remarks?: string;
+  
+  // Status workflow
+  status: 'Draft' | 'Pending' | 'Confirmed' | 'Amended' | 'Cancelled' | 'Rejected';
+  
+  // Approvals
+  createdBy: string;
+  createdAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  
+  // Email tracking
+  emailSent: boolean;
+  emailSentAt?: string;
+  emailSentTo?: string[];
+  
+  // Notification tracking
+  notificationSent: boolean;
+  notificationSentAt?: string;
+  
+  // Amendment tracking
+  previousVersionId?: string;
+  amendedBy?: string;
+  amendedAt?: string;
+  
+  // Audit trail
+  auditTrail: ConfirmationAuditEntry[];
+}
+
+export interface ConfirmationAuditEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  action: 'Created' | 'Updated' | 'Amended' | 'Approved' | 'Rejected' | 'Cancelled' | 'Email Sent' | 'Notification Sent';
+  details: string;
+  changes?: {
+    field: string;
+    oldValue: any;
+    newValue: any;
+  }[];
+}
+
 export type UserRole = 'Admin' | 'Sales' | 'Accounts' | 'Dispute Manager' | 'Business Partner';
 
 export interface User {
@@ -476,7 +567,7 @@ export interface AgingReport {
   total: number;
 }
 
-export type Module = 'Sales Contracts' | 'Invoices' | 'Payments' | 'Disputes' | 'Commissions' | 'Business Partners' | 'User Management' | 'Settings' | 'Reports' | 'Audit Trail' | 'Roles & Rights' | 'Grievance Officer';
+export type Module = 'Sales Contracts' | 'Sales Confirmation' | 'Invoices' | 'Payments' | 'Disputes' | 'Commissions' | 'Business Partners' | 'User Management' | 'Settings' | 'Reports' | 'Audit Trail' | 'Roles & Rights' | 'Grievance Officer';
 export type Permission = 'create' | 'read' | 'update' | 'delete' | 'approve' | 'share';
 export type PermissionsMap = {
   [key in UserRole]?: {

@@ -4,6 +4,7 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import Dashboard from './pages/Dashboard';
 import SalesContracts from './pages/SalesContracts';
+import SalesConfirmation from './pages/SalesConfirmation';
 import PartnerRegistration from './pages/PartnerRegistration';
 import MyPartnerProfile from './pages/MyPartnerProfile';
 import BusinessPartnerManagement from './pages/BusinessPartnerManagement';
@@ -158,6 +159,7 @@ const App: React.FC = () => {
       case 'trade-desk': return <TradeDesk currentUser={currentUser} />;
       case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
       case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
+      case 'sales-confirmation': return <SalesConfirmation currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} addAuditLog={addAuditLog} />;
       case 'invoices': return <Invoices currentUser={currentUser} />;
       case 'payments': return <Payments currentUser={currentUser} />;
       case 'commissions': return <Commissions currentUser={currentUser} />;

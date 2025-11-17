@@ -3,24 +3,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import { Button } from '../components/ui/Form';
 import { User } from '../types';
-import { Upload, FileText, Image, CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import OCRService, { OCRResult } from '../services/ocrService';
-import ValidationService, { ValidationResult } from '../services/validationService';
-import NotificationService from '../services/notificationService';
-import AutoPostingService from '../services/autoPostingService';
+import { getNotifications } from '../utils/notifications';
 
 interface Message {
   id: number;
-  sender: 'bot' | 'user';
+  sender: 'bot' | 'user' | 'system';
   text: string;
   timestamp: Date;
-  fileAttachment?: {
-    name: string;
-    type: string;
-    size: number;
-  };
-  ocrResult?: OCRResult;
-  validationResult?: ValidationResult;
+  isNotification?: boolean;
 }
 
 interface ChatbotProps {
@@ -32,7 +22,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     {
       id: 1,
       sender: 'bot',
-      text: `Hello ${currentUser.name}! I'm your RNRL ERP Assistant with OCR capabilities. I can help you with:\n\n📄 INVOICE AUTOMATION\n• Upload invoices (PDF/Image) - I'll extract data using OCR\n• Auto-validate against contracts\n• Auto-email to buyers\n• Auto-post to ledger\n\n💰 PAYMENT AUTOMATION\n• Upload payment receipts - I'll extract details\n• Auto-post to ledger\n• Auto-reconcile with invoices\n\n🚛 LOGISTICS & CONTROLLER\n• Upload logistics bills\n• Upload controller invoices\n• Auto-forward to relevant parties\n\n📊 ACCOUNTING\n• Raise debit/credit notes\n• Auto-post to ledgers\n• Check ledger balances\n• Run auto-reconciliation\n\nJust type what you need or upload a document!`,
+      text: `Hello ${currentUser.name}! I'm your RNRL ERP Assistant. I can help you with:\n\n• Creating invoices from emails\n• Recording payments\n• Checking contract status\n• Tracking shipments\n• Answering questions about your transactions\n• Viewing system notifications\n\nWhat would you like to do today?`,
       timestamp: new Date(),
     },
   ]);
@@ -40,178 +30,63 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [lastNotificationCheck, setLastNotificationCheck] = useState<Date>(new Date());
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Check for new notifications periodically
+  useEffect(() => {
+    const checkNotifications = () => {
+      const notifications = getNotifications();
+      const newNotifications = notifications.filter(n => 
+        new Date(n.timestamp) > lastNotificationCheck && !n.isRead
+      );
 
-    setIsProcessing(true);
-
-    // Add user message with file attachment
-    const userMessage: Message = {
-      id: messages.length + 1,
-      sender: 'user',
-      text: `Uploaded file: ${file.name}`,
-      timestamp: new Date(),
-      fileAttachment: {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-      },
+      if (newNotifications.length > 0) {
+        newNotifications.forEach(notification => {
+          const notificationMessage: Message = {
+            id: messages.length + Math.random(),
+            sender: 'system',
+            text: `🔔 ${notification.title}\n\n${notification.message}`,
+            timestamp: notification.timestamp,
+            isNotification: true,
+          };
+          setMessages(prev => [...prev, notificationMessage]);
+        });
+        setLastNotificationCheck(new Date());
+      }
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    // Determine document type from filename or user context
-    let documentType: 'invoice' | 'payment' | 'logistics' = 'invoice';
-    if (file.name.toLowerCase().includes('payment') || file.name.toLowerCase().includes('receipt')) {
-      documentType = 'payment';
-    } else if (file.name.toLowerCase().includes('lr') || file.name.toLowerCase().includes('logistics')) {
-      documentType = 'logistics';
-    }
-
-    // Process with OCR
-    let ocrResult: OCRResult;
-    if (documentType === 'invoice') {
-      ocrResult = await OCRService.processInvoice(file);
-    } else if (documentType === 'payment') {
-      ocrResult = await OCRService.processPaymentReceipt(file);
-    } else {
-      ocrResult = await OCRService.processLogisticsBill(file);
-    }
-
-    setIsTyping(false);
-    setIsProcessing(false);
-
-    // Process OCR result
-    if (ocrResult.success && ocrResult.data) {
-      await handleOCRSuccess(ocrResult, documentType);
-    } else {
-      const errorMessage: Message = {
-        id: messages.length + 2,
-        sender: 'bot',
-        text: `❌ Failed to process document:\n\n${ocrResult.errors?.join('\n') || 'Unknown error'}\n\nPlease try:\n• Taking a clearer photo\n• Ensuring good lighting\n• Uploading a higher resolution image\n• Or enter details manually`,
-        timestamp: new Date(),
-        ocrResult,
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleOCRSuccess = async (ocrResult: OCRResult, documentType: string) => {
-    if (documentType === 'invoice' && ocrResult.data) {
-      const invoiceData = ocrResult.data as any;
-      
-      // Validate invoice
-      const validationResult = await ValidationService.validateInvoice(invoiceData);
-      
-      if (validationResult.isValid) {
-        // Validation successful
-        const successMessage: Message = {
-          id: messages.length + 2,
-          sender: 'bot',
-          text: `✅ Invoice processed successfully!\n\n📄 Invoice: ${invoiceData.invoiceNumber}\n📅 Date: ${invoiceData.invoiceDate}\n👤 Seller: ${invoiceData.sellerName}\n👥 Buyer: ${invoiceData.buyerName}\n💰 Amount: ₹${invoiceData.totalAmount.toLocaleString()}\n📊 Confidence: ${OCRService.getConfidenceLevel(ocrResult.confidence)}\n\n✓ Validated against contract ${invoiceData.salesContractNumber || 'N/A'}\n✓ Auto-posting to ledger...\n✓ Sending email to buyer...\n\n✨ Invoice has been processed and saved!`,
-          timestamp: new Date(),
-          ocrResult,
-          validationResult,
-        };
-        setMessages(prev => [...prev, successMessage]);
-
-        // Auto-post to ledger
-        await AutoPostingService.postInvoiceToLedger(invoiceData);
-
-        // Send notification to buyer
-        await NotificationService.notifyInvoiceUploaded(invoiceData, { email: invoiceData.buyerName });
-
-      } else {
-        // Validation failed
-        const errorList = validationResult.errors.map(e => `• ${e.field}: ${e.message}`).join('\n');
-        const warningList = validationResult.warnings.length > 0 
-          ? '\n\n⚠️ Warnings:\n' + validationResult.warnings.map(w => `• ${w.field}: ${w.message}`).join('\n')
-          : '';
-        
-        const errorMessage: Message = {
-          id: messages.length + 2,
-          sender: 'bot',
-          text: `❌ Invoice validation failed:\n\n${errorList}${warningList}\n\nPlease correct these issues and upload again.`,
-          timestamp: new Date(),
-          ocrResult,
-          validationResult,
-        };
-        setMessages(prev => [...prev, errorMessage]);
-
-        // Send error notification to seller
-        await NotificationService.notifyInvoiceError(
-          invoiceData,
-          { email: invoiceData.sellerName },
-          validationResult.errors.map(e => e.message)
-        );
-      }
-    } else if (documentType === 'payment' && ocrResult.data) {
-      const paymentData = ocrResult.data as any;
-      
-      // Validate payment
-      const validationResult = await ValidationService.validatePayment(paymentData);
-      
-      if (validationResult.isValid) {
-        const successMessage: Message = {
-          id: messages.length + 2,
-          sender: 'bot',
-          text: `✅ Payment processed successfully!\n\n💰 Transaction: ${paymentData.transactionId}\n📅 Date: ${paymentData.paymentDate}\n💵 Amount: ₹${paymentData.amount.toLocaleString()}\n🏦 Mode: ${paymentData.paymentMode}\n📄 Invoice: ${paymentData.invoiceNumber || 'N/A'}\n📊 Confidence: ${OCRService.getConfidenceLevel(ocrResult.confidence)}\n\n✓ Auto-posting to buyer ledger...\n✓ Notifying seller...\n✓ Running auto-reconciliation...\n\n✨ Payment has been recorded!`,
-          timestamp: new Date(),
-          ocrResult,
-          validationResult,
-        };
-        setMessages(prev => [...prev, successMessage]);
-
-        // Auto-post to ledger
-        await AutoPostingService.postPaymentToLedger(paymentData);
-
-        // Send notification
-        await NotificationService.notifyPaymentReceived(paymentData, { email: 'seller@example.com' });
-
-      } else {
-        const errorList = validationResult.errors.map(e => `• ${e.field}: ${e.message}`).join('\n');
-        const errorMessage: Message = {
-          id: messages.length + 2,
-          sender: 'bot',
-          text: `❌ Payment validation failed:\n\n${errorList}\n\nPlease correct these issues and try again.`,
-          timestamp: new Date(),
-          ocrResult,
-          validationResult,
-        };
-        setMessages(prev => [...prev, errorMessage]);
-      }
-    } else if (documentType === 'logistics' && ocrResult.data) {
-      const logisticsData = ocrResult.data as any;
-      
-      const successMessage: Message = {
-        id: messages.length + 2,
-        sender: 'bot',
-        text: `✅ Logistics bill processed successfully!\n\n🚛 Bill: ${logisticsData.billNumber}\n📦 LR: ${logisticsData.lrNumber}\n🚗 Vehicle: ${logisticsData.vehicleNumber}\n📍 Route: ${logisticsData.fromLocation} → ${logisticsData.toLocation}\n💰 Amount: ₹${logisticsData.totalAmount.toLocaleString()}\n\n✓ Auto-forwarding to buyer...\n\n✨ Logistics bill saved!`,
-        timestamp: new Date(),
-        ocrResult,
-      };
-      setMessages(prev => [...prev, successMessage]);
-
-      // Send notification
-      await NotificationService.notifyLogisticsBillUploaded(logisticsData, { email: 'buyer@example.com', type: 'buyer' });
-    }
-  };
+    const interval = setInterval(checkNotifications, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [messages.length, lastNotificationCheck]);
 
   const simulateBotResponse = (userInput: string): string => {
     const input = userInput.toLowerCase();
+    
+    // Notification-related queries
+    if (input.includes('notification') || input.includes('alert') || input.includes('updates')) {
+      const notifications = getNotifications();
+      const unreadCount = notifications.filter(n => !n.isRead).length;
+      
+      if (notifications.length === 0) {
+        return '📬 You have no notifications at the moment.\n\nNotifications will appear here automatically when:\n• New sales confirmations are created\n• Confirmations are amended\n• Confirmations require approval\n• Other important system events occur';
+      }
+      
+      const recentNotifications = notifications.slice(0, 5);
+      const notifText = recentNotifications.map((n, i) => 
+        `${i + 1}. ${n.title}\n   ${n.message}\n   ${new Date(n.timestamp).toLocaleString()}`
+      ).join('\n\n');
+      
+      return `📬 You have ${unreadCount} unread notification(s)\n\nRecent notifications:\n\n${notifText}`;
+    }
+
+    // Sales Confirmation queries
+    if (input.includes('sales confirmation') || input.includes('confirmation')) {
+      return 'I can help you with Sales Confirmations!\n\n📋 Sales Confirmation features:\n• Create multi-commodity confirmations\n• Dynamic forms based on commodity types\n• Amendment tracking with full audit trail\n• Email notifications to buyers and sellers\n• Approval workflow\n\nGo to Sales Confirmation page to manage confirmations, or type "notifications" to see recent updates.';
+    }
     
     // Invoice-related queries
     if (input.includes('invoice') || input.includes('bill')) {
@@ -240,11 +115,11 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     
     // Help
     if (input.includes('help') || input.includes('what can') || input.includes('how')) {
-      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Shipment Tracking\n   - LR number updates\n   - Delivery status\n   - Documents\n\n4. 📊 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n\nJust tell me what you need!';
+      return 'I can assist you with:\n\n1. 📄 Invoice Management\n   - Upload via email/photo\n   - Auto-forward to buyers\n   - Track payment status\n\n2. 💰 Payment Recording\n   - Quick payment entry\n   - Match with invoices\n   - Generate receipts\n\n3. 📦 Shipment Tracking\n   - LR number updates\n   - Delivery status\n   - Documents\n\n4. 📊 Quick Reports\n   - Outstanding amounts\n   - Payment due dates\n   - Commission status\n\n5. 📋 Sales Confirmations\n   - Multi-commodity support\n   - Amendment tracking\n   - Email notifications\n\n6. 🔔 Notifications\n   - Real-time system updates\n   - Action reminders\n   - Status changes\n\nJust tell me what you need!';
     }
     
     // Default response
-    return 'I understand you\'re asking about: "' + userInput + '"\n\nCould you provide more details? I can help you with:\n• Creating invoices\n• Recording payments\n• Checking contracts\n• Tracking shipments\n• Email integration\n\nType "help" to see all my capabilities!';
+    return 'I understand you\'re asking about: "' + userInput + '"\n\nCould you provide more details? I can help you with:\n• Creating invoices\n• Recording payments\n• Checking contracts\n• Tracking shipments\n• Email integration\n• Sales confirmations\n• Notifications\n\nType "help" to see all my capabilities!';
   };
 
   const handleSendMessage = () => {
@@ -315,13 +190,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
                   className={`max-w-[70%] rounded-lg p-3 ${
                     message.sender === 'user'
                       ? 'bg-blue-600 text-white'
+                      : message.sender === 'system'
+                      ? 'bg-yellow-50 border-2 border-yellow-300 text-yellow-900'
                       : 'bg-white border border-slate-200 text-slate-800'
                   }`}
                 >
                   <p className="text-sm whitespace-pre-line">{message.text}</p>
                   <p
                     className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-blue-100' : 'text-slate-400'
+                      message.sender === 'user' ? 'text-blue-100' : 
+                      message.sender === 'system' ? 'text-yellow-700' :
+                      'text-slate-400'
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString()}
