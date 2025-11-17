@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { User, DeliveryOrder, DeliveryStatus } from '../types';
 import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
+import { Button } from '../components/ui/Form';
+import TransporterBillForm from '../components/forms/TransporterBillForm';
 import { Truck, MapPin, Calendar, FileText, Download, Eye, Edit, X } from 'lucide-react';
 
 interface LogisticsProps {
@@ -119,6 +122,8 @@ const mockDeliveryOrders: DeliveryOrder[] = [
 const LogisticsPage: React.FC<LogisticsProps> = ({ currentUser }) => {
   const [deliveryOrders, setDeliveryOrders] = useState<DeliveryOrder[]>(mockDeliveryOrders);
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
+  const [isTransporterBillModalOpen, setIsTransporterBillModalOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState<any>(null);
   const [filter, setFilter] = useState<{
     status?: DeliveryStatus;
     transportMode?: string;
