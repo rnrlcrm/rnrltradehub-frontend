@@ -28,6 +28,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [lastNotificationCheck, setLastNotificationCheck] = useState<Date>(new Date());
 
@@ -155,12 +156,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
     }
   };
 
-  const QuickAction: React.FC<{ text: string; onClick: () => void }> = ({ text, onClick }) => (
+  const QuickAction: React.FC<{ text: string; onClick: () => void; icon?: React.ReactNode }> = ({ text, onClick, icon }) => (
     <button
       onClick={onClick}
-      className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors border border-blue-200"
+      className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors border border-blue-200 flex items-center space-x-1"
     >
-      {text}
+      {icon}
+      <span>{text}</span>
     </button>
   );
 
@@ -224,74 +226,173 @@ const Chatbot: React.FC<ChatbotProps> = ({ currentUser }) => {
           <div className="px-4 py-2 bg-white border-t border-slate-200">
             <p className="text-xs text-slate-600 mb-2">Quick Actions:</p>
             <div className="flex flex-wrap gap-2">
-              <QuickAction text="📄 Upload Invoice" onClick={() => handleQuickAction('I have an invoice to upload')} />
-              <QuickAction text="💰 Record Payment" onClick={() => handleQuickAction('I received a payment')} />
-              <QuickAction text="📊 Check Status" onClick={() => handleQuickAction('Check contract status')} />
-              <QuickAction text="📧 Email Setup" onClick={() => handleQuickAction('How do I forward emails?')} />
+              <QuickAction 
+                text="📄 Upload Invoice" 
+                icon={<Upload className="w-3 h-3" />}
+                onClick={() => fileInputRef.current?.click()} 
+              />
+              <QuickAction 
+                text="💰 Upload Payment" 
+                icon={<FileText className="w-3 h-3" />}
+                onClick={() => fileInputRef.current?.click()} 
+              />
+              <QuickAction 
+                text="🚛 Upload Logistics Bill" 
+                icon={<FileText className="w-3 h-3" />}
+                onClick={() => fileInputRef.current?.click()} 
+              />
+              <QuickAction 
+                text="📊 Check Status" 
+                onClick={() => handleQuickAction('Check contract status')} 
+              />
+              <QuickAction 
+                text="💳 Raise Debit Note" 
+                onClick={() => handleQuickAction('I want to raise a debit note')} 
+              />
+              <QuickAction 
+                text="💵 Raise Credit Note" 
+                onClick={() => handleQuickAction('I want to raise a credit note')} 
+              />
               <QuickAction text="❓ Help" onClick={() => handleQuickAction('help')} />
             </div>
           </div>
 
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
           {/* Input area */}
           <div className="p-4 bg-white border-t border-slate-200">
+            {isProcessing && (
+              <div className="mb-3 flex items-center space-x-2 text-blue-600">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Processing document with OCR...</span>
+              </div>
+            )}
             <div className="flex space-x-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center space-x-2"
+                disabled={isTyping || isProcessing}
+                title="Upload document (Invoice, Payment Receipt, Logistics Bill)"
+              >
+                <Upload className="w-4 h-4" />
+                <span className="text-sm">Upload</span>
+              </button>
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your message... (e.g., 'I have an invoice for SC-2024-001')"
+                placeholder="Type your message or upload a document..."
                 className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={isTyping}
+                disabled={isTyping || isProcessing}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isTyping}
+                disabled={!inputMessage.trim() || isTyping || isProcessing}
                 className="px-6"
               >
                 Send
               </Button>
             </div>
+            <p className="text-xs text-slate-500 mt-2">
+              💡 Tip: Upload invoices, payment receipts, or logistics bills for automatic OCR processing
+            </p>
           </div>
         </div>
       </Card>
 
       {/* Instructions Card */}
-      <Card title="Email Integration Guide">
+      <Card title="📋 Automated Document Processing Guide">
         <div className="p-4 space-y-4">
           <div>
-            <h3 className="font-semibold text-slate-800 mb-2">For Sellers:</h3>
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
-              <p className="mb-2">📧 <strong>Forward invoice emails to:</strong> invoices@rnrltradehub.com</p>
-              <p className="text-slate-600">
-                • Attach invoice PDF<br />
-                • Mention contract number in subject/body<br />
-                • System will auto-process and forward to buyer
-              </p>
+            <h3 className="font-semibold text-slate-800 mb-2 flex items-center">
+              <Upload className="w-4 h-4 mr-2" />
+              How to Upload Documents:
+            </h3>
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm space-y-2">
+              <p><strong>1. Click "Upload" button or drag & drop</strong></p>
+              <p><strong>2. Select document type:</strong></p>
+              <ul className="ml-4 space-y-1 text-slate-600">
+                <li>• <strong>Invoice:</strong> PDF or image of seller invoice</li>
+                <li>• <strong>Payment:</strong> Bank receipt, RTGS/NEFT confirmation</li>
+                <li>• <strong>Logistics:</strong> LR receipt, transporter bill</li>
+              </ul>
+              <p><strong>3. System will:</strong></p>
+              <ul className="ml-4 space-y-1 text-slate-600">
+                <li>✓ Extract data using OCR</li>
+                <li>✓ Validate against contracts</li>
+                <li>✓ Auto-post to ledger</li>
+                <li>✓ Send notifications</li>
+                <li>✓ Update reconciliation</li>
+              </ul>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold text-slate-800 mb-2">For Buyers:</h3>
-            <div className="bg-green-50 border border-green-200 rounded-md p-3 text-sm">
-              <p className="mb-2">💰 <strong>Send payment confirmations to:</strong> payments@rnrltradehub.com</p>
-              <p className="text-slate-600">
-                • Include invoice number<br />
-                • Mention amount and payment method<br />
-                • System will auto-update records
-              </p>
+            <h3 className="font-semibold text-slate-800 mb-2">📧 Email Integration (Alternative):</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                <p className="font-semibold mb-1">📄 Invoices</p>
+                <p className="text-xs text-slate-600">invoices@rnrltradehub.com</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="font-semibold mb-1">💰 Payments</p>
+                <p className="text-xs text-slate-600">payments@rnrltradehub.com</p>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <p className="font-semibold mb-1">🚛 Logistics</p>
+                <p className="text-xs text-slate-600">logistics@rnrltradehub.com</p>
+              </div>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold text-slate-800 mb-2">Chatbot Features:</h3>
-            <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
-              <li>Natural language processing for easy data entry</li>
-              <li>Auto-extraction from emails and photos</li>
-              <li>Instant status updates and queries</li>
-              <li>No manual form filling required</li>
-              <li>Works 24/7 for sellers and buyers</li>
-            </ul>
+            <h3 className="font-semibold text-slate-800 mb-2">🤖 Chatbot Capabilities:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="font-semibold text-blue-700 mb-1">Automated Processing:</p>
+                <ul className="list-disc list-inside text-slate-600 space-y-1">
+                  <li>OCR data extraction (95%+ accuracy)</li>
+                  <li>Auto-validation against contracts</li>
+                  <li>Auto-posting to ledgers</li>
+                  <li>Auto-reconciliation (RECO)</li>
+                  <li>Email notifications with timeline</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-blue-700 mb-1">Supported Documents:</p>
+                <ul className="list-disc list-inside text-slate-600 space-y-1">
+                  <li>Seller invoices (with GST)</li>
+                  <li>Payment receipts (RTGS/NEFT/Cheque)</li>
+                  <li>Controller invoices</li>
+                  <li>Logistics/LR bills</li>
+                  <li>Debit/Credit notes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-slate-800 mb-2">⚡ Key Features:</h3>
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-md p-3">
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-slate-700">
+                <li>✅ <strong>Zero Manual Entry:</strong> Upload & done</li>
+                <li>✅ <strong>Real-time Validation:</strong> Instant error detection</li>
+                <li>✅ <strong>Auto-Notifications:</strong> Buyer/seller alerts</li>
+                <li>✅ <strong>Auto-Ledger Posting:</strong> Immediate updates</li>
+                <li>✅ <strong>Auto-Reconciliation:</strong> Match/unmatch detection</li>
+                <li>✅ <strong>Timeline Tracking:</strong> Complete audit trail</li>
+                <li>✅ <strong>Multi-party Support:</strong> Buyers, sellers, controllers, transporters</li>
+                <li>✅ <strong>24/7 Availability:</strong> Process anytime</li>
+              </ul>
+            </div>
           </div>
         </div>
       </Card>

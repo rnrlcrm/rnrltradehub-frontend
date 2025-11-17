@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
 import Modal from '../components/ui/Modal';
@@ -8,6 +8,11 @@ import { mockInvoices } from '../data/mockData';
 import { Invoice, User } from '../types';
 import { hasPermission } from '../lib/permissions';
 import { Button, Input, Select } from '../components/ui/Form';
+import { Upload, FileText, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import OCRService, { OCRResult } from '../services/ocrService';
+import ValidationService from '../services/validationService';
+import NotificationService from '../services/notificationService';
+import AutoPostingService from '../services/autoPostingService';
 
 interface InvoicesProps {
   currentUser: User;
@@ -27,6 +32,10 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('view');
   const [selectedItem, setSelectedItem] = useState<Invoice | null>(null);
+  const [isOCRModalOpen, setIsOCRModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +44,10 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
   const [dateTo, setDateTo] = useState('');
   const [amountMin, setAmountMin] = useState('');
   const [amountMax, setAmountMax] = useState('');
+  const [buyerFilter, setBuyerFilter] = useState<string>('all');
+  const [sellerFilter, setSellerFilter] = useState<string>('all');
+  const [fyFilter, setFyFilter] = useState<string>('all');
+  const [commodityFilter, setCommodityFilter] = useState<string>('all');
 
 
   const canCreate = hasPermission(currentUser.role, 'Invoices', 'create');
@@ -62,9 +75,24 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
       const matchesAmountMin = !amountMin || invoice.amount >= parseFloat(amountMin);
       const matchesAmountMax = !amountMax || invoice.amount <= parseFloat(amountMax);
       
-      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountMin && matchesAmountMax;
+      // Buyer filter (mock data doesn't have buyer, so just pass through)
+      const matchesBuyer = buyerFilter === 'all';
+      
+      // Seller filter (mock data doesn't have seller, so just pass through)
+      const matchesSeller = sellerFilter === 'all';
+      
+      // FY filter
+      const matchesFY = fyFilter === 'all' || (invoice.financialYear && invoice.financialYear === fyFilter);
+      
+      // Commodity filter (mock data doesn't have commodity, so just pass through)
+      const matchesCommodity = commodityFilter === 'all';
+      
+      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && 
+             matchesAmountMin && matchesAmountMax && matchesBuyer && matchesSeller && 
+             matchesFY && matchesCommodity;
     });
-  }, [mockInvoices, searchTerm, statusFilter, dateFrom, dateTo, amountMin, amountMax]);
+  }, [mockInvoices, searchTerm, statusFilter, dateFrom, dateTo, amountMin, amountMax, 
+      buyerFilter, sellerFilter, fyFilter, commodityFilter]);
 
   // Calculate summary statistics
   const summary = useMemo(() => {
@@ -86,6 +114,50 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
     setDateTo('');
     setAmountMin('');
     setAmountMax('');
+    setBuyerFilter('all');
+    setSellerFilter('all');
+    setFyFilter('all');
+    setCommodityFilter('all');
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    setIsOCRModalOpen(true);
+
+    // Process with OCR
+    const result = await OCRService.processInvoice(file);
+    setOcrResult(result);
+    setIsProcessing(false);
+
+    if (result.success && result.data) {
+      const invoiceData = result.data as any;
+      
+      // Validate invoice
+      const validationResult = await ValidationService.validateInvoice(invoiceData);
+      
+      if (validationResult.isValid) {
+        // Auto-post to ledger
+        await AutoPostingService.postInvoiceToLedger(invoiceData);
+        
+        // Send notification to buyer
+        await NotificationService.notifyInvoiceUploaded(invoiceData, { email: invoiceData.buyerName });
+      } else {
+        // Send error notification to seller
+        await NotificationService.notifyInvoiceError(
+          invoiceData,
+          { email: invoiceData.sellerName },
+          validationResult.errors.map(e => e.message)
+        );
+      }
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const exportToCSV = () => {
@@ -198,8 +270,8 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
       </div>
 
       {/* Filters */}
-      <Card title="Filters">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      <Card title="Advanced Filters & Upload">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Search</label>
             <Input
@@ -219,6 +291,50 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
               <option value="Paid">Paid</option>
               <option value="Unpaid">Unpaid</option>
               <option value="Partially Paid">Partially Paid</option>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Buyer</label>
+            <Select
+              value={buyerFilter}
+              onChange={(e) => setBuyerFilter(e.target.value)}
+            >
+              <option value="all">All Buyers</option>
+              <option value="ABC Mills">ABC Mills</option>
+              <option value="XYZ Traders">XYZ Traders</option>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Seller</label>
+            <Select
+              value={sellerFilter}
+              onChange={(e) => setSellerFilter(e.target.value)}
+            >
+              <option value="all">All Sellers</option>
+              <option value="Seller A">Seller A</option>
+              <option value="Seller B">Seller B</option>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Financial Year</label>
+            <Select
+              value={fyFilter}
+              onChange={(e) => setFyFilter(e.target.value)}
+            >
+              <option value="all">All FY</option>
+              <option value="FY 2024-25">FY 2024-25</option>
+              <option value="FY 2023-24">FY 2023-24</option>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Commodity</label>
+            <Select
+              value={commodityFilter}
+              onChange={(e) => setCommodityFilter(e.target.value)}
+            >
+              <option value="all">All Commodities</option>
+              <option value="Cotton">Cotton</option>
+              <option value="Wheat">Wheat</option>
             </Select>
           </div>
           <div>
@@ -256,13 +372,27 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
             />
           </div>
         </div>
-        <div className="px-4 pb-4 flex gap-2">
+        <div className="px-4 pb-4 flex gap-2 flex-wrap">
           <Button onClick={clearFilters} className="text-sm bg-slate-500 hover:bg-slate-600">
             Clear Filters
           </Button>
           <Button onClick={exportToCSV} className="text-sm bg-green-600 hover:bg-green-700">
             Export to CSV
           </Button>
+          <Button 
+            onClick={() => fileInputRef.current?.click()} 
+            className="text-sm bg-blue-600 hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Invoice (OCR)</span>
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
         </div>
       </Card>
 
@@ -283,6 +413,63 @@ const Invoices: React.FC<InvoicesProps> = ({ currentUser }) => {
           onSave={handleSave}
           onCancel={handleCloseModal}
         />
+      </Modal>
+
+      {/* OCR Processing Modal */}
+      <Modal 
+        isOpen={isOCRModalOpen} 
+        onClose={() => setIsOCRModalOpen(false)} 
+        title="Invoice OCR Processing"
+      >
+        <div className="p-4">
+          {isProcessing ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+              <p className="text-slate-600">Processing invoice with OCR...</p>
+              <p className="text-sm text-slate-500 mt-2">This may take a few seconds</p>
+            </div>
+          ) : ocrResult ? (
+            <div className="space-y-4">
+              {ocrResult.success ? (
+                <>
+                  <div className="flex items-center space-x-2 text-green-600">
+                    <CheckCircle className="w-6 h-6" />
+                    <span className="font-semibold">Invoice processed successfully!</span>
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-md p-4 space-y-2 text-sm">
+                    <p><strong>Confidence:</strong> {OCRService.getConfidenceLevel(ocrResult.confidence)} ({(ocrResult.confidence * 100).toFixed(1)}%)</p>
+                    {ocrResult.data && (
+                      <>
+                        <p><strong>Invoice #:</strong> {(ocrResult.data as any).invoiceNumber}</p>
+                        <p><strong>Amount:</strong> ₹{((ocrResult.data as any).totalAmount || 0).toLocaleString()}</p>
+                        <p className="text-green-700 mt-3">✓ Data extracted and validated</p>
+                        <p className="text-green-700">✓ Posted to ledger</p>
+                        <p className="text-green-700">✓ Buyer notified</p>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center space-x-2 text-red-600">
+                    <AlertCircle className="w-6 h-6" />
+                    <span className="font-semibold">Processing failed</span>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                    <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                      {ocrResult.errors?.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={() => setIsOCRModalOpen(false)}>Close</Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </Modal>
     </div>
   );
