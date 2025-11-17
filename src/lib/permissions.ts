@@ -4,6 +4,7 @@ import { UserRole, Module, Permission, PermissionsMap } from '../types';
 export const mockPermissions: PermissionsMap = {
   'Admin': {
     'Sales Contracts': ['create', 'read', 'update', 'delete'],
+    'Sales Confirmation': ['create', 'read', 'update', 'delete', 'approve'],
     'Invoices': ['create', 'read', 'update', 'delete'],
     'Payments': ['create', 'read', 'update', 'delete'],
     'Disputes': ['create', 'read', 'update', 'delete'],
@@ -18,6 +19,7 @@ export const mockPermissions: PermissionsMap = {
   },
   'Sales': {
     'Sales Contracts': ['create', 'read', 'update'],
+    'Sales Confirmation': ['create', 'read', 'update'],
     'Business Partners': ['create', 'read', 'update', 'share'],
     'Disputes': ['create', 'read'],
     'Reports': ['read'],
@@ -25,6 +27,7 @@ export const mockPermissions: PermissionsMap = {
   },
   'Accounts': {
     'Sales Contracts': ['read'],
+    'Sales Confirmation': ['read', 'approve'],
     'Invoices': ['create', 'read', 'update'],
     'Payments': ['create', 'read', 'update'],
     'Commissions': ['read', 'update'],
@@ -34,11 +37,13 @@ export const mockPermissions: PermissionsMap = {
   },
   'Dispute Manager': {
     'Sales Contracts': ['read'],
+    'Sales Confirmation': ['read'],
     'Disputes': ['read', 'update'],
     'Grievance Officer': ['read'],
   },
   'Business Partner': {
     'Sales Contracts': ['read'],
+    'Sales Confirmation': ['read'],
     'Invoices': ['read'],
     'Payments': ['read'],
     'Grievance Officer': ['read'],

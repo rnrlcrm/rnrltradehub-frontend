@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage, currentUser }
     { name: 'Command Center', icon: DashboardIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Trade Desk', icon: TradeDeskIcon, roles: ['Admin', 'Sales', 'Business Partner'] },
     { name: 'AI Assistant', icon: ChatIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
-    { name: 'Sales Contracts', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts', 'Dispute Manager', 'Business Partner'] },
+    { name: 'Sales Confirmation', icon: ContractIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Quality Inspection', icon: QualityIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Inventory', icon: InventoryIcon, roles: ['Admin', 'Sales', 'Accounts'] },
     { name: 'Logistics', icon: LogisticsIcon, roles: ['Admin', 'Sales', 'Accounts'] },
