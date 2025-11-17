@@ -30,6 +30,7 @@ import Logistics from './pages/Logistics';
 import Ledger from './pages/Ledger';
 import Reconciliation from './pages/Reconciliation';
 import Login from './pages/Login';
+import FinanceModule from './pages/FinanceModule';
 import { mockUsers, mockAuditLogs, mockOrganizations, mockSalesContracts, mockMasterData } from './data/mockData';
 import { User, AuditLog, MasterDataItem, SalesContract } from './types';
 import { DialogProvider } from './components/dialogs/CustomDialogs';
@@ -158,6 +159,7 @@ const App: React.FC = () => {
       case 'trade-desk': return <TradeDesk currentUser={currentUser} />;
       case 'ai-assistant': return <Chatbot currentUser={currentUser} />;
       case 'sales-contracts': return <SalesContracts currentUser={currentUser} currentOrganization={currentOrganization} currentFinancialYear={currentFinancialYear} contracts={contracts} setContracts={setContracts} addAuditLog={addAuditLog} />;
+      case 'finance': return <FinanceModule currentUser={currentUser} />;
       case 'invoices': return <Invoices currentUser={currentUser} />;
       case 'payments': return <Payments currentUser={currentUser} />;
       case 'commissions': return <Commissions currentUser={currentUser} />;
