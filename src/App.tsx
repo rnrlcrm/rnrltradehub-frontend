@@ -26,6 +26,7 @@ import TermsOfService from './pages/TermsOfService';
 import RolesAndRights from './pages/RolesAndRights';
 import Chatbot from './pages/Chatbot';
 import QualityInspection from './pages/QualityInspection';
+import Controller from './pages/Controller';
 import Inventory from './pages/Inventory';
 import Logistics from './pages/Logistics';
 import Ledger from './pages/Ledger';
@@ -128,6 +129,7 @@ const App: React.FC = () => {
       case 'commission-accounting': return <CommissionAccounting currentUser={currentUser} />;
       case 'disputes': return <Disputes currentUser={currentUser} />;
       case 'quality-inspection': return <QualityInspection currentUser={currentUser} />;
+      case 'controller': return <Controller currentUser={currentUser} />;
       case 'inventory': return <Inventory currentUser={currentUser} />;
       case 'logistics': return <Logistics currentUser={currentUser} />;
       case 'ledger': return <Ledger currentUser={currentUser} />;
