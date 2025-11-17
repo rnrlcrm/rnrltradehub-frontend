@@ -450,90 +450,114 @@ const SalesConfirmationPage: React.FC<SalesConfirmationProps> = ({
 
       {/* Confirmations Table */}
       <Card>
-        <Table
-          headers={['Confirmation No', 'Date', 'Buyer', 'Seller', 'Items', 'Total Amount', 'Status', 'Actions']}
-          data={filteredConfirmations}
-          renderRow={(confirmation) => (
-            <>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                {confirmation.confirmationNo}
-                {confirmation.version > 1 && (
-                  <span className="ml-2 text-xs text-blue-600">(v{confirmation.version})</span>
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                {new Date(confirmation.date).toLocaleDateString('en-IN')}
-              </td>
-              <td className="px-6 py-4 text-sm text-slate-600">{confirmation.buyerName}</td>
-              <td className="px-6 py-4 text-sm text-slate-600">{confirmation.sellerName}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
-                {confirmation.lineItems.length}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                ₹ {confirmation.lineItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString('en-IN')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <StatusBadge status={confirmation.status} />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                <button
-                  onClick={() => handleOpenModal('view', confirmation)}
-                  className="text-blue-600 hover:text-blue-900"
-                  title="View"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-                {canUpdate && confirmation.status === 'Draft' && (
-                  <button
-                    onClick={() => handleOpenModal('edit', confirmation)}
-                    className="text-yellow-600 hover:text-yellow-900"
-                    title="Edit"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                )}
-                {canUpdate && (confirmation.status === 'Confirmed' || confirmation.status === 'Amended') && (
-                  <button
-                    onClick={() => handleOpenModal('amend', confirmation)}
-                    className="text-purple-600 hover:text-purple-900"
-                    title="Amend"
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                )}
-                {canApprove && confirmation.status === 'Pending' && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setSelectedConfirmation(confirmation);
-                        setIsApprovalModalOpen(true);
-                      }}
-                      className="text-green-600 hover:text-green-900"
-                      title="Approve"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedConfirmation(confirmation);
-                        setIsRejectionModalOpen(true);
-                      }}
-                      className="text-red-600 hover:text-red-900"
-                      title="Reject"
-                    >
-                      <XCircle className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-              </td>
-            </>
-          )}
-        />
-        {filteredConfirmations.length === 0 && (
+        {filteredConfirmations.length === 0 ? (
           <div className="text-center py-8 text-slate-500">
             <AlertTriangle className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No sales confirmations found</p>
           </div>
+        ) : (
+          <Table<SalesConfirmation>
+            data={filteredConfirmations}
+            columns={[
+              {
+                header: 'Confirmation No',
+                accessor: (confirmation) => (
+                  <div>
+                    {confirmation.confirmationNo}
+                    {confirmation.version > 1 && (
+                      <span className="ml-2 text-xs text-blue-600">(v{confirmation.version})</span>
+                    )}
+                  </div>
+                ),
+              },
+              {
+                header: 'Date',
+                accessor: (confirmation) => new Date(confirmation.date).toLocaleDateString('en-IN'),
+              },
+              {
+                header: 'Buyer',
+                accessor: 'buyerName',
+              },
+              {
+                header: 'Seller',
+                accessor: 'sellerName',
+              },
+              {
+                header: 'Items',
+                accessor: (confirmation) => (
+                  <div className="text-center">{confirmation.lineItems.length}</div>
+                ),
+              },
+              {
+                header: 'Total Amount',
+                accessor: (confirmation) => (
+                  <span className="font-semibold">
+                    ₹ {confirmation.lineItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString('en-IN')}
+                  </span>
+                ),
+              },
+              {
+                header: 'Status',
+                accessor: (confirmation) => <StatusBadge status={confirmation.status} />,
+              },
+              {
+                header: 'Actions',
+                accessor: (confirmation) => (
+                  <div className="space-x-2 flex items-center">
+                    <button
+                      onClick={() => handleOpenModal('view', confirmation)}
+                      className="text-blue-600 hover:text-blue-900"
+                      title="View"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    {canUpdate && confirmation.status === 'Draft' && (
+                      <button
+                        onClick={() => handleOpenModal('edit', confirmation)}
+                        className="text-yellow-600 hover:text-yellow-900"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canUpdate && (confirmation.status === 'Confirmed' || confirmation.status === 'Amended') && (
+                      <button
+                        onClick={() => handleOpenModal('amend', confirmation)}
+                        className="text-purple-600 hover:text-purple-900"
+                        title="Amend"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canApprove && confirmation.status === 'Pending' && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setSelectedConfirmation(confirmation);
+                            setIsApprovalModalOpen(true);
+                          }}
+                          className="text-green-600 hover:text-green-900"
+                          title="Approve"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedConfirmation(confirmation);
+                            setIsRejectionModalOpen(true);
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                          title="Reject"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
         )}
       </Card>
 
